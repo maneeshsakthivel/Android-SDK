@@ -98,6 +98,10 @@ public class FilePickerActivity extends ListActivity {
     // Clear the files ArrayList
     mFiles.clear();
     
+    File parentDir = mDirectory.getParentFile();
+    if (parentDir != null)
+      mFiles.add(parentDir);
+    
     // Set the extension file filter
     ExtensionFilenameFilter filter = new ExtensionFilenameFilter(acceptedFileExtensions);
     
@@ -119,17 +123,17 @@ public class FilePickerActivity extends ListActivity {
     mAdapter.notifyDataSetChanged();
   }
   
-  @Override
-  public void onBackPressed() {
-    if(mDirectory.getParentFile() != null) {
-      // Go to parent directory
-      mDirectory = mDirectory.getParentFile();
-      refreshFilesList();
-      return;
-    }
-    
-    super.onBackPressed();
-  }
+  //@Override
+  //public void onBackPressed() {
+  //  if(mDirectory.getParentFile() != null) {
+  //    // Go to parent directory
+  //    mDirectory = mDirectory.getParentFile();
+  //    refreshFilesList();
+  //    return;
+  //  }
+  //  
+  //  super.onBackPressed();
+  //}
   
   @Override
   protected void onListItemClick(ListView l, View v, int position, long id) {
@@ -173,19 +177,29 @@ public class FilePickerActivity extends ListActivity {
       }
 
       File object = mObjects.get(position);
-
+      
       ImageView imageView = (ImageView)row.findViewById(R.id.file_picker_image);
       TextView textView = (TextView)row.findViewById(R.id.file_picker_text);
+      
       // Set single line
       textView.setSingleLine(true);
       
-      textView.setText(object.getName());
-      if(object.isFile()) {
-        // Show the file icon
-        imageView.setImageResource(R.drawable.file);
-      } else {
+      if (object.equals(mDirectory.getParentFile()))
+      {
         // Show the folder icon
         imageView.setImageResource(R.drawable.folder);
+        textView.setText("..");
+      }
+      else
+      {
+        textView.setText(object.getName());
+        if(object.isFile()) {
+          // Show the file icon
+          imageView.setImageResource(R.drawable.file);
+        } else {
+          // Show the folder icon
+          imageView.setImageResource(R.drawable.folder);
+        }
       }
       
       return row;

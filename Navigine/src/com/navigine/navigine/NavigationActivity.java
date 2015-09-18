@@ -46,6 +46,8 @@ public class NavigationActivity extends Activity
   private boolean    mAdjustMode   = true;
   private boolean    mDrawScale    = true;
   
+  private boolean    mMapLoaded    = false;
+  
   // Image parameters
   int mMapWidth    = 0;
   int mMapHeight   = 0;
@@ -156,15 +158,14 @@ public class NavigationActivity extends Activity
   @Override public void onDestroy()
   {
     super.onDestroy();
-    NavigineApp.stopNavigation(NavigationThread.MODE_IDLE);
+    NavigineApp.stopNavigation();
   }
   
   @Override public void onResume()
   {
     super.onResume();
     
-    //if (mMatrix != null && NavigineApp.Navigation.getArchivePath() != null)
-    NavigineApp.startNavigation(false);
+    NavigineApp.setForegroundMode();
     
     // Starting interface updates
     mTimerTask = 
@@ -182,8 +183,7 @@ public class NavigationActivity extends Activity
   {
     super.onPause();
     
-    //if (mMatrix != null && NavigineApp.Navigation.getArchivePath() != null)
-    NavigineApp.startNavigation(true);
+    NavigineApp.setBackgroundMode();
     
     mTimerTask.cancel();
     mTimerTask = null;
@@ -253,8 +253,22 @@ public class NavigationActivity extends Activity
     editor.commit();
   }
   
-  private boolean loadMap(String filename)
+  private boolean tryLoadMap()
   {
+    if (mMapLoaded)
+      return false;    
+    mMapLoaded = true;
+    
+    if (NavigineApp.Navigation == null)
+    {
+      Toast.makeText(mContext, "Can't load map! Navigine SDK is not available!", Toast.LENGTH_LONG).show();
+      return false;
+    }
+    
+    String filename = NavigineApp.Navigation.getArchivePath();
+    if (filename == null || filename.length() == 0)
+      return false;
+    
     if (!NavigineApp.Navigation.loadArchive(filename))
     {
       String error = NavigineApp.Navigation.getLastError();
@@ -296,8 +310,8 @@ public class NavigationActivity extends Activity
       return false;
     }
     
-    //NavigineApp.setTrackFile();
     mHandler.post(mRunnable);
+    NavigineApp.startNavigation();
     return true;
   }
   
@@ -914,7 +928,6 @@ public class NavigationActivity extends Activity
       NavigineApp.IMU.disconnect();
   }*/
   
-  private boolean mMapLoaded = false;
   private boolean mImuMode   = false;
   private long mPopupTimeout = 60000;
   private long mPopupTime = 0;
@@ -927,12 +940,7 @@ public class NavigationActivity extends Activity
       {
         if (mMatrix == null)
         {
-          if (!mMapLoaded && NavigineApp.Navigation.getArchivePath() != null)
-          {
-            mMapLoaded = true;
-            if (loadMap(NavigineApp.Navigation.getArchivePath()))
-              NavigineApp.startNavigation(false);
-          }
+          tryLoadMap();
           return;
         }
         

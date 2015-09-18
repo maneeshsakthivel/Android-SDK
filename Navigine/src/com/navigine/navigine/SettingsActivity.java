@@ -28,11 +28,16 @@ public class SettingsActivity extends Activity
 {
   // Constants
   private static final String TAG = "Navigine.SettingsActivity";
+  private static final int REQUEST_PICK_FILE = 1;
   
   // This context
   private final Context context = this;
   
+  private boolean mBackgroundNavigationEnabled = true;
   private int mBackgroundMode = NavigationThread.MODE_NORMAL;
+  
+  private boolean mNavigationFileEnabled = false;
+  private String mNavigationFile = "";
   
   /** Called when the activity is first created */
   @Override public void onCreate(Bundle savedInstanceState)
@@ -41,6 +46,17 @@ public class SettingsActivity extends Activity
     requestWindowFeature(Window.FEATURE_NO_TITLE);
     setContentView(R.layout.settings);
     
+    CheckBox backgroundNavigationCheckBox = (CheckBox)findViewById(R.id.settings__background_navigation_checkbox);
+    backgroundNavigationCheckBox.setOnCheckedChangeListener(
+      new CompoundButton.OnCheckedChangeListener()
+      {
+        @Override public void onCheckedChanged(CompoundButton button, boolean checked)
+        {
+          mBackgroundNavigationEnabled = checked;
+          findViewById(R.id.settings__radio_group).setVisibility(checked ? View.VISIBLE : View.GONE);
+        }
+      });
+    
     CheckBox serverCheckBox = (CheckBox)findViewById(R.id.settings__navigation_server_checkbox);
     serverCheckBox.setOnCheckedChangeListener(
       new CompoundButton.OnCheckedChangeListener()
@@ -48,6 +64,21 @@ public class SettingsActivity extends Activity
         @Override public void onCheckedChanged(CompoundButton button, boolean checked)
         {
           findViewById(R.id.settings__navigation_server_address_edit).setVisibility(checked ? View.VISIBLE : View.GONE);
+        }
+      });
+    
+    CheckBox navigationFileCheckBox = (CheckBox)findViewById(R.id.settings__navigation_file_enabled_checkbox);
+    navigationFileCheckBox.setOnClickListener(
+      new CompoundButton.OnClickListener()
+      {
+        @Override public void onClick(View v)
+        {
+          mNavigationFileEnabled = ((CheckBox)findViewById(R.id.settings__navigation_file_enabled_checkbox)).isChecked();
+          if (mNavigationFileEnabled)
+          {
+            Intent intent = new Intent(NavigineApp.AppContext, FilePickerActivity.class);
+            startActivityForResult(intent, REQUEST_PICK_FILE);
+          }
         }
       });
     
@@ -61,6 +92,25 @@ public class SettingsActivity extends Activity
         }
       });
     
+    if (NavigineApp.Settings.getBoolean("navigation_file_enabled", false) &&
+        NavigineApp.Settings.getString("navigation_file", "").length() > 0)
+    {
+      mNavigationFileEnabled = true;
+      mNavigationFile = NavigineApp.Settings.getString("navigation_file", "");
+      setCheckBox (R.id.settings__navigation_file_enabled_checkbox, true);
+      TextView tv = (TextView)findViewById(R.id.settings__navigation_file_enabled_label);
+      String name = new File(mNavigationFile).getName();
+      String text = String.format(Locale.ENGLISH, "Navigation file enabled:\n'%s'", name);
+      tv.setText(text);
+    }
+    else
+    {
+      mNavigationFileEnabled = false;
+      setCheckBox (R.id.settings__navigation_file_enabled_checkbox, false);
+      TextView tv = (TextView)findViewById(R.id.settings__navigation_file_enabled_label);
+      tv.setText("Navigation file enabled");
+    }
+    
     setCheckBox (R.id.settings__beacon_service_checkbox,        NavigineApp.Settings.getBoolean("beacon_service_enabled", true));
     setCheckBox (R.id.settings__navigation_server_checkbox,     NavigineApp.Settings.getBoolean("navigation_server_enabled", false));
     setTextValue(R.id.settings__navigation_server_address_edit, NavigineApp.Settings.getString("navigation_server_address", NavigineApp.DEFAULT_SERVER));
@@ -72,20 +122,22 @@ public class SettingsActivity extends Activity
     switch (mBackgroundMode)
     {
       case NavigationThread.MODE_NORMAL:
-        ((RadioButton)findViewById(R.id.radio_normal_mode)).setChecked(true);
+        setCheckBox(R.id.settings__background_navigation_checkbox, true);
+        ((RadioButton)findViewById(R.id.settings__radio_normal_mode)).setChecked(true);
         break;
       
-      case NavigationThread.MODE_ECONOMIC:
-        ((RadioButton)findViewById(R.id.radio_economic_mode)).setChecked(true);
+      case NavigationThread.MODE_ECONOMIC1:
+        setCheckBox(R.id.settings__background_navigation_checkbox, true);
+        ((RadioButton)findViewById(R.id.settings__radio_economic_mode)).setChecked(true);
         break;
       
       case NavigationThread.MODE_ECONOMIC2:
-        ((RadioButton)findViewById(R.id.radio_economic2_mode)).setChecked(true);
+        setCheckBox(R.id.settings__background_navigation_checkbox, true);
+        ((RadioButton)findViewById(R.id.settings__radio_economic2_mode)).setChecked(true);
         break;
       
       case NavigationThread.MODE_IDLE:
-        ((RadioButton)findViewById(R.id.radio_idle_mode)).setChecked(true);
-        break;
+        setCheckBox(R.id.settings__background_navigation_checkbox, false);
     }
     
     boolean serverEnabled = getCheckBox(R.id.settings__navigation_server_checkbox);
@@ -102,20 +154,16 @@ public class SettingsActivity extends Activity
     // Check which radio button was clicked
     switch (view.getId())
     {
-      case R.id.radio_normal_mode:
+      case R.id.settings__radio_normal_mode:
         mBackgroundMode = NavigationThread.MODE_NORMAL;
         break;
       
-      case R.id.radio_economic_mode:
-        mBackgroundMode = NavigationThread.MODE_ECONOMIC;
+      case R.id.settings__radio_economic_mode:
+        mBackgroundMode = NavigationThread.MODE_ECONOMIC1;
         break;
       
-      case R.id.radio_economic2_mode:
+      case R.id.settings__radio_economic2_mode:
         mBackgroundMode = NavigationThread.MODE_ECONOMIC2;
-        break;
-      
-      case R.id.radio_idle_mode:
-        mBackgroundMode = NavigationThread.MODE_IDLE;
         break;
     }
   }
@@ -158,13 +206,46 @@ public class SettingsActivity extends Activity
   private void saveSettings()
   {
     SharedPreferences.Editor editor = NavigineApp.Settings.edit();
-    editor.putInt("background_navigation_mode",    mBackgroundMode);
+    editor.putInt("background_navigation_mode",    mBackgroundNavigationEnabled ? mBackgroundMode : NavigationThread.MODE_IDLE);
     editor.putBoolean("beacon_service_enabled",    getCheckBox (R.id.settings__beacon_service_checkbox));
     editor.putBoolean("navigation_server_enabled", getCheckBox (R.id.settings__navigation_server_checkbox));
     editor.putString ("navigation_server_address", getTextValue(R.id.settings__navigation_server_address_edit));
     editor.putBoolean("navigation_log_enabled",    getCheckBox (R.id.settings__save_navigation_log_checkbox));
     editor.putBoolean("navigation_track_enabled",  getCheckBox (R.id.settings__save_navigation_track_checkbox));
     editor.putBoolean("post_messages_enabled",     getCheckBox (R.id.settings__post_messages_enabled_checkbox));
+    editor.putBoolean("navigation_file_enabled",   mNavigationFileEnabled);
+    editor.putString ("navigation_file",           mNavigationFileEnabled ? mNavigationFile : "");
     editor.commit();
+  }
+  
+  @Override protected void onActivityResult(int requestCode, int resultCode, Intent data)
+  {
+    if (requestCode != REQUEST_PICK_FILE)
+      return;
+    
+    if (resultCode == RESULT_OK)
+    {
+      if (data.hasExtra(FilePickerActivity.EXTRA_FILE_PATH))
+      {
+        // Get the file path
+        File f = new File(data.getStringExtra(FilePickerActivity.EXTRA_FILE_PATH));
+        
+        mNavigationFileEnabled = true;
+        mNavigationFile = f.getAbsolutePath();
+        
+        ((CheckBox)findViewById(R.id.settings__navigation_file_enabled_checkbox)).setChecked(true);
+        TextView tv = (TextView)findViewById(R.id.settings__navigation_file_enabled_label);
+        String text = String.format(Locale.ENGLISH, "Navigation file enabled:\n'%s'", f.getName());
+        tv.setText(text);
+      }
+    }
+    else
+    {
+      mNavigationFileEnabled = false;
+      mNavigationFile = "";
+      ((CheckBox)findViewById(R.id.settings__navigation_file_enabled_checkbox)).setChecked(false);
+      TextView tv = (TextView)findViewById(R.id.settings__navigation_file_enabled_label);
+      tv.setText("Navigation file enabled");
+    }
   }
 }

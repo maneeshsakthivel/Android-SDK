@@ -20,7 +20,6 @@ public class NavigineApp extends Application
   public static final String      DEFAULT_SERVER    = "server.navigine.com";
   public static final int         DEFAULT_SEND_PORT = 27015;
   public static final int         DEFAULT_RECV_PORT = 27016;
-  public static final int         DEFAULT_FREQUENCY = 10;
   
   public static Context           AppContext        = null;
   public static SharedPreferences Settings          = null;
@@ -31,24 +30,27 @@ public class NavigineApp extends Application
   @Override public void onCreate()
   {
     super.onCreate();
-    
+  }
+  
+  public static void initNavigation(Context appContext)
+  {
     // Setting static parameters
     BeaconService.DEBUG_LEVEL     = 2;
     NativeUtils.DEBUG_LEVEL       = 2;
     LocationLoader.DEBUG_LEVEL    = 2;
     NavigationThread.DEBUG_LEVEL  = 2;
     MeasureThread.DEBUG_LEVEL     = 2;
-    SensorThread.DEBUG_LEVEL      = 3;
+    SensorThread.DEBUG_LEVEL      = 2;
     Parser.DEBUG_LEVEL            = 2;
     
     NavigationThread.STRICT_MODE  = false;
-    LocationLoader.SERVER         = "client.navigine.com";
+    LocationLoader.SERVER         = "api.navigine.com";
     
     try
     {
-      AppContext = getApplicationContext();
+      AppContext = appContext;
       Settings   = AppContext.getSharedPreferences("NavigineSettings", 0);
-      Navigation = new NavigationThread(AppContext);
+      Navigation = new NavigationThread(Settings.getString("user_hash", ""), AppContext);
       Sender = new SenderThread();
       IMU = new IMUThread();    
     }
@@ -62,37 +64,16 @@ public class NavigineApp extends Application
     Log.d(TAG, String.format(Locale.ENGLISH, "Location directory: %s",
           LocationLoader.getLocationDir(AppContext, "")));
     
-    initNavigation();
-  }
-  
-  public static void initNavigation()
-  {
     if (AppContext == null || Navigation == null)
       return;
     
-    // Applying map_file
+    // Loading map file
     String mapFile = Settings.getString("map_file", "");
-    if (mapFile.length() > 0 && !NavigineApp.Navigation.loadArchive(mapFile))
+    if (mapFile.length() > 0 && !Navigation.loadArchive(mapFile))
     {
       SharedPreferences.Editor editor = Settings.edit();
       editor.putString("map_file", "");
       editor.commit();
-    }
-    
-    // Starting BeaconService (if necessary)
-    BeaconService.setUserId(Settings.getString("user_hash", ""));
-    BeaconService.setMapId(Navigation.getLocation() == null ? 0 : Navigation.getLocation().id);
-    if (Settings.getBoolean("beacon_service_enabled", true))
-    {
-      if (!BeaconService.isStarted())
-      {
-        Log.d(TAG, "Starting BeaconService");
-        AppContext.startService(new Intent(AppContext, BeaconService.class));
-      }
-    }
-    else
-    {
-      BeaconService.requestToStop();
     }
   }
   
@@ -116,10 +97,12 @@ public class NavigineApp extends Application
     return null;
   }
   
-  public static void startNavigation(boolean background)
+  public static void startNavigation()
   {
     if (AppContext == null || Navigation == null)
       return;
+    
+    Navigation.loadArchive(Settings.getString("map_file", ""));
     
     if (Settings.getBoolean("navigation_log_enabled", false))
       Navigation.setLogFile(getLogFile("log"));
@@ -138,38 +121,86 @@ public class NavigineApp extends Application
       mode = NavigationThread.MODE_FILE;
       Navigation.setNavigationFile(Settings.getString("navigation_file", ""));
     }
-    else
-    {
-      if (background)
-        mode = Settings.getInt("background_navigation_mode", NavigationThread.MODE_NORMAL);
-    }
     
-    Navigation.setMode(mode);
     Navigation.setPostEnabled(Settings.getBoolean("post_messages_enabled", true));
+    Navigation.setMode(mode);
     
-    if (Settings.getBoolean("navigation_server_enabled", false))
-    {
-      String address = Settings.getString("navigation_server_address", "");
-      if (address.length() > 0)
-      {
-        Sender.reconnect(address, DEFAULT_SEND_PORT, 10);
-      }
-    }
+    //if (Settings.getBoolean("navigation_server_enabled", false))
+    //{
+    //  String address = Settings.getString("navigation_server_address", "");
+    //  if (address.length() > 0)
+    //  {
+    //    Sender.reconnect(address, DEFAULT_SEND_PORT, 10);
+    //  }
+    //}
   }
   
-  public static void stopNavigation(int mode)
+  public static void setBackgroundMode()
   {
     if (AppContext == null || Navigation == null)
       return;
     
-    Navigation.setMode(mode);
-    Sender.idle();
+    switch (Navigation.getMode())
+    {
+      case NavigationThread.MODE_NORMAL:
+      case NavigationThread.MODE_ECONOMIC1:
+      case NavigationThread.MODE_ECONOMIC2:
+        Navigation.setMode(Settings.getInt("background_navigation_mode", NavigationThread.MODE_NORMAL));
+        break;
+    }
+  }
+  
+  public static void setForegroundMode()
+  {
+    if (AppContext == null || Navigation == null)
+      return;
     
+    switch (Navigation.getMode())
+    {
+      case NavigationThread.MODE_NORMAL:
+      case NavigationThread.MODE_ECONOMIC1:
+      case NavigationThread.MODE_ECONOMIC2:
+        Navigation.setMode(NavigationThread.MODE_NORMAL);
+        break;
+    }
+  }
+  
+  public static void stopNavigation()
+  {
+    if (AppContext == null || Navigation == null)
+      return;
+    
+    Navigation.setLogFile(null);
+    Navigation.setTrackFile(null);
+    Navigation.setMode(NavigationThread.MODE_IDLE);
+    //Sender.idle();
     //if (IMU.getConnectionState() == IMUThread.STATE_NORMAL)
     //{
     //  Log.d(TAG, "Disconnecting from IMU");
     //  IMU.disconnect();
     //}
+  }
+  
+  public static void startScanning()
+  {
+    if (AppContext == null || Navigation == null)
+      return;
+    
+    Navigation.setLogFile(null);
+    Navigation.setTrackFile(null);
+    Navigation.setMode(NavigationThread.MODE_SCAN);
+    //Sender.idle();
+  }
+  
+  public static void stopScanning()
+  {
+    if (AppContext == null || Navigation == null)
+      return;
+    
+    Navigation.setLogFile(null);
+    Navigation.setTrackFile(null);
+    Navigation.setMode(NavigationThread.MODE_IDLE);
+    //Sender.idle();
   }
   
   public static void destroyNavigation()

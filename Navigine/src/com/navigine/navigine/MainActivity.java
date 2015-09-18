@@ -115,6 +115,8 @@ public class MainActivity extends Activity
           startActivity(I);
         }
       });
+    
+    NavigineApp.initNavigation(getApplicationContext());
   }
   
   @Override public void onStart()
@@ -136,7 +138,21 @@ public class MainActivity extends Activity
     mNavigationModeButton.setVisibility(mapFile.length() > 0 ? View.VISIBLE : View.GONE);
     mMeasuringModeButton.setVisibility (mapFile.length() > 0 ? View.VISIBLE : View.GONE);
     
-    NavigineApp.initNavigation();
+    // Starting BeaconService (if necessary)
+    BeaconService.setUserId(NavigineApp.Settings.getString("user_hash", ""));
+    BeaconService.setMapId(NavigineApp.Navigation.getLocation() == null ? 0 : NavigineApp.Navigation.getLocation().id);
+    if (NavigineApp.Settings.getBoolean("beacon_service_enabled", true))
+    {
+      if (!BeaconService.isStarted())
+      {
+        Log.d(TAG, "Starting BeaconService");
+        NavigineApp.AppContext.startService(new Intent(NavigineApp.AppContext, BeaconService.class));
+      }
+    }
+    else
+    {
+      BeaconService.requestToStop();
+    }
   }
   
   @Override public void onDestroy()

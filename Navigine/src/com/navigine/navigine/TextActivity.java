@@ -25,7 +25,8 @@ public class TextActivity extends Activity
 {
   // Constants
   private static final String   TAG = "Navigine.TextActivity";
-  private static final int      REQUEST_PICK_MAP = 1;  
+  private static final int      REQUEST_PICK_FILE = 1;
+  private static final int      UPDATE_TIMEOUT = 1000;
   
   // This object
   private Context mContext = this;
@@ -90,7 +91,7 @@ public class TextActivity extends Activity
           update();
         }
       };
-    mTimer.schedule(mTimerTask, 500, 100);
+    mTimer.schedule(mTimerTask, UPDATE_TIMEOUT, UPDATE_TIMEOUT);
   }
   
   @Override public void onPause()
@@ -119,7 +120,7 @@ public class TextActivity extends Activity
     {
       case R.id.text_menu_load_map:
         Intent intent = new Intent(mContext, FilePickerActivity.class);
-        startActivityForResult(intent, REQUEST_PICK_MAP);
+        startActivityForResult(intent, REQUEST_PICK_FILE);
         return true;
       
       default:
@@ -134,7 +135,7 @@ public class TextActivity extends Activity
     
     switch (requestCode)
     {
-      case REQUEST_PICK_MAP:
+      case REQUEST_PICK_FILE:
         if (data.hasExtra(FilePickerActivity.EXTRA_FILE_PATH))
         {
           // Get the file path
@@ -190,14 +191,36 @@ public class TextActivity extends Activity
     if (mStarted)
     {
       mStarted = false;
-      NavigineApp.stopNavigation(NavigationThread.MODE_SCAN);
+      NavigineApp.stopNavigation();
+      NavigineApp.startScanning();
       mButton.setText("Start");
     }
     else
     {
       mStarted = true;
-      NavigineApp.startNavigation(false);
+      NavigineApp.startNavigation();
       mButton.setText("Stop");
+    }
+  }
+  
+  private void checkMode()
+  {
+    // Check if mode switched
+    switch (NavigineApp.Navigation.getMode())
+    {
+      case NavigationThread.MODE_IDLE:
+      case NavigationThread.MODE_SCAN:
+        if (mStarted)
+          toggleMode();
+        break;
+      
+      case NavigationThread.MODE_FILE:
+      case NavigationThread.MODE_NORMAL:
+      case NavigationThread.MODE_ECONOMIC1:
+      case NavigationThread.MODE_ECONOMIC2:
+        if (!mStarted)
+          toggleMode();
+        break;
     }
   }
   
@@ -213,6 +236,7 @@ public class TextActivity extends Activity
       {
         try
         {
+          checkMode();
           long timeNow = DateTimeUtils.currentTimeMillis();
           StringBuilder messageBuilder = new StringBuilder();
           
@@ -231,6 +255,8 @@ public class TextActivity extends Activity
             String name = new File(logFile).getName();
             messageBuilder.append(String.format(Locale.ENGLISH, "Log: %s\n", name));
           }
+          else if (NavigineApp.Settings.getBoolean("navigation_log_enabled", false))
+            messageBuilder.append("Log: enabled\n");
           else
             messageBuilder.append("Log:\n");
           
@@ -240,10 +266,12 @@ public class TextActivity extends Activity
             String name = new File(trackFile).getName();
             messageBuilder.append(String.format(Locale.ENGLISH, "Track: %s\n", name));
           }
+          else if (NavigineApp.Settings.getBoolean("navigation_track_enabled", false))
+            messageBuilder.append("Track: enabled\n");
           else
             messageBuilder.append("Track:\n");
           
-          String navFile = NavigineApp.Navigation.getNavigationFile();
+          String navFile = NavigineApp.Settings.getString("navigation_file", "");
           if (navFile != null && navFile.length() > 0)
           {
             String name = new File(navFile).getName();
@@ -303,6 +331,7 @@ public class TextActivity extends Activity
             switch (result.type)
             {
               case WScanResult.TYPE_WIFI:
+                //Log.d(TAG, String.format(Locale.ENGLISH, "%s: %d", result.BSSID, result.level));
                 wifiEntriesCounter++;
                 if (!bssids.contains(result.BSSID))
                   wifiEntries.add(result);
@@ -425,6 +454,7 @@ public class TextActivity extends Activity
                                                 locVector[0], locVector[1], locVector[2], locVector[3]));
           
           mTextView.setText(messageBuilder.toString());
+          
         }
         catch (Throwable e)
         {

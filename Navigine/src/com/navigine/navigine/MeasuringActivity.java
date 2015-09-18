@@ -53,6 +53,8 @@ public class MeasuringActivity extends Activity
   private Handler       mHandler    = new Handler();
   private boolean       mDrawScale  = true;
   
+  private boolean       mMapLoaded  = false;
+  
   // Image parameters
   RectF mMapRect   = null;
   int mMapWidth    = 0;
@@ -133,8 +135,7 @@ public class MeasuringActivity extends Activity
     mImageView.setBackgroundColor(Color.argb(255, 235, 235, 235));
     mScaleView.setImageBitmap(Bitmap.createBitmap(100, 30, Bitmap.Config.ARGB_8888));
     
-    if (NavigineApp.Navigation != null)
-      NavigineApp.Navigation.setMode(NavigationThread.MODE_SCAN);
+    NavigineApp.startScanning();
     
     // Setting up touch listener
     mImageView.setOnTouchListener(
@@ -205,8 +206,7 @@ public class MeasuringActivity extends Activity
     //  Parser.saveMeasureXml(mLocation);
     //  Parser.saveBeaconsXml(mLocation);
     //}
-    if (NavigineApp.Navigation != null)
-      NavigineApp.Navigation.setMode(NavigationThread.MODE_IDLE);
+    NavigineApp.stopScanning();
   }
   
   @Override public void onResume()
@@ -311,13 +311,21 @@ public class MeasuringActivity extends Activity
     }
   }
   
-  private boolean loadMap(String filename)
+  private boolean tryLoadMap()
   {
+    if (mMapLoaded)
+      return false;
+    mMapLoaded = true;
+    
     if (NavigineApp.Navigation == null)
     {
       Toast.makeText(mContext, "Can't load map! Navigine SDK is not available!", Toast.LENGTH_LONG).show();
       return false;
     }
+    
+    String filename = NavigineApp.Navigation.getArchivePath();
+    if (filename == null || filename.length() == 0)
+      return false;
     
     if (!NavigineApp.Navigation.loadArchive(filename))
     {
@@ -2048,8 +2056,6 @@ public class MeasuringActivity extends Activity
     }
   }
   
-  private boolean mMapLoaded = false;
-  
   final Runnable mRunnable =
     new Runnable()
     {
@@ -2057,11 +2063,7 @@ public class MeasuringActivity extends Activity
       {
         if (mMatrix == null)
         {
-          if (!mMapLoaded && NavigineApp.Navigation.getArchivePath() != null)
-          {
-            loadMap(NavigineApp.Navigation.getArchivePath());
-            mMapLoaded = true;
-          }
+          tryLoadMap();
           return;
         }
         
