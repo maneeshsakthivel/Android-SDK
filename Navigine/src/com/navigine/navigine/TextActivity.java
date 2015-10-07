@@ -26,7 +26,7 @@ public class TextActivity extends Activity
   // Constants
   private static final String   TAG = "Navigine.TextActivity";
   private static final int      REQUEST_PICK_FILE = 1;
-  private static final int      UPDATE_TIMEOUT = 1000;
+  private static final int      UPDATE_TIMEOUT = 200;
   
   // This object
   private Context mContext = this;

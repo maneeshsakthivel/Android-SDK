@@ -390,7 +390,7 @@ public class IMUThread extends Thread
     deviceInfo.id            = NavigineApp.Navigation.getDeviceId();
     deviceInfo.type          = "android";
     deviceInfo.time          = DateTimeUtils.currentDate(timeNow);
-    deviceInfo.index         = 0;
+    //deviceInfo.index         = 0;
     deviceInfo.location      = mLocId;
     deviceInfo.subLocation   = mSubLocId;
     deviceInfo.x             = mX0 + mIMUValues[0]; // in meters

@@ -678,16 +678,10 @@ public class MeasuringActivity extends Activity
         case MeasureObject.MEASURE_POINT:
         {
           paint.setARGB(255, 255, 0, 0);
-          String text = object.status == MeasureObject.STATUS_OLD ?
+          String text = object.status == 0 ?
                         String.format(Locale.ENGLISH, "%s (%d%%)", object.name, object.quality):
                         String.format(Locale.ENGLISH, "%s* (%d%%)", object.name, object.quality);
-          PointF Q = new PointF(object.x1, object.y1);
-          if (object.kx1 != 0.0f || object.ky1 != 0.0f)
-          {
-            // Calculating from relative coordinates
-            Q.x = object.kx1 * subLoc.width;
-            Q.y = object.ky1 * subLoc.height;
-          }
+          PointF Q = new PointF(object.kx1 * subLoc.width, object.ky1 * subLoc.height);
           PointF P = getSvgCoordinates(Q.x, Q.y);
           canvas.drawLine(P.x - crossSize, P.y - crossSize, P.x + crossSize, P.y + crossSize, paint);
           canvas.drawLine(P.x - crossSize, P.y + crossSize, P.x + crossSize, P.y - crossSize, paint);
@@ -698,23 +692,11 @@ public class MeasuringActivity extends Activity
         case MeasureObject.MEASURE_LINE:
         {
           paint.setARGB(255, 255, 0, 0);
-          String text = object.status == MeasureObject.STATUS_OLD ?
+          String text = object.status == 0 ?
                         String.format(Locale.ENGLISH, "%s (%d%%)", object.name, object.quality):
                         String.format(Locale.ENGLISH, "%s* (%d%%)", object.name, object.quality);
-          PointF Q1 = new PointF(object.x1, object.y1);
-          PointF Q2 = new PointF(object.x2, object.y2);
-          if (object.kx1 != 0.0f || object.ky1 <= 0.0f)
-          {
-            // Calculating from relative coordinates
-            Q1.x = object.kx1 * subLoc.width;
-            Q1.y = object.ky1 * subLoc.height;
-          }
-          if (object.kx2 != 0.0f || object.ky2 != 0.0f)
-          {
-            // Calculating from relative coordinates
-            Q2.x = object.kx2 * subLoc.width;
-            Q2.y = object.ky2 * subLoc.height;
-          }
+          PointF Q1 = new PointF(object.kx1 * subLoc.width, object.ky1 * subLoc.height);
+          PointF Q2 = new PointF(object.kx2 * subLoc.width, object.ky2 * subLoc.height);
           PointF P1 = getSvgCoordinates(Q1.x, Q1.y);
           PointF P2 = getSvgCoordinates(Q2.x, Q2.y);
           drawArrow(P1, P2, paint, canvas);
@@ -725,16 +707,10 @@ public class MeasuringActivity extends Activity
         case MeasureObject.BEACON:
         {
           paint.setARGB(255, 0, 0, 255);
-          String text = object.status == MeasureObject.STATUS_OLD ?
+          String text = object.status == 0 ?
                         String.format(Locale.ENGLISH, "%s", object.name):
                         String.format(Locale.ENGLISH, "%s*", object.name);
-          PointF Q = new PointF(object.x1, object.y1);
-          if (object.kx1 != 0.0f || object.ky1 != 0.0f)
-          {
-            // Calculating from relative coordinates
-            Q.x = object.kx1 * subLoc.width;
-            Q.y = object.ky1 * subLoc.height;
-          }
+          PointF Q = new PointF(object.kx1 * subLoc.width, object.ky1 * subLoc.height);
           PointF P = getSvgCoordinates(Q.x, Q.y);
           canvas.drawCircle(P.x, P.y, crossSize, paint);
           paint.setARGB(255, 255, 255, 255);
@@ -937,8 +913,6 @@ public class MeasuringActivity extends Activity
       mSelectedObject.type          = MeasureObject.MEASURE_POINT;
       mSelectedObject.name          = suggestObjectName(MeasureObject.MEASURE_POINT);
       mSelectedObject.uuid          = UUID.randomUUID().toString();
-      mSelectedObject.x1            = P.x;
-      mSelectedObject.y1            = P.y;
       mSelectedObject.kx1           = P.x / subLoc.width;
       mSelectedObject.ky1           = P.y / subLoc.height;
       mSelectedObject.location      = mLocation.id;
@@ -967,8 +941,6 @@ public class MeasuringActivity extends Activity
       mSelectedObject.type          = MeasureObject.MEASURE_LINE;
       mSelectedObject.name          = suggestObjectName(MeasureObject.MEASURE_LINE);
       mSelectedObject.uuid          = UUID.randomUUID().toString();
-      mSelectedObject.x1            = P.x;
-      mSelectedObject.y1            = P.y;
       mSelectedObject.kx1           = P.x / subLoc.width;
       mSelectedObject.ky1           = P.y / subLoc.height;
       mSelectedObject.location      = mLocation.id;
@@ -992,8 +964,6 @@ public class MeasuringActivity extends Activity
         mSelectedObject.type == MeasureObject.MEASURE_LINE)
     {
       PointF P = getAbsCoordinates(mViewWidth / 2, mViewHeight / 2);
-      mSelectedObject.x2  = P.x;
-      mSelectedObject.y2  = P.y;
       mSelectedObject.kx2 = P.x / subLoc.width;
       mSelectedObject.ky2 = P.y / subLoc.height;
       showSelectedObjectDialog(false);
@@ -1015,8 +985,6 @@ public class MeasuringActivity extends Activity
       mSelectedObject.status      = MeasureObject.STATUS_NEW;
       mSelectedObject.type        = MeasureObject.BEACON;
       mSelectedObject.name        = suggestObjectName(MeasureObject.BEACON);
-      mSelectedObject.x1          = P.x;
-      mSelectedObject.y1          = P.y;
       mSelectedObject.kx1         = P.x / subLoc.width;
       mSelectedObject.ky1         = P.y / subLoc.height;
       mSelectedObject.location    = mLocation.id;
@@ -1110,12 +1078,7 @@ public class MeasuringActivity extends Activity
       {
         case MeasureObject.MEASURE_POINT:
         {
-          PointF Q = new PointF(object.x1, object.y1);
-          if (object.kx1 != 0.0f || object.ky1 != 0.0f)
-          {
-            Q.x = object.kx1 * subLoc.width;
-            Q.y = object.ky1 * subLoc.height;
-          }
+          PointF Q = new PointF(object.kx1 * subLoc.width, object.ky1 * subLoc.height);
           PointF P = getScreenCoordinates(Q.x, Q.y);
           dist = PointF.length(x - P.x, y - P.y);
           break;
@@ -1123,18 +1086,8 @@ public class MeasuringActivity extends Activity
         
         case MeasureObject.MEASURE_LINE:
         {
-          PointF Q1 = new PointF(object.x1, object.y1);
-          PointF Q2 = new PointF(object.x2, object.y2);
-          if (object.kx1 != 0.0f || object.ky1 != 0.0f)
-          {
-            Q1.x = object.kx1 * subLoc.width;
-            Q1.y = object.ky1 * subLoc.height;
-          }
-          if (object.kx2 != 0.0f || object.ky2 != 0.0f)
-          {
-            Q2.x = object.kx2 * subLoc.width;
-            Q2.y = object.ky2 * subLoc.height;
-          }
+          PointF Q1 = new PointF(object.kx1 * subLoc.width, object.ky1 * subLoc.height);
+          PointF Q2 = new PointF(object.kx2 * subLoc.width, object.ky2 * subLoc.height);
           PointF P1 = getScreenCoordinates(Q1.x, Q1.y);
           PointF P2 = getScreenCoordinates(Q2.x, Q2.y);
           dist = lineDist(P1.x, P1.y, P2.x, P2.y, x, y);
@@ -1143,12 +1096,7 @@ public class MeasuringActivity extends Activity
         
         case MeasureObject.BEACON:
         {
-          PointF Q = new PointF(object.x1, object.y1);
-          if (object.kx1 != 0.0f || object.ky1 != 0.0f)
-          {
-            Q.x = object.kx1 * subLoc.width;
-            Q.y = object.ky1 * subLoc.height;
-          }
+          PointF Q = new PointF(object.kx1 * subLoc.width, object.ky1 * subLoc.height);
           PointF P = getScreenCoordinates(Q.x, Q.y);
           dist = PointF.length(x - P.x, y - P.y);
           break;
@@ -1197,6 +1145,11 @@ public class MeasuringActivity extends Activity
     if (mSelectedObject.status == MeasureObject.STATUS_DEL)
       return;
     
+    if (mCurrentSubLocationIndex < 0)
+      return;
+    
+    SubLocation subLoc = mLocation.subLocations.get(mCurrentSubLocationIndex);
+    
     Log.d(TAG, String.format(Locale.ENGLISH, "Show measure object dialog: %s", mSelectedObject.name));
     
     _existing = existing;
@@ -1218,10 +1171,10 @@ public class MeasuringActivity extends Activity
     _yEdit1  = (EditText)view.findViewById(R.id.measuring_object_dialog_y1);
     _xEdit2  = (EditText)view.findViewById(R.id.measuring_object_dialog_x2);
     _yEdit2  = (EditText)view.findViewById(R.id.measuring_object_dialog_y2);
-    _xEdit1.setText(String.format(Locale.ENGLISH, "%.2f", mSelectedObject.x1));
-    _yEdit1.setText(String.format(Locale.ENGLISH, "%.2f", mSelectedObject.y1));
-    _xEdit2.setText(String.format(Locale.ENGLISH, "%.2f", mSelectedObject.x2));
-    _yEdit2.setText(String.format(Locale.ENGLISH, "%.2f", mSelectedObject.y2));
+    _xEdit1.setText(String.format(Locale.ENGLISH, "%.2f", mSelectedObject.kx1 * subLoc.width));
+    _yEdit1.setText(String.format(Locale.ENGLISH, "%.2f", mSelectedObject.ky1 * subLoc.height));
+    _xEdit2.setText(String.format(Locale.ENGLISH, "%.2f", mSelectedObject.kx2 * subLoc.width));
+    _yEdit2.setText(String.format(Locale.ENGLISH, "%.2f", mSelectedObject.ky2 * subLoc.height));
     _xEdit1.setFocusable(!existing); _xEdit1.setCursorVisible(!existing);
     _yEdit1.setFocusable(!existing); _yEdit1.setCursorVisible(!existing);
     _xEdit2.setFocusable(!existing); _xEdit2.setCursorVisible(!existing);
@@ -1281,7 +1234,15 @@ public class MeasuringActivity extends Activity
       {
         @Override public void onClick(DialogInterface dlg, int id)
         {
+          if (mLocation == null)
+            return;
+          
           if (mSelectedObject == null)
+            return;
+          
+          SubLocation subLoc = mLocation.getSubLocation(mSelectedObject.subLocation);
+          
+          if (subLoc == null)
             return;
           
           Log.d(TAG, "Measuring dialog accepted");
@@ -1291,11 +1252,10 @@ public class MeasuringActivity extends Activity
           try { x2 = Float.parseFloat(_xEdit2.getText().toString()); } catch (Throwable e) { x2 = 0.0f; }
           try { y2 = Float.parseFloat(_yEdit2.getText().toString()); } catch (Throwable e) { y2 = 0.0f; }
           mSelectedObject.name = _nameEdit.getText().toString();
-          mSelectedObject.x1 = x1;
-          mSelectedObject.y1 = y1;
-          mSelectedObject.x2 = x2;
-          mSelectedObject.y2 = y2;
-          SubLocation subLoc = mLocation.getSubLocation(mSelectedObject.subLocation);
+          mSelectedObject.kx1 = x1 / subLoc.width;
+          mSelectedObject.ky1 = y1 / subLoc.height;
+          mSelectedObject.kx2 = x2 / subLoc.width;
+          mSelectedObject.ky2 = y2 / subLoc.height;
           
           if (subLoc != null && !_existing)
           {
@@ -1304,7 +1264,7 @@ public class MeasuringActivity extends Activity
             mSelectedIndex = subLoc.measureList.size() - 1;
           }
           
-          if (mSelectedObject.status == MeasureObject.STATUS_OLD)
+          if (mSelectedObject.status == 0)
             mSelectedObject.status = MeasureObject.STATUS_MOD;
           
           switch (mSelectedObject.type)
@@ -2043,12 +2003,7 @@ public class MeasuringActivity extends Activity
       paint.setStyle(Paint.Style.STROKE);
       paint.setColor(Color.RED);
       paint.setStrokeWidth(0);
-      PointF T = new PointF(mSelectedObject.x1, mSelectedObject.y1);
-      if (mSelectedObject.kx1 != 0.0f || mSelectedObject.ky1 != 0.0f)
-      {
-        T.x = mSelectedObject.kx1 * subLoc.width;
-        T.y = mSelectedObject.ky1 * subLoc.height;
-      }
+      PointF T = new PointF(mSelectedObject.kx1 * subLoc.width, mSelectedObject.ky1 * subLoc.height);
       PointF P = getSvgCoordinates(T.x, T.y);
       PointF Q = getAbsCoordinates(mViewWidth / 2, mViewHeight / 2);
       PointF R = getSvgCoordinates(Q.x, Q.y);
