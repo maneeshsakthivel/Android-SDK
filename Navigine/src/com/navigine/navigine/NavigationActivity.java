@@ -40,6 +40,7 @@ public class NavigationActivity extends Activity
   private Button     mPrevFloorButton = null;
   private Button     mNextFloorButton = null;
   private TextView   mCurrentFloorTextView = null;
+  private TextView   mNavigationInfoTextView = null;
   private TimerTask  mTimerTask    = null;
   private Timer      mTimer        = new Timer();
   private Handler    mHandler      = new Handler();
@@ -86,8 +87,7 @@ public class NavigationActivity extends Activity
   private float   mMaxRatio = 10.0f;
   
   // Device parameters
-  private List<DeviceInfo> mDevices = null;   // List of all devices
-  private DeviceInfo mCurrentDevice = null;   // Current device
+  private DeviceInfo mDeviceInfo = null;          // Current device
   private LocationPoint mTargetPoint = null;  // Current device target
   
   // Location parameters
@@ -114,6 +114,7 @@ public class NavigationActivity extends Activity
     mPrevFloorButton = (Button)findViewById(R.id.navigation_prev_floor_button);
     mNextFloorButton = (Button)findViewById(R.id.navigation_next_floor_button);
     mCurrentFloorTextView = (TextView)findViewById(R.id.navigation_current_floor_text_view);
+    mNavigationInfoTextView = (TextView)findViewById(R.id.navigation_info_text_view);
     mPrevFloorButton.setVisibility(View.INVISIBLE);
     mNextFloorButton.setVisibility(View.INVISIBLE);
     
@@ -161,11 +162,9 @@ public class NavigationActivity extends Activity
     NavigineApp.stopNavigation();
   }
   
-  @Override public void onResume()
+  @Override public void onStart()
   {
-    super.onResume();
-    
-    NavigineApp.setForegroundMode();
+    super.onStart();
     
     // Starting interface updates
     mTimerTask = 
@@ -179,14 +178,23 @@ public class NavigationActivity extends Activity
     mTimer.schedule(mTimerTask, 500, UPDATE_TIMEOUT);
   }
   
-  @Override public void onPause()
+  @Override public void onStop()
   {
-    super.onPause();
-    
-    NavigineApp.setBackgroundMode();
-    
+    super.onStop();
     mTimerTask.cancel();
     mTimerTask = null;
+  }
+  
+  @Override public void onResume()
+  {
+    super.onResume();
+    NavigineApp.setForegroundMode();
+  }
+  
+  @Override public void onPause()
+  {
+    super.onPause();    
+    NavigineApp.setBackgroundMode();
   }
   
   @Override public boolean onCreateOptionsMenu(Menu menu)
@@ -226,8 +234,7 @@ public class NavigationActivity extends Activity
         return true;
       
       case R.id.navigation_menu_disconnect_imu:
-        Log.d(TAG, "Disconnecting from IMU");
-        //disconnectFromIMU();
+        disconnectFromIMU();
         return true;
       
       default:
@@ -608,6 +615,9 @@ public class NavigationActivity extends Activity
   
   private void drawDevice(DeviceInfo info, Canvas canvas)
   {
+    if (info == null)
+      return;
+    
     // Ignoring Raspberry devices
     if (info.type.equals("raspberry"))
       return;
@@ -866,46 +876,27 @@ public class NavigationActivity extends Activity
         }
       });
     
-    //if (NavigineApp.IMU.getConnectionState() == IMUThread.STATE_IDLE)
-    //{
-    //  alertBuilder.setNeutralButton("Connect IMU",
-    //    new DialogInterface.OnClickListener()
-    //    {
-    //      @Override public void onClick(DialogInterface dlg, int id)
-    //      {
-    //        SubLocation subLoc = mLocation.subLocations.get(mCurrentSubLocationIndex);
-    //        if (subLoc != null)
-    //          connectToIMU(subLoc.id, _targetPoint.x, _targetPoint.y);
-    //        dlg.cancel();
-    //      }
-    //    });
-    //}
+    if (NavigineApp.IMU.getConnectionState() == IMUThread.STATE_IDLE)
+    {
+      alertBuilder.setNeutralButton("Connect IMU",
+        new DialogInterface.OnClickListener()
+        {
+          @Override public void onClick(DialogInterface dlg, int id)
+          {
+            SubLocation subLoc = mLocation.subLocations.get(mCurrentSubLocationIndex);
+            if (subLoc != null)
+              connectToIMU(subLoc.id, _targetPoint.x, _targetPoint.y);
+            dlg.cancel();
+          }
+        });
+    }
     
     AlertDialog alertDialog = alertBuilder.create();
     alertDialog.setCanceledOnTouchOutside(false);
     alertDialog.show();
   }
   
-  /*private String getIMULogFile()
-  {
-    if (NavigineApp.Navigation == null)
-      return "";
-    
-    String arhivePath = NavigineApp.Navigation.getArchivePath();
-    if (arhivePath != null && arhivePath.length() > 0)
-    {
-      for(int i = 1; true; ++i)
-      {
-        String suffix = String.format(Locale.ENGLISH, ".IMU.%d.log", i);
-        String filename = arhivePath.replaceAll("\\.zip$", suffix);
-        if (!(new File(filename)).exists())
-          return filename;
-      }
-    }
-    return "";
-  }*/
-  
-  /*private void connectToIMU(int subLocId, float x0, float y0)
+  private void connectToIMU(int subLocId, float x0, float y0)
   {
     if (mLocation == null)
       return;
@@ -914,53 +905,61 @@ public class NavigationActivity extends Activity
     if (subLoc == null)
       return;
     
+    if (NavigineApp.IMU.getConnectionState() != IMUThread.STATE_IDLE)
+    {
+      Log.e(TAG, "Can't connect to IMU: not in IDLE state!");
+      return;
+    }
+    
+    NavigineApp.stopNavigation();
+    
     if (NavigineApp.Navigation != null)
-      NavigineApp.IMU.setLogFile(getIMULogFile());
+    {
+      String logFile = null;
+      String arhivePath = NavigineApp.Navigation.getArchivePath();
+      if (arhivePath != null && arhivePath.length() > 0)
+      {
+        for(int i = 1; i < 10; ++i)
+        {
+          String suffix = String.format(Locale.ENGLISH, ".IMU.%d.log", i);
+          String filename = arhivePath.replaceAll("\\.zip$", suffix);
+          if (!(new File(filename)).exists())
+          {
+            logFile = filename;
+            break;
+          }
+        }
+      }
+      NavigineApp.IMU.setLogFile(logFile);
+    }
     
     float a0 = -subLoc.azimuth * (float)Math.PI / 180.0f;
-    if (NavigineApp.IMU.getConnectionState() == IMUThread.STATE_IDLE)
-      NavigineApp.IMU.connect(mLocation.id, subLocId, x0, y0, a0);
+    NavigineApp.IMU.connect(mLocation.id, subLocId, x0, y0, a0);
   }
   
   private void disconnectFromIMU()
   {
-    if (NavigineApp.IMU.getConnectionState() == IMUThread.STATE_NORMAL)
-      NavigineApp.IMU.disconnect();
-  }*/
-  
-  private boolean mImuMode   = false;
-  private long mPopupTimeout = 60000;
-  private long mPopupTime = 0;
-  private float _theta = 0.0f;
+    if (NavigineApp.IMU.getConnectionState() != IMUThread.STATE_NORMAL)
+    {
+      Log.e(TAG, "Can't disconnect from IMU: not in NORMAL state!");
+      return;
+    }
+    NavigineApp.IMU.disconnect();
+  }
   
   final Runnable mRunnable =
     new Runnable()
     {
       public void run()
       {
+        if (NavigineApp.Navigation == null)
+          return;
+        
         if (mMatrix == null)
         {
           tryLoadMap();
           return;
         }
-        
-        //if (NavigineApp.IMU.getConnectionState() == IMUThread.STATE_NORMAL)
-        //{
-        //  if (!mImuMode)
-        //  {
-        //    mImuMode = true;
-        //    NavigineApp.Navigation.setMode(NavigationThread.MODE_IDLE);
-        //  }
-        //}
-        //else
-        //{
-        //  if (mImuMode)
-        //  {
-        //    mImuMode = false;
-        //    //NavigineApp.setTrackFile();
-        //    NavigineApp.Navigation.setMode(NavigationThread.MODE_NORMAL);
-        //  }
-        //}
         
         long timeNow = DateTimeUtils.currentTimeMillis();
         
@@ -982,46 +981,49 @@ public class NavigationActivity extends Activity
         
         Picture pic = mPicDrawable.getPicture();
         Canvas canvas = pic.beginRecording(mMapWidth, mMapHeight);
-
-        mCurrentDevice = null;
-        int errorCode = 0;
         
-        if (NavigineApp.IMU.getConnectionState() == IMUThread.STATE_NORMAL)
-        {
-          mDevices = new ArrayList<DeviceInfo>();
-          DeviceInfo device = NavigineApp.IMU.getDevice();
-          if (device != null)
-            mDevices.add(device);
-        }
-        else
-        {
-          mDevices = NavigineApp.Navigation.getDeviceList();
-          errorCode = NavigineApp.Navigation.getErrorCode();
-        }
+        mDeviceInfo = null;
+        String infoText = null;
         
-        //Log.d(TAG, String.format(Locale.ENGLISH, "Error code = %d\n", errorCode));
-        
-        if (mDevices != null)
+        switch (NavigineApp.IMU.getConnectionState())
         {
-          for(int i = 0; i < mDevices.size(); ++i)
-          {
-            DeviceInfo info = mDevices.get(i);
-            //if (info.id.equals(NavigineApp.Navigation.getDeviceId()))
-              mCurrentDevice = new DeviceInfo(info);
-          }
-        }
-        
-        if (mDevices != null)
-        {
-          for(int i = 0; i < mDevices.size(); ++i)
-          {
-            DeviceInfo info = mDevices.get(i);
-            drawDevice(info, canvas);
-          }
+          case IMUThread.STATE_IDLE:
+            if (NavigineApp.Navigation.getMode() == NavigationThread.MODE_IDLE)
+              NavigineApp.startNavigation();
+            mDeviceInfo = NavigineApp.Navigation.getDeviceInfo();
+            infoText = (mDeviceInfo == null) ?
+                        String.format(Locale.ENGLISH, " Error code: %d ",  NavigineApp.Navigation.getErrorCode()) :
+                        String.format(Locale.ENGLISH, " Step %d [%.2fm] ", mDeviceInfo.stepCount, mDeviceInfo.stepLength);
+            break;
+          
+          case IMUThread.STATE_NORMAL:
+            if (NavigineApp.Navigation.getMode() != NavigationThread.MODE_IDLE)
+              NavigineApp.stopNavigation();
+            mDeviceInfo = NavigineApp.IMU.getDevice();
+            infoText = new String(" Connected to IMU! ");
+            break;
+          
+          case IMUThread.STATE_CONNECT:
+            if (NavigineApp.Navigation.getMode() != NavigationThread.MODE_IDLE)
+              NavigineApp.stopNavigation();
+            infoText = new String(" Connecting to IMU... ");
+            break;
+          
+          case IMUThread.STATE_DISCONNECT:
+            if (NavigineApp.Navigation.getMode() != NavigationThread.MODE_IDLE)
+              NavigineApp.stopNavigation();
+            infoText = new String(" Disconnecting from IMU... ");
+            break;
         }
         
-        if (mAdjustMode && mCurrentDevice != null)
-          adjustDevice(mCurrentDevice);
+        if (infoText != null)
+          mNavigationInfoTextView.setText(infoText);
+        
+        if (mDeviceInfo != null)
+          drawDevice(mDeviceInfo, canvas);
+        
+        if (mAdjustMode && mDeviceInfo != null)
+          adjustDevice(mDeviceInfo);
         
         //else if (Math.abs(mAdjustAngle) > EPS)
         //{

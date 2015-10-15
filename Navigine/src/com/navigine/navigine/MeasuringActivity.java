@@ -900,6 +900,9 @@ public class MeasuringActivity extends Activity
   // Function is called, when menu option "Create point" is selected
   private void setPoint()
   {
+    if (NavigineApp.Navigation == null)
+      return;
+    
     if (mLocation == null || mCurrentSubLocationIndex < 0)
       return;
     
@@ -927,6 +930,9 @@ public class MeasuringActivity extends Activity
   // Function is called, when menu option "Create line" is selected
   private void setLineBegin()
   {
+    if (NavigineApp.Navigation == null)
+      return;
+    
     if (mLocation == null || mCurrentSubLocationIndex < 0)
       return;
     
@@ -954,6 +960,9 @@ public class MeasuringActivity extends Activity
   // Function is called, when line end is selected ("Ok" button is clicked)
   private void setLineEnd()
   {
+    if (NavigineApp.Navigation == null)
+      return;
+    
     if (mLocation == null || mCurrentSubLocationIndex < 0)
       return;
     
@@ -973,6 +982,9 @@ public class MeasuringActivity extends Activity
   // Function is called, when menu option "Create beacon" is selected
   private void setBeacon()
   {
+    if (NavigineApp.Navigation == null)
+      return;
+    
     if (mLocation == null || mCurrentSubLocationIndex < 0)
       return;
     
@@ -996,6 +1008,9 @@ public class MeasuringActivity extends Activity
   // Function is called, when menu option "Cancel point/line" is selected
   private void cancelObject()
   {
+    if (NavigineApp.Navigation == null)
+      return;
+    
     if (mLocation == null)
       return;
     
@@ -1801,6 +1816,9 @@ public class MeasuringActivity extends Activity
   
   private void updateMeasuringState()
   {
+    if (NavigineApp.Navigation == null)
+      return;
+    
     if (mLocation == null || mCurrentSubLocationIndex < 0)
       return;
     
@@ -1992,6 +2010,9 @@ public class MeasuringActivity extends Activity
   
   private void displayMeasuringState(Canvas canvas)
   {
+    if (NavigineApp.Navigation == null)
+      return;
+    
     if (mLocation == null || mCurrentSubLocationIndex < 0)
       return;
     
@@ -2016,6 +2037,9 @@ public class MeasuringActivity extends Activity
     {
       public void run()
       {
+        if (NavigineApp.Navigation == null)
+          return;
+        
         if (mMatrix == null)
         {
           tryLoadMap();

@@ -43,7 +43,7 @@ public class NavigineApp extends Application
     SensorThread.DEBUG_LEVEL      = 2;
     Parser.DEBUG_LEVEL            = 2;
     
-    NavigationThread.STRICT_MODE  = false;
+    NavigationThread.STRICT_MODE  = true;
     LocationLoader.SERVER         = "api.navigine.com";
     
     try
@@ -174,11 +174,12 @@ public class NavigineApp extends Application
     Navigation.setTrackFile(null);
     Navigation.setMode(NavigationThread.MODE_IDLE);
     //Sender.idle();
-    //if (IMU.getConnectionState() == IMUThread.STATE_NORMAL)
-    //{
-    //  Log.d(TAG, "Disconnecting from IMU");
-    //  IMU.disconnect();
-    //}
+    
+    if (IMU.getConnectionState() == IMUThread.STATE_NORMAL)
+    {
+      Log.d(TAG, "Disconnecting from IMU");
+      IMU.disconnect();
+    }
   }
   
   public static void startScanning()

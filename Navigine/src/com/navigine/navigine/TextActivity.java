@@ -56,7 +56,8 @@ public class TextActivity extends Activity
     mTextView = (TextView)findViewById(R.id.text_view);
     mTextView.setMovementMethod(new ScrollingMovementMethod());
     
-    NavigineApp.Navigation.setMode(NavigationThread.MODE_SCAN);
+    if (NavigineApp.Navigation != null)
+      NavigineApp.Navigation.setMode(NavigationThread.MODE_SCAN);
     
     // Setting up CONNECT button click handler
     mButton.setOnClickListener(
@@ -74,7 +75,8 @@ public class TextActivity extends Activity
     Log.d(TAG, "TextActivity destroyed");
     super.onDestroy();
     
-    NavigineApp.Navigation.setMode(NavigationThread.MODE_IDLE);
+    if (NavigineApp.Navigation != null)
+      NavigineApp.Navigation.setMode(NavigationThread.MODE_IDLE);
   }
   
   @Override public void onResume()
@@ -173,6 +175,9 @@ public class TextActivity extends Activity
 
   private boolean loadMap(String filename)
   {
+    if (NavigineApp.Navigation == null)
+      return false;
+    
     if (!NavigineApp.Navigation.loadArchive(filename))
     {
       String error = NavigineApp.Navigation.getLastError();
@@ -205,6 +210,9 @@ public class TextActivity extends Activity
   
   private void checkMode()
   {
+    if (NavigineApp.Navigation == null)
+      return;
+    
     // Check if mode switched
     switch (NavigineApp.Navigation.getMode())
     {
@@ -236,6 +244,9 @@ public class TextActivity extends Activity
       {
         try
         {
+          if (NavigineApp.Navigation == null)
+            return;
+          
           checkMode();
           long timeNow = DateTimeUtils.currentTimeMillis();
           StringBuilder messageBuilder = new StringBuilder();
@@ -296,14 +307,11 @@ public class TextActivity extends Activity
               messageBuilder.append(String.format(Locale.ENGLISH, "ErrorCode: %d\n", errorCode));
             else
             {
-              List<DeviceInfo> devices = NavigineApp.Navigation.getDeviceList();
-              for(int i = 0; i < devices.size(); ++i)
-              {
-                DeviceInfo info = devices.get(i);
-                messageBuilder.append(String.format(Locale.ENGLISH, "Device %s: [%d,  %.1f,  %.1f,  %.1f]\n",
-                                      info.id, info.subLocation, info.x, info.y, info.azimuth));
-              }
-              if (devices.size() == 0)
+              DeviceInfo info = NavigineApp.Navigation.getDeviceInfo();
+              if (info != null)
+                messageBuilder.append(String.format(Locale.ENGLISH, "Device %s: [%d,  %.1f,  %.1f,  %.1f,  #%d]\n",
+                                      info.id, info.subLocation, info.x, info.y, info.azimuth, info.stepCount));
+              else
                 messageBuilder.append("\n");
             }
           }

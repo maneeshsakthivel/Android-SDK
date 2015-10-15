@@ -54,6 +54,7 @@ public class IMUThread extends Thread
   
   public synchronized void setLogFile(String logFile)
   {
+    Log.d(TAG, "Set IMU log file: " + logFile);
     mLogFile = logFile;
   }
   
@@ -64,6 +65,7 @@ public class IMUThread extends Thread
       Log.e(TAG, "IMU-thread is not in the IDLE state! Ignoring connect request!");
       return;
     }
+    Log.d(TAG, "Connecting to IMU!");
     mStateTmp = STATE_CONNECT;
     mLocId = loc;
     mSubLocId = subLoc;
@@ -78,10 +80,10 @@ public class IMUThread extends Thread
   {
     if (mState != STATE_NORMAL)
     {
-      Log.e(TAG, "IMU-thread is not in the NORMAL state! Ignoring connect request!");
+      Log.e(TAG, "IMU-thread is not in the NORMAL state! Ignoring disconnect request!");
       return;
     }
-    
+    Log.d(TAG, "Disconnecting from IMU!");
     mStateTmp = STATE_DISCONNECT;
     mPacketNumber = -1;
     mPacketTime   = -1;
@@ -383,14 +385,13 @@ public class IMUThread extends Thread
   public synchronized DeviceInfo getDevice()
   {
     long timeNow = DateTimeUtils.currentTimeMillis();
-    if (Math.abs(mPacketTime - timeNow) > 6000)
-      return null;
+    //if (Math.abs(mPacketTime - timeNow) > 6000)
+    //  return null;
     
     DeviceInfo deviceInfo = new DeviceInfo();
     deviceInfo.id            = NavigineApp.Navigation.getDeviceId();
     deviceInfo.type          = "android";
     deviceInfo.time          = DateTimeUtils.currentDate(timeNow);
-    //deviceInfo.index         = 0;
     deviceInfo.location      = mLocId;
     deviceInfo.subLocation   = mSubLocId;
     deviceInfo.x             = mX0 + mIMUValues[0]; // in meters
@@ -401,6 +402,9 @@ public class IMUThread extends Thread
     deviceInfo.pitch         = 0.0f; // in degrees
     deviceInfo.roll          = 0.0f; // in degrees
     deviceInfo.timeLabel     = timeNow; // in milliseconds
+    Log.d(TAG, String.format(Locale.ENGLISH, "Device %s [%d:%d, %.2f, %.2f], time=%s\n",
+                             deviceInfo.id, deviceInfo.location, deviceInfo.subLocation,
+                             deviceInfo.x, deviceInfo.y, deviceInfo.time));
     return deviceInfo;
   }
   
@@ -426,9 +430,12 @@ public class IMUThread extends Thread
         mState = state;
       }
       
+      int timeout = 100;
+      
       switch (state)
       {
         case STATE_IDLE:
+          timeout = 1000;
           //Log.d(TAG, "IDLE");
           break;
         
@@ -458,7 +465,7 @@ public class IMUThread extends Thread
       
       try
       {
-        Thread.sleep(1000);
+        Thread.sleep(timeout);
       }
       catch (Throwable e)
       {

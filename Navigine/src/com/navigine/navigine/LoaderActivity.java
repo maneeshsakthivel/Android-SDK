@@ -383,6 +383,9 @@ public class LoaderActivity extends Activity
   
   private void deleteLocation(LocationInfo info)
   {
+    if (NavigineApp.Navigation == null)
+      return;
+    
     if (info != null)
     {
       try
@@ -418,6 +421,9 @@ public class LoaderActivity extends Activity
   
   private void selectLocation(LocationInfo info)
   {
+    if (NavigineApp.Navigation == null)
+      return;
+    
     if (info != null && NavigineApp.Navigation.loadArchive(info.archiveFile))
     {
       SharedPreferences.Editor editor = NavigineApp.Settings.edit();
@@ -447,6 +453,9 @@ public class LoaderActivity extends Activity
   
   private void updateLocalVersions()
   {
+    if (NavigineApp.Navigation == null)
+      return;
+    
     for(int i = 0; i < mInfoList.size(); ++i)
     {
       LocationInfo info = mInfoList.get(i);
@@ -478,6 +487,9 @@ public class LoaderActivity extends Activity
   
   private void updateLoader()
   {
+    if (NavigineApp.Navigation == null)
+      return;
+    
     Log.d(TAG, String.format(Locale.ENGLISH, "Update loader: %d", mLoader));
     
     long timeNow = DateTimeUtils.currentTimeMillis();
@@ -537,6 +549,9 @@ public class LoaderActivity extends Activity
   long mUpdateLocationLoadersTime = 0;
   private void updateLocationLoaders()
   {
+    if (NavigineApp.Navigation == null)
+      return;
+    
     long timeNow = DateTimeUtils.currentTimeMillis();
     mUpdateLocationLoadersTime = timeNow;
     
@@ -614,6 +629,9 @@ public class LoaderActivity extends Activity
   
   private void startDownload(int index)
   {
+    if (NavigineApp.Navigation == null)
+      return;
+    
     String userHash = NavigineApp.Settings.getString("user_hash", "");
     if (userHash.length() == 0)
       return;
@@ -638,6 +656,9 @@ public class LoaderActivity extends Activity
   
   private void startUpload(int index)
   {
+    if (NavigineApp.Navigation == null)
+      return;
+    
     String userHash = NavigineApp.Settings.getString("user_hash", "");
     if (userHash.length() == 0)
       return;
@@ -665,6 +686,9 @@ public class LoaderActivity extends Activity
     {
       public void run()
       {
+        if (NavigineApp.Navigation == null)
+          return;
+        
         long timeNow = DateTimeUtils.currentTimeMillis();
         
         String userHash = NavigineApp.Settings.getString("user_hash", "");
