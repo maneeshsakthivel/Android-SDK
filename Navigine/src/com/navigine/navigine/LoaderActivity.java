@@ -334,6 +334,7 @@ public class LoaderActivity extends Activity
           SharedPreferences.Editor editor = NavigineApp.Settings.edit();
           editor.putString("user_hash", userHash);
           editor.commit();
+          NavigineApp.applySettings();
           refreshMapList();
         }
       });
@@ -445,7 +446,7 @@ public class LoaderActivity extends Activity
     // Starting new loader
     String fileName = LocationLoader.getLocationDir(NavigineApp.AppContext, null) + "/maps.xml";
     new File(fileName).delete();
-    mLoader = LocationLoader.startLocationLoader(userHash, null, fileName, true);
+    mLoader = LocationLoader.startLocationLoader(null, fileName, true);
     mLoaderTime = DateTimeUtils.currentTimeMillis();
     mInfoList = new ArrayList<LocationInfo>();
     Log.d(TAG, String.format(Locale.ENGLISH, "Location loader started: %d", mLoader));
@@ -462,7 +463,7 @@ public class LoaderActivity extends Activity
       String versionStr = LocationLoader.getLocalVersion(NavigineApp.AppContext, info.title);
       if (versionStr != null)
       {
-        Log.d(TAG, info.title + ": " + versionStr);
+        //Log.d(TAG, info.title + ": " + versionStr);
         info.localModified = versionStr.endsWith("+");
         if (info.localModified)
           versionStr = versionStr.substring(0, versionStr.length() - 1);
@@ -490,7 +491,7 @@ public class LoaderActivity extends Activity
     if (NavigineApp.Navigation == null)
       return;
     
-    Log.d(TAG, String.format(Locale.ENGLISH, "Update loader: %d", mLoader));
+    //Log.d(TAG, String.format(Locale.ENGLISH, "Update loader: %d", mLoader));
     
     long timeNow = DateTimeUtils.currentTimeMillis();
     if (mLoader < 0)
@@ -647,7 +648,7 @@ public class LoaderActivity extends Activity
         LoaderState loader = new LoaderState();
         loader.location = location;
         loader.type = DOWNLOAD;
-        loader.id = LocationLoader.startLocationLoader(userHash, location, info.archiveFile, true);
+        loader.id = LocationLoader.startLocationLoader(location, info.archiveFile, true);
         mLoaderMap.put(location, loader);
       }
     }
@@ -674,7 +675,7 @@ public class LoaderActivity extends Activity
         LoaderState loader = new LoaderState();
         loader.location = location;
         loader.type = UPLOAD;
-        loader.id = LocationLoader.startLocationUploader(userHash, location, info.archiveFile, true);
+        loader.id = LocationLoader.startLocationUploader(location, info.archiveFile, true);
         mLoaderMap.put(location, loader);
       }
     }

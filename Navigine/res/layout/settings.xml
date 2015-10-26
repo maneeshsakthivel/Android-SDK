@@ -54,6 +54,34 @@
             android:onClick="onRadioButtonClicked"/>
     </RadioGroup>
     
+    <!-- Location server label -->
+    <TextView android:id="@+id/settings__location_server_label"
+        android:layout_width="fill_parent"
+        android:layout_height="45dp"
+        android:gravity="left"
+        android:textSize="14sp"
+        android:text="Location server:"/>    
+    
+    <!-- Location server address -->
+    <LinearLayout android:orientation="horizontal"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="-20dp">
+        
+        <EditText android:id="@+id/settings__location_server_address_edit"
+            android:layout_width="0dp"
+            android:layout_height="45dp"
+            android:layout_weight="2"
+            android:scrollHorizontally="true"
+            android:singleLine="true"/>
+        
+        <CheckBox android:id="@+id/settings__location_server_ssl_checkbox"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="SSL"/>
+        
+    </LinearLayout>
+    
     <!-- Beacon service enabled/disabled -->
     <LinearLayout android:orientation="horizontal"
         android:layout_width="fill_parent"
@@ -75,7 +103,7 @@
     </LinearLayout>
     
     <!-- Navigation server enabled/disabled -->
-    <LinearLayout android:orientation="horizontal"
+    <!--<LinearLayout android:orientation="horizontal"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content">
         
@@ -91,14 +119,14 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"/>
-    </LinearLayout>
+    </LinearLayout>-->
     
     <!-- Navigation server address -->
-    <EditText android:id="@+id/settings__navigation_server_address_edit"
+    <!--<EditText android:id="@+id/settings__navigation_server_address_edit"
         android:layout_width="fill_parent"
         android:layout_height="45dp"
         android:scrollHorizontally="true"
-        android:singleLine="true"/>
+        android:singleLine="true"/>-->
     
     <!-- Save navigation log -->
     <LinearLayout android:orientation="horizontal"

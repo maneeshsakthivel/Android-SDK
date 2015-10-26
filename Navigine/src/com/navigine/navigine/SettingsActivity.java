@@ -57,16 +57,6 @@ public class SettingsActivity extends Activity
         }
       });
     
-    CheckBox serverCheckBox = (CheckBox)findViewById(R.id.settings__navigation_server_checkbox);
-    serverCheckBox.setOnCheckedChangeListener(
-      new CompoundButton.OnCheckedChangeListener()
-      {
-        @Override public void onCheckedChanged(CompoundButton button, boolean checked)
-        {
-          findViewById(R.id.settings__navigation_server_address_edit).setVisibility(checked ? View.VISIBLE : View.GONE);
-        }
-      });
-    
     CheckBox navigationFileCheckBox = (CheckBox)findViewById(R.id.settings__navigation_file_enabled_checkbox);
     navigationFileCheckBox.setOnClickListener(
       new CompoundButton.OnClickListener()
@@ -111,9 +101,9 @@ public class SettingsActivity extends Activity
       tv.setText("Navigation file enabled");
     }
     
+    setTextValue(R.id.settings__location_server_address_edit,   NavigineApp.Settings.getString ("location_server_address", NavigineApp.DEFAULT_SERVER));
+    setCheckBox (R.id.settings__location_server_ssl_checkbox,   NavigineApp.Settings.getBoolean("location_server_ssl_enabled", true));
     setCheckBox (R.id.settings__beacon_service_checkbox,        NavigineApp.Settings.getBoolean("beacon_service_enabled", true));
-    setCheckBox (R.id.settings__navigation_server_checkbox,     NavigineApp.Settings.getBoolean("navigation_server_enabled", false));
-    setTextValue(R.id.settings__navigation_server_address_edit, NavigineApp.Settings.getString("navigation_server_address", NavigineApp.DEFAULT_SERVER));
     setCheckBox (R.id.settings__save_navigation_log_checkbox,   NavigineApp.Settings.getBoolean("navigation_log_enabled", false));
     setCheckBox (R.id.settings__save_navigation_track_checkbox, NavigineApp.Settings.getBoolean("navigation_track_enabled", false));
     setCheckBox (R.id.settings__post_messages_enabled_checkbox, NavigineApp.Settings.getBoolean("post_messages_enabled", true));
@@ -139,10 +129,6 @@ public class SettingsActivity extends Activity
       case NavigationThread.MODE_IDLE:
         setCheckBox(R.id.settings__background_navigation_checkbox, false);
     }
-    
-    boolean serverEnabled = getCheckBox(R.id.settings__navigation_server_checkbox);
-    EditText serverAddressEdit = (EditText)findViewById(R.id.settings__navigation_server_address_edit);
-    serverAddressEdit.setVisibility(serverEnabled ? View.VISIBLE : View.GONE);
   }
   
   public void onRadioButtonClicked(View view)
@@ -206,16 +192,18 @@ public class SettingsActivity extends Activity
   private void saveSettings()
   {
     SharedPreferences.Editor editor = NavigineApp.Settings.edit();
-    editor.putInt("background_navigation_mode",    mBackgroundNavigationEnabled ? mBackgroundMode : NavigationThread.MODE_IDLE);
-    editor.putBoolean("beacon_service_enabled",    getCheckBox (R.id.settings__beacon_service_checkbox));
-    editor.putBoolean("navigation_server_enabled", getCheckBox (R.id.settings__navigation_server_checkbox));
-    editor.putString ("navigation_server_address", getTextValue(R.id.settings__navigation_server_address_edit));
-    editor.putBoolean("navigation_log_enabled",    getCheckBox (R.id.settings__save_navigation_log_checkbox));
-    editor.putBoolean("navigation_track_enabled",  getCheckBox (R.id.settings__save_navigation_track_checkbox));
-    editor.putBoolean("post_messages_enabled",     getCheckBox (R.id.settings__post_messages_enabled_checkbox));
-    editor.putBoolean("navigation_file_enabled",   mNavigationFileEnabled);
-    editor.putString ("navigation_file",           mNavigationFileEnabled ? mNavigationFile : "");
+    editor.putString ("location_server_address",      getTextValue(R.id.settings__location_server_address_edit));
+    editor.putBoolean("location_server_ssl_enabled",  getCheckBox (R.id.settings__location_server_ssl_checkbox));
+    editor.putInt("background_navigation_mode",       mBackgroundNavigationEnabled ? mBackgroundMode : NavigationThread.MODE_IDLE);
+    editor.putBoolean("beacon_service_enabled",       getCheckBox (R.id.settings__beacon_service_checkbox));
+    editor.putBoolean("navigation_log_enabled",       getCheckBox (R.id.settings__save_navigation_log_checkbox));
+    editor.putBoolean("navigation_track_enabled",     getCheckBox (R.id.settings__save_navigation_track_checkbox));
+    editor.putBoolean("post_messages_enabled",        getCheckBox (R.id.settings__post_messages_enabled_checkbox));
+    editor.putBoolean("navigation_file_enabled",      mNavigationFileEnabled);
+    editor.putString ("navigation_file",              mNavigationFileEnabled ? mNavigationFile : "");
     editor.commit();
+    
+    NavigineApp.applySettings();
   }
   
   @Override protected void onActivityResult(int requestCode, int resultCode, Intent data)

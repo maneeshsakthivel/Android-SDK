@@ -17,9 +17,8 @@ import java.util.*;
 public class NavigineApp extends Application
 {
   public static final String      TAG               = "NavigineApp";
-  public static final String      DEFAULT_SERVER    = "server.navigine.com";
-  public static final int         DEFAULT_SEND_PORT = 27015;
-  public static final int         DEFAULT_RECV_PORT = 27016;
+  public static final String      DEFAULT_SERVER    = "api.navigine.com";
+  public static final String      DEFAULT_USER_HASH = "0000-0000-0000-0000";
   
   public static Context           AppContext        = null;
   public static SharedPreferences Settings          = null;
@@ -30,28 +29,41 @@ public class NavigineApp extends Application
   @Override public void onCreate()
   {
     super.onCreate();
+        
+    registerReceiver(
+      new BroadcastReceiver()
+      {
+        @Override public void onReceive(Context context, Intent intent)
+        {
+          int id           = intent.getIntExtra("beacon_action_id", 0);
+          String title     = intent.getStringExtra("beacon_action_title");
+          String content   = intent.getStringExtra("beacon_action_content");
+          String imageUrl  = intent.getStringExtra("beacon_action_image_url");
+          postNotification(id, title, content, imageUrl);
+        }
+      },
+      new IntentFilter("com.navigine.navigine.beacon_action")
+    );
   }
   
-  public static void initNavigation(Context appContext)
+  public static void initialize(Context appContext)
   {
     // Setting static parameters
     BeaconService.DEBUG_LEVEL     = 2;
     NativeUtils.DEBUG_LEVEL       = 2;
     LocationLoader.DEBUG_LEVEL    = 2;
-    NavigationThread.DEBUG_LEVEL  = 2;
+    NavigationThread.DEBUG_LEVEL  = 3;
     MeasureThread.DEBUG_LEVEL     = 2;
     SensorThread.DEBUG_LEVEL      = 2;
     Parser.DEBUG_LEVEL            = 2;
     
     NavigationThread.STRICT_MODE  = true;
-    LocationLoader.SERVER         = "api.navigine.com";
     
     try
     {
       AppContext = appContext;
       Settings   = AppContext.getSharedPreferences("NavigineSettings", 0);
       Navigation = new NavigationThread(Settings.getString("user_hash", ""), AppContext);
-      Sender = new SenderThread();
       IMU = new IMUThread();    
     }
     catch (Throwable e)
@@ -74,6 +86,37 @@ public class NavigineApp extends Application
       SharedPreferences.Editor editor = Settings.edit();
       editor.putString("map_file", "");
       editor.commit();
+    }
+    
+    applySettings();
+  }
+  
+  public static void applySettings()
+  {
+    if (AppContext == null || Navigation == null)
+      return;
+    
+    // Setting up server parameters
+    String address = Settings.getString("location_server_address", NavigineApp.DEFAULT_SERVER);
+    String userHash = Settings.getString("user_hash", NavigineApp.DEFAULT_USER_HASH);
+    boolean sslEnabled = Settings.getBoolean("location_server_ssl_enabled", true);
+    LocationLoader.initialize(AppContext, userHash, address, sslEnabled);
+    
+    // Setting up BeaconService
+    BeaconService.setUserHash(userHash);
+    BeaconService.setMapId(Navigation.getLocation() == null ?
+                            0 : NavigineApp.Navigation.getLocation().id);
+    
+    if (!Settings.getBoolean("beacon_service_enabled", true))
+    {
+      BeaconService.requestToStop();
+      return;
+    }
+    
+    if (!BeaconService.isStarted())
+    {
+      Log.d(TAG, "Starting BeaconService");
+      NavigineApp.AppContext.startService(new Intent(AppContext, BeaconService.class));
     }
   }
   
@@ -124,15 +167,6 @@ public class NavigineApp extends Application
     
     Navigation.setPostEnabled(Settings.getBoolean("post_messages_enabled", true));
     Navigation.setMode(mode);
-    
-    //if (Settings.getBoolean("navigation_server_enabled", false))
-    //{
-    //  String address = Settings.getString("navigation_server_address", "");
-    //  if (address.length() > 0)
-    //  {
-    //    Sender.reconnect(address, DEFAULT_SEND_PORT, 10);
-    //  }
-    //}
   }
   
   public static void setBackgroundMode()
@@ -173,7 +207,6 @@ public class NavigineApp extends Application
     Navigation.setLogFile(null);
     Navigation.setTrackFile(null);
     Navigation.setMode(NavigationThread.MODE_IDLE);
-    //Sender.idle();
     
     if (IMU.getConnectionState() == IMUThread.STATE_NORMAL)
     {
@@ -190,7 +223,6 @@ public class NavigineApp extends Application
     Navigation.setLogFile(null);
     Navigation.setTrackFile(null);
     Navigation.setMode(NavigationThread.MODE_SCAN);
-    //Sender.idle();
   }
   
   public static void stopScanning()
@@ -201,7 +233,6 @@ public class NavigineApp extends Application
     Navigation.setLogFile(null);
     Navigation.setTrackFile(null);
     Navigation.setMode(NavigationThread.MODE_IDLE);
-    //Sender.idle();
   }
   
   public static void destroyNavigation()
@@ -209,16 +240,13 @@ public class NavigineApp extends Application
     if (AppContext == null || Navigation == null)
       return;
     
-    Log.d(TAG, "Terminating IMU, Sender, Navigation threads!");
+    Log.d(TAG, "Terminating IMU, Navigation threads!");
     IMU.terminate();
-    Sender.terminate();
     Navigation.terminate();
     try
     {
       Log.d(TAG, "Joining with IMU thread");
       IMU.join();
-      Log.d(TAG, "Joining with Sender thread");
-      Sender.join();
       Log.d(TAG, "Joining with Navigation thread");
       Navigation.join();
     }
@@ -228,9 +256,53 @@ public class NavigineApp extends Application
       Log.e(TAG, Log.getStackTraceString(e));
     }
     IMU = null;
-    Sender = null;
     Navigation = null;
     AppContext = null;
   }
   
+  public static void postNotification(int id, String title, String content, String imageUrl)
+  {
+    try
+    {
+      Context context = BeaconService.getContext();
+      Log.d(TAG, String.format(Locale.ENGLISH, "Post notification: id=%d, title='%s', content='%s', imageUrl='%s'",
+                               id, title, content, imageUrl));
+      
+      String imagePath = String.format(Locale.ENGLISH, "%s/image-beacon-action-%d.png",
+                                       context.getCacheDir().getPath(), id);
+      
+      Intent intent = new Intent(context, BeaconActivity.class);
+      intent.putExtra("beacon_action_title", title);
+      intent.putExtra("beacon_action_content", content);
+      intent.putExtra("beacon_action_image_url", imageUrl);
+      intent.putExtra("beacon_action_image_path", imagePath);
+      
+      PendingIntent pendingIntent = PendingIntent.getActivity(context, id, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+      
+      Notification.Builder notificationBuilder = new Notification.Builder(context);
+      notificationBuilder.setSmallIcon(R.drawable.notification);
+      notificationBuilder.setContentTitle(title);
+      notificationBuilder.setContentText(content);
+      notificationBuilder.setDefaults(Notification.DEFAULT_SOUND);
+      notificationBuilder.setAutoCancel(true);
+      notificationBuilder.setContentIntent(pendingIntent);
+      
+      File imageFile = new File(imagePath);
+      if (imageFile.exists())
+      {
+        Bitmap imageBitmap = BitmapFactory.decodeFile(imagePath);
+        notificationBuilder.setLargeIcon(imageBitmap);
+      }
+      
+      // Get an instance of the NotificationManager service
+      NotificationManager notificationManager = (NotificationManager)context.getSystemService(Context.NOTIFICATION_SERVICE);
+      
+      // Build the notification and issues it with notification manager.
+      notificationManager.notify(id, notificationBuilder.build());
+    }
+    catch (Throwable e)
+    {
+      Log.e(TAG, Log.getStackTraceString(e));
+    }
+  }
 }
