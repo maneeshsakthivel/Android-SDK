@@ -331,7 +331,7 @@ public class MeasuringActivity extends Activity
     {
       String error = NavigineApp.Navigation.getLastError();
       if (error != null)
-        Toast.makeText(mContext, (CharSequence)error, Toast.LENGTH_LONG).show();
+        Toast.makeText(mContext, error, Toast.LENGTH_LONG).show();
       SharedPreferences.Editor editor = NavigineApp.Settings.edit();
       editor.remove("map_file");
       editor.commit();
@@ -345,7 +345,7 @@ public class MeasuringActivity extends Activity
     if (mLocation == null)
     {
       String text = "Load map failed: no location";
-      Toast.makeText(mContext, (CharSequence)text, Toast.LENGTH_LONG).show();
+      Toast.makeText(mContext, text, Toast.LENGTH_LONG).show();
       Log.e(TAG, text);
       return false;
     }
@@ -353,7 +353,7 @@ public class MeasuringActivity extends Activity
     if (mLocation.subLocations.size() == 0)
     {
       String text = "Load map failed: no sublocations";
-      Toast.makeText(mContext, (CharSequence)text, Toast.LENGTH_LONG).show();
+      Toast.makeText(mContext, text, Toast.LENGTH_LONG).show();
       Log.e(TAG, text);
       mLocation = null;
       return false;
@@ -362,7 +362,7 @@ public class MeasuringActivity extends Activity
     if (!loadSubLocation(0))
     {
       String text = "Load map failed: unable to load default sublocation";
-      Toast.makeText(mContext, (CharSequence)text, Toast.LENGTH_LONG).show();
+      Toast.makeText(mContext, text, Toast.LENGTH_LONG).show();
       Log.e(TAG, text);
       mLocation = null;
       return false;
@@ -389,7 +389,7 @@ public class MeasuringActivity extends Activity
     if (subLoc.picture == null && subLoc.bitmap == null)
     {
       String text = "Load sublocation failed: invalid image";
-      Toast.makeText(mContext, (CharSequence)text, Toast.LENGTH_LONG).show();
+      Toast.makeText(mContext, text, Toast.LENGTH_LONG).show();
       Log.e(TAG, text);
       return false;
     }
@@ -398,7 +398,7 @@ public class MeasuringActivity extends Activity
     {
       String text = String.format(Locale.ENGLISH, "Load sublocation failed: invalid size: %.2f x %.2f",
                                   subLoc.width, subLoc.height);
-      Toast.makeText(mContext, (CharSequence)text, Toast.LENGTH_LONG).show();
+      Toast.makeText(mContext, text, Toast.LENGTH_LONG).show();
       Log.e(TAG, text);
       return false;
     }
@@ -1534,19 +1534,19 @@ public class MeasuringActivity extends Activity
       case STATE_POINT_READY:
         mState = STATE_POINT_RUN;
         text = "Keep your device motionless while measuring";
-        Toast.makeText(mContext, (CharSequence)text, Toast.LENGTH_LONG).show();
+        Toast.makeText(mContext, text, Toast.LENGTH_LONG).show();
         break;
       
       case STATE_LINE_READY:
         mState = STATE_LINE_RUN;
         text = "Follow along the line uniformly while measuring";
-        Toast.makeText(mContext, (CharSequence)text, Toast.LENGTH_LONG).show();
+        Toast.makeText(mContext, text, Toast.LENGTH_LONG).show();
         break;
       
       case STATE_BEACON_READY:
         mState = STATE_BEACON_RUN;
         text = "Keep beacon close to the device while measuring";
-        Toast.makeText(mContext, (CharSequence)text, Toast.LENGTH_LONG).show();
+        Toast.makeText(mContext, text, Toast.LENGTH_LONG).show();
         break;
       
       default:
@@ -1786,7 +1786,7 @@ public class MeasuringActivity extends Activity
             else
             {
               String text = String.format(Locale.ENGLISH, "Beacon already exists: '%s'! Please, try another one!", beacon.name);
-              Toast.makeText(mContext, (CharSequence)text, Toast.LENGTH_LONG).show();
+              Toast.makeText(mContext, text, Toast.LENGTH_LONG).show();
               cancelObject();
               setBeacon();
               return;

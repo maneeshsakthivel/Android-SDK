@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-  <string name="address_edit">Server IP-address</string>
   <string name="app_name">Navigine</string>
+  <string name="address_edit">Server IP-address</string>
   <string name="beacon_activity_name" formatted="false">Navigine.Beacon</string>
   <string name="beacon_s_measuring_d_sec" formatted="false">Beacon \&apos;%s\&apos;: %d sec (quality %d%%)</string>
   <string name="beacon_s_start_measuring" formatted="false">Beacon \&apos;%s\&apos;: start</string>
