@@ -102,7 +102,6 @@ public class SettingsActivity extends Activity
     }
     
     setTextValue(R.id.settings__location_server_address_edit,   NavigineApp.Settings.getString ("location_server_address", NavigineApp.DEFAULT_SERVER));
-    setCheckBox (R.id.settings__location_server_ssl_checkbox,   NavigineApp.Settings.getBoolean("location_server_ssl_enabled", true));
     setCheckBox (R.id.settings__beacon_service_checkbox,        NavigineApp.Settings.getBoolean("beacon_service_enabled", true));
     setCheckBox (R.id.settings__save_navigation_log_checkbox,   NavigineApp.Settings.getBoolean("navigation_log_enabled", false));
     setCheckBox (R.id.settings__save_navigation_track_checkbox, NavigineApp.Settings.getBoolean("navigation_track_enabled", false));
@@ -193,7 +192,6 @@ public class SettingsActivity extends Activity
   {
     SharedPreferences.Editor editor = NavigineApp.Settings.edit();
     editor.putString ("location_server_address",      getTextValue(R.id.settings__location_server_address_edit));
-    editor.putBoolean("location_server_ssl_enabled",  getCheckBox (R.id.settings__location_server_ssl_checkbox));
     editor.putInt("background_navigation_mode",       mBackgroundNavigationEnabled ? mBackgroundMode : NavigationThread.MODE_IDLE);
     editor.putBoolean("beacon_service_enabled",       getCheckBox (R.id.settings__beacon_service_checkbox));
     editor.putBoolean("navigation_log_enabled",       getCheckBox (R.id.settings__save_navigation_log_checkbox));

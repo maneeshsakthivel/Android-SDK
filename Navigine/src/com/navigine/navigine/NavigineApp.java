@@ -1,6 +1,7 @@
 package com.navigine.navigine;
 import com.navigine.navigine.*;
 import com.navigine.naviginesdk.*;
+import com.navigine.imu.*;
 
 import android.app.*;
 import android.content.*;
@@ -17,14 +18,15 @@ import java.util.*;
 public class NavigineApp extends Application
 {
   public static final String      TAG               = "NavigineApp";
-  public static final String      DEFAULT_SERVER    = "api.navigine.com";
+  public static final String      DEFAULT_SERVER    = "https://api.navigine.com";
   public static final String      DEFAULT_USER_HASH = "0000-0000-0000-0000";
   
   public static Context           AppContext        = null;
   public static SharedPreferences Settings          = null;
   public static NavigationThread  Navigation        = null;
-  public static SenderThread      Sender            = null;
-  public static IMUThread         IMU               = null;
+  public static IMU_Thread        IMU               = null;
+  public static int               IMU_Location      = 0;
+  public static int               IMU_SubLocation   = 0;
   
   @Override public void onCreate()
   {
@@ -52,7 +54,7 @@ public class NavigineApp extends Application
     BeaconService.DEBUG_LEVEL     = 2;
     NativeUtils.DEBUG_LEVEL       = 2;
     LocationLoader.DEBUG_LEVEL    = 2;
-    NavigationThread.DEBUG_LEVEL  = 3;
+    NavigationThread.DEBUG_LEVEL  = 2;
     MeasureThread.DEBUG_LEVEL     = 2;
     SensorThread.DEBUG_LEVEL      = 2;
     Parser.DEBUG_LEVEL            = 2;
@@ -64,7 +66,7 @@ public class NavigineApp extends Application
       AppContext = appContext;
       Settings   = AppContext.getSharedPreferences("NavigineSettings", 0);
       Navigation = new NavigationThread(Settings.getString("user_hash", ""), AppContext);
-      IMU = new IMUThread();    
+      IMU = new IMU_Thread();    
     }
     catch (Throwable e)
     {
@@ -99,13 +101,12 @@ public class NavigineApp extends Application
     // Setting up server parameters
     String address = Settings.getString("location_server_address", NavigineApp.DEFAULT_SERVER);
     String userHash = Settings.getString("user_hash", NavigineApp.DEFAULT_USER_HASH);
-    boolean sslEnabled = Settings.getBoolean("location_server_ssl_enabled", true);
-    LocationLoader.initialize(AppContext, userHash, address, sslEnabled);
+    LocationLoader.initialize(AppContext, userHash, address);
     
     // Setting up BeaconService
     BeaconService.setUserHash(userHash);
-    BeaconService.setMapId(Navigation.getLocation() == null ?
-                            0 : NavigineApp.Navigation.getLocation().id);
+    BeaconService.setLocationId(Navigation.getLocation() == null ?
+                                0 : NavigineApp.Navigation.getLocation().id);
     
     if (!Settings.getBoolean("beacon_service_enabled", true))
     {
@@ -208,7 +209,7 @@ public class NavigineApp extends Application
     Navigation.setTrackFile(null);
     Navigation.setMode(NavigationThread.MODE_IDLE);
     
-    if (IMU.getConnectionState() == IMUThread.STATE_NORMAL)
+    if (IMU.getConnectionState() == IMU_Thread.STATE_NORMAL)
     {
       Log.d(TAG, "Disconnecting from IMU");
       IMU.disconnect();
@@ -258,6 +259,28 @@ public class NavigineApp extends Application
     IMU = null;
     Navigation = null;
     AppContext = null;
+  }
+  
+  public static DeviceInfo getDeviceInfoByIMU(IMU_Device imuDevice)
+  {
+    if (AppContext == null || Navigation == null)
+      return null;
+    
+    long timeNow = DateTimeUtils.currentTimeMillis();
+    
+    DeviceInfo device = new DeviceInfo();
+    device.id = Navigation.getDeviceId();
+    device.type = "android";
+    device.time = DateTimeUtils.currentDate(timeNow);
+    device.location = IMU_Location;
+    device.subLocation = IMU_SubLocation;
+    device.x = imuDevice.x;
+    device.y = imuDevice.y;
+    device.z = imuDevice.z;
+    device.r = 2;
+    device.azimuth = imuDevice.angle;
+    device.timeLabel = timeNow;
+    return device;
   }
   
   public static void postNotification(int id, String title, String content, String imageUrl)

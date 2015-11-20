@@ -134,8 +134,8 @@ public class LoaderActivity extends Activity
         view.setBackgroundColor(Color.BLACK);
       }
       
-      titleTextView.setText((CharSequence)titleText);
-      stateTextView.setText((CharSequence)stateText);
+      titleTextView.setText(titleText);
+      stateTextView.setText(stateText);
       
       if (info.localModified)
       {
@@ -148,7 +148,7 @@ public class LoaderActivity extends Activity
         downloadButton.setVisibility(View.VISIBLE);
         uploadButton.setVisibility(View.GONE);
         String downText = String.format(Locale.ENGLISH, "Version available: %d", info.serverVersion);
-        downTextView.setText((CharSequence)downText);
+        downTextView.setText(downText);
       }
       else
       {
@@ -290,7 +290,7 @@ public class LoaderActivity extends Activity
     LayoutInflater inflater = getLayoutInflater();
     View view = inflater.inflate(R.layout.user_hash_dialog, null);
     _userEdit = (EditText)view.findViewById(R.id.user_hash_edit);
-    _userEdit.setText((CharSequence)userHash);
+    _userEdit.setText(userHash);
     _userEdit.setTypeface(Typeface.MONOSPACE); 
     //_userEdit.addTextChangedListener(new TextWatcher()
     //  {
@@ -309,7 +309,7 @@ public class LoaderActivity extends Activity
     //      
     //      if (length == 4 || length == 9 || length == 14)
     //      {
-    //        _userEdit.setText((CharSequence)(text + "-"));
+    //        _userEdit.setText((text + "-"));
     //        _userEdit.setSelection(length + 1);
     //      }
     //    }
@@ -353,7 +353,7 @@ public class LoaderActivity extends Activity
       String text = String.format(Locale.ENGLISH, "Location '%s' cannot be selected!\n" +
                                                   "Please, download location first!",
                                                   _info.title);
-      Toast.makeText(mContext, (CharSequence)text, Toast.LENGTH_LONG).show();
+      Toast.makeText(mContext, text, Toast.LENGTH_LONG).show();
       return;
     }
     
@@ -514,7 +514,7 @@ public class LoaderActivity extends Activity
       {
         mListView.setVisibility(View.GONE);
         mStatusLabel.setVisibility(View.VISIBLE);
-        mStatusLabel.setText((CharSequence)String.format(Locale.ENGLISH, "Loading content (%d%%)", status));
+        mStatusLabel.setText(String.format(Locale.ENGLISH, "Loading content (%d%%)", status));
       }
     }
     else

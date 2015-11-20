@@ -182,7 +182,7 @@ public class TextActivity extends Activity
     {
       String error = NavigineApp.Navigation.getLastError();
       if (error != null)
-        Toast.makeText(mContext, (CharSequence)error, Toast.LENGTH_LONG).show();
+        Toast.makeText(mContext, error, Toast.LENGTH_LONG).show();
       SharedPreferences.Editor editor = NavigineApp.Settings.edit();
       editor.remove("map_file");
       editor.commit();
@@ -250,6 +250,8 @@ public class TextActivity extends Activity
           checkMode();
           long timeNow = DateTimeUtils.currentTimeMillis();
           StringBuilder messageBuilder = new StringBuilder();
+          
+          messageBuilder.append(String.format(Locale.ENGLISH, "Build version: %s\n", A.BUILD_VERSION_BRIEF));
           
           String archivePath = NavigineApp.Navigation.getArchivePath();
           if (archivePath != null && archivePath.length() > 0)
