@@ -27,7 +27,7 @@ import java.util.*;
 public class BeaconActivity extends Activity
 {
   // Constants
-  private static final String TAG = "Navigine.BeaconActivity";
+  private static final String TAG = "NAVIGINE.BeaconActivity";
   
   // This context
   private final Context context = this;

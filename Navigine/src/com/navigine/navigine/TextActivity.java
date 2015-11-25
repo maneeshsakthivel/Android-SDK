@@ -24,24 +24,25 @@ import java.util.*;
 public class TextActivity extends Activity
 {
   // Constants
-  private static final String   TAG = "Navigine.TextActivity";
-  private static final int      REQUEST_PICK_FILE = 1;
-  private static final int      UPDATE_TIMEOUT = 200;
+  private static final String   TAG                 = "NAVIGINE.TextActivity";
+  private static final int      REQUEST_PICK_FILE   = 1;
+  private static final int      UPDATE_TIMEOUT      = 200;
   
-  // This object
-  private Context mContext = this;
+  // Context
+  private Context     mContext        = this;
   
   // UI parameters
-  private Button      mButton     = null;
-  private TextView    mTextView   = null;
-  private TimerTask   mTimerTask  = null;
-  private Handler     mHandler    = new Handler();
-  private Timer       mTimer      = new Timer();
+  private Button      mStartButton    = null;
+  private Button      mLoadMapButton  = null;
+  private TextView    mTextView       = null;
+  private TimerTask   mTimerTask      = null;
+  private Handler     mHandler        = new Handler();
+  private Timer       mTimer          = new Timer();
   
-  private boolean     mStarted    = false;
-  
-  private String      mLogInputFile       = "";
-  private String      mLogOutputFile      = "";
+  // State parameters
+  private boolean     mStarted        = false;
+  private String      mLogInputFile   = "";
+  private String      mLogOutputFile  = "";
   
   /** Called when the activity is first created. */
   @Override public void onCreate(Bundle savedInstanceState)
@@ -52,20 +53,35 @@ public class TextActivity extends Activity
     setContentView(R.layout.text_mode);
     
     // Initializing variables
-    mButton = (Button)findViewById(R.id.start_button);
-    mTextView = (TextView)findViewById(R.id.text_view);
+    mTextView = (TextView)findViewById(R.id.text_mode__text_view);
+    mStartButton = (Button)findViewById(R.id.text_mode__start_button);
+    mLoadMapButton = (Button)findViewById(R.id.text_mode__load_map_button);
+    
     mTextView.setMovementMethod(new ScrollingMovementMethod());
+    mStartButton.setVisibility(View.GONE);
+    mLoadMapButton.setVisibility(View.GONE);
     
     if (NavigineApp.Navigation != null)
       NavigineApp.Navigation.setMode(NavigationThread.MODE_SCAN);
     
-    // Setting up CONNECT button click handler
-    mButton.setOnClickListener(
+    // Setting up START button click handler
+    mStartButton.setOnClickListener(
       new OnClickListener()
       {
         @Override public void onClick(View v)
         {
           toggleMode();
+        }
+      });
+    
+    // Setting up LOAD MAP button click handler
+    mLoadMapButton.setOnClickListener(
+      new OnClickListener()
+      {
+        @Override public void onClick(View v)
+        {
+          Intent intent = new Intent(mContext, FilePickerActivity.class);
+          startActivityForResult(intent, REQUEST_PICK_FILE);
         }
       });
   }
@@ -102,32 +118,6 @@ public class TextActivity extends Activity
     super.onPause();
     mTimerTask.cancel();
     mTimerTask = null;
-  }
-  
-  @Override public boolean onCreateOptionsMenu(Menu menu)
-  {
-    MenuInflater inflater = getMenuInflater();
-    inflater.inflate(R.menu.text_menu, menu);
-    return true;
-  }
-  
-  @Override public boolean onPrepareOptionsMenu(Menu menu)
-  {
-    return true;
-  }
-  
-  @Override public boolean onOptionsItemSelected(MenuItem item)
-  {
-    switch (item.getItemId())
-    {
-      case R.id.text_menu_load_map:
-        Intent intent = new Intent(mContext, FilePickerActivity.class);
-        startActivityForResult(intent, REQUEST_PICK_FILE);
-        return true;
-      
-      default:
-        return super.onOptionsItemSelected(item);
-    }
   }
   
   @Override protected void onActivityResult(int requestCode, int resultCode, Intent data)
@@ -198,13 +188,13 @@ public class TextActivity extends Activity
       mStarted = false;
       NavigineApp.stopNavigation();
       NavigineApp.startScanning();
-      mButton.setText("Start");
+      mStartButton.setText("Start");
     }
     else
     {
       mStarted = true;
       NavigineApp.startNavigation();
-      mButton.setText("Stop");
+      mStartButton.setText("Stop");
     }
   }
   
@@ -212,6 +202,9 @@ public class TextActivity extends Activity
   {
     if (NavigineApp.Navigation == null)
       return;
+    
+    mStartButton.setVisibility(View.VISIBLE);
+    mLoadMapButton.setVisibility(View.VISIBLE);
     
     // Check if mode switched
     switch (NavigineApp.Navigation.getMode())
@@ -311,8 +304,8 @@ public class TextActivity extends Activity
             {
               DeviceInfo info = NavigineApp.Navigation.getDeviceInfo();
               if (info != null)
-                messageBuilder.append(String.format(Locale.ENGLISH, "Device %s: [%d,  %.1f,  %.1f,  %.1f,  #%d]\n",
-                                      info.id, info.subLocation, info.x, info.y, info.azimuth, info.stepCount));
+                messageBuilder.append(String.format(Locale.ENGLISH, "Device: [%d,  %.1f,  %.1f,  %.1f,  #%d]\n",
+                                      info.subLocation, info.x, info.y, info.azimuth, info.stepCount));
               else
                 messageBuilder.append("\n");
             }
@@ -320,7 +313,7 @@ public class TextActivity extends Activity
           else
             messageBuilder.append("\n");
           
-          messageBuilder.append("------------------------------------------------------------------------------------------\n\n");
+          messageBuilder.append("----------------------------------------------------------------------------\n\n");
           
           // Writing WiFi scan results
           List<WScanResult> scanResults   = NavigineApp.Navigation.getScanResults(0);

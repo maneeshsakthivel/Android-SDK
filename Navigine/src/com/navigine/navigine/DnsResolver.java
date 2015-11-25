@@ -14,7 +14,7 @@ import java.util.*;
 
 public class DnsResolver implements Runnable
 {
-  private static final String TAG = "Navigine.DnsResolver";
+  private static final String TAG = "NAVIGINE.DnsResolver";
   private InetAddress mInetAddress = null;
   private String mHostName = null;
   

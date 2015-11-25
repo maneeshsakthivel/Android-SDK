@@ -27,7 +27,7 @@ import java.util.regex.*;
 public class MeasuringActivity extends Activity
 {
   // Constants
-  private static final String TAG = "Navigine.MeasuringActivity";
+  private static final String TAG = "NAVIGINE.MeasuringActivity";
   private static final int REQUEST_PICK_FILE  = 1;  
   private static final int UPDATE_TIMEOUT     = 100;
   private static final int SCAN_MAX_NUMBER    = 30;
@@ -40,14 +40,16 @@ public class MeasuringActivity extends Activity
   // GUI parameters
   private LinearLayout  mMeasuringLayout      = null;
   private TextView      mMeasuringPrompt      = null;
-  private Button        mMeasuringOkButton    = null;
   private Button        mMeasuringStartButton = null;
   private Button        mMeasuringStopButton  = null;
   private Button        mPrevFloorButton      = null;
   private Button        mNextFloorButton      = null;
+  private Button        mAddPointButton       = null;
+  private Button        mAddBeaconButton      = null;
   private TextView      mCurrentFloorTextView = null;
   private ImageView     mImageView  = null;
   private ImageView     mScaleView  = null;
+  private ImageView     mTargetView = null;
   private TimerTask     mTimerTask  = null;
   private Timer         mTimer      = new Timer();
   private Handler       mHandler    = new Handler();
@@ -80,9 +82,6 @@ public class MeasuringActivity extends Activity
   private static final int STATE_NONE           = 0;
   private static final int STATE_POINT_READY    = 1;
   private static final int STATE_POINT_RUN      = 2;
-  private static final int STATE_LINE_BEGIN     = 3;
-  private static final int STATE_LINE_READY     = 4;
-  private static final int STATE_LINE_RUN       = 5;
   private static final int STATE_BEACON_READY   = 6;
   private static final int STATE_BEACON_RUN     = 7;
   private int  mState = STATE_NONE;
@@ -93,9 +92,7 @@ public class MeasuringActivity extends Activity
   private float  mRatio  = 1.0f;
   
   // Config parameters
-  private float mMinX = 0.0f;
   private float mMaxX = 0.0f;
-  private float mMinY = 0.0f;
   private float mMaxY = 0.0f;
   private float mMinRatio = 0.1f;
   private float mMaxRatio = 10.0f;
@@ -119,21 +116,30 @@ public class MeasuringActivity extends Activity
     setContentView(R.layout.measuring_mode);
     
     // Setting up GUI parameters
-    mImageView = (ImageView)findViewById(R.id.measuring_map_image_view);
-    mScaleView = (ImageView)findViewById(R.id.measuring_scale_image_view);
-    mMeasuringLayout = (LinearLayout)findViewById(R.id.measuring_layout);
-    mMeasuringPrompt = (TextView)findViewById(R.id.map_measuring_prompt);
-    mMeasuringOkButton = (Button)findViewById(R.id.map_measuring_ok_button);
-    mMeasuringStartButton = (Button)findViewById(R.id.map_measuring_start_button);
-    mMeasuringStopButton  = (Button)findViewById(R.id.map_measuring_stop_button);
-    mPrevFloorButton = (Button)findViewById(R.id.measuring_prev_floor_button);
-    mNextFloorButton = (Button)findViewById(R.id.measuring_next_floor_button);
-    mCurrentFloorTextView = (TextView)findViewById(R.id.measuring_current_floor_text_view);
+    mImageView  = (ImageView)findViewById(R.id.measuring_mode__map_image);
+    mScaleView  = (ImageView)findViewById(R.id.measuring_mode__scale_image);
+    mTargetView = (ImageView)findViewById(R.id.measuring_mode__center_target_image);
+    mMeasuringLayout = (LinearLayout)findViewById(R.id.measuring_mode__measuring_panel_layout);
+    mMeasuringPrompt = (TextView)findViewById(R.id.measuring_mode__measuring_panel_prompt_label);
+    mMeasuringStartButton = (Button)findViewById(R.id.measuring_mode__measuring_panel_start_button);
+    mMeasuringStopButton  = (Button)findViewById(R.id.measuring_mode__measuring_panel_stop_button);
+    mPrevFloorButton = (Button)findViewById(R.id.measuring_mode__prev_floor_button);
+    mNextFloorButton = (Button)findViewById(R.id.measuring_mode__next_floor_button);
+    mCurrentFloorTextView = (TextView)findViewById(R.id.measuring_mode__current_floor_label);
     mMeasuringLayout.setVisibility(View.GONE);
     mPrevFloorButton.setVisibility(View.INVISIBLE);
     mNextFloorButton.setVisibility(View.INVISIBLE);
+    
+    mAddPointButton  = (Button)findViewById(R.id.measuring_mode__add_point_button);
+    mAddBeaconButton = (Button)findViewById(R.id.measuring_mode__add_beacon_button);
+    
+    mImageView.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
     mImageView.setBackgroundColor(Color.argb(255, 235, 235, 235));
     mScaleView.setImageBitmap(Bitmap.createBitmap(100, 30, Bitmap.Config.ARGB_8888));
+    
+    mTargetView.setVisibility(View.GONE);
+    mAddPointButton.setVisibility(View.GONE);
+    mAddBeaconButton.setVisibility(View.GONE);
     
     NavigineApp.startScanning();
     
@@ -145,15 +151,6 @@ public class MeasuringActivity extends Activity
         {
           doTouch(event);
           return true;
-        }
-      });
-    
-    mMeasuringOkButton.setOnClickListener(
-      new OnClickListener()
-      {
-        @Override public void onClick(View v)
-        {
-          setLineEnd();
         }
       });
     
@@ -194,6 +191,31 @@ public class MeasuringActivity extends Activity
           loadNextSubLocation();
         }
       });
+    
+    mAddPointButton.setOnClickListener(
+      new OnClickListener()
+      {
+        @Override public void onClick(View v)
+        {
+          Log.d(TAG, "Creating point");
+          setPoint();
+        }
+      });
+    
+    mAddBeaconButton.setOnClickListener(
+      new OnClickListener()
+      {
+        @Override public void onClick(View v)
+        {
+          Log.d(TAG, "Creating beacon");
+          if (NavigineApp.Navigation == null)
+            Toast.makeText(mContext, "Can't add beacon! Navigine SDK is not available!", Toast.LENGTH_LONG).show();
+          else if (!NavigineApp.Navigation.isBluetoothEnabled())
+            Toast.makeText(mContext, "Can't add beacon! Enable bluetooth please!", Toast.LENGTH_LONG).show();
+          else
+            setBeacon();
+        }
+      });
   }
   
   @Override public void onDestroy()
@@ -231,84 +253,6 @@ public class MeasuringActivity extends Activity
     
     mTimerTask.cancel();
     mTimerTask = null;
-  }
-  
-  @Override public boolean onCreateOptionsMenu(Menu menu)
-  {
-    Log.d(TAG, "Create menu options");
-    MenuInflater inflater = getMenuInflater();
-    inflater.inflate(R.menu.measuring_menu, menu);
-    menu.findItem(R.id.measuring_menu_create_point).setVisible(mState == STATE_NONE);   
-    menu.findItem(R.id.measuring_menu_cancel_point).setVisible(mState == STATE_POINT_READY ||
-                                                               mState == STATE_POINT_RUN);
-    menu.findItem(R.id.measuring_menu_create_line).setVisible(mState == STATE_NONE);
-    menu.findItem(R.id.measuring_menu_cancel_line).setVisible(mState == STATE_LINE_BEGIN ||
-                                                              mState == STATE_LINE_READY ||
-                                                              mState == STATE_LINE_RUN);
-    menu.findItem(R.id.measuring_menu_create_beacon).setVisible(mState == STATE_NONE);    
-    menu.findItem(R.id.measuring_menu_cancel_beacon).setVisible(mState == STATE_BEACON_READY ||
-                                                                mState == STATE_BEACON_RUN);
-    return true;
-  }
-  
-  @Override public boolean onPrepareOptionsMenu(Menu menu)
-  {
-    Log.d(TAG, "Prepare menu options");
-    menu.findItem(R.id.measuring_menu_create_point).setVisible(mState == STATE_NONE);
-    menu.findItem(R.id.measuring_menu_cancel_point).setVisible(mState == STATE_POINT_READY ||
-                                                               mState == STATE_POINT_RUN);
-    menu.findItem(R.id.measuring_menu_create_line).setVisible(mState == STATE_NONE);
-    menu.findItem(R.id.measuring_menu_cancel_line).setVisible(mState == STATE_LINE_BEGIN ||
-                                                              mState == STATE_LINE_READY ||
-                                                              mState == STATE_LINE_RUN);
-    menu.findItem(R.id.measuring_menu_create_beacon).setVisible(mState == STATE_NONE);    
-    menu.findItem(R.id.measuring_menu_cancel_beacon).setVisible(mState == STATE_BEACON_READY ||
-                                                                mState == STATE_BEACON_RUN);
-    return true;
-  }
-  
-  @Override public boolean onOptionsItemSelected(MenuItem item)
-  {
-    switch (item.getItemId())
-    {
-      case R.id.measuring_menu_create_point:
-        Log.d(TAG, "Menu: create point");
-        setPoint();
-        return true;
-      
-      case R.id.measuring_menu_cancel_point:
-        Log.d(TAG, "Menu: cancel point");
-        cancelObject();
-        return true;
-      
-      case R.id.measuring_menu_create_line:
-        Log.d(TAG, "Menu: create line");
-        setLineBegin();
-        return true;
-      
-      case R.id.measuring_menu_cancel_line:
-        Log.d(TAG, "Menu: cancel line");
-        cancelObject();
-        return true;
-      
-      case R.id.measuring_menu_create_beacon:
-        Log.d(TAG, "Menu: create beacon");
-        if (NavigineApp.Navigation == null)
-          Toast.makeText(mContext, "Can't add beacon! Navigine SDK is not available!", Toast.LENGTH_LONG).show();
-        else if (!NavigineApp.Navigation.isBluetoothEnabled())
-          Toast.makeText(mContext, "Can't add beacon! Enable bluetooth please!", Toast.LENGTH_LONG).show();
-        else
-          setBeacon();
-        return true;
-      
-      case R.id.measuring_menu_cancel_beacon:
-        Log.d(TAG, "Menu: cancel beacon");
-        cancelObject();
-        return true;
-      
-      default:
-        return super.onOptionsItemSelected(item);
-    }
   }
   
   private boolean tryLoadMap()
@@ -413,7 +357,7 @@ public class MeasuringActivity extends Activity
     // Updating image view size parameters
     float pixLength = 0.0f;
     if (mMatrix != null && mMapWidth > 0 && mRatio > 0)
-      pixLength = (mMaxX - mMinX) / mMapWidth / mRatio; // Pixel length in meters
+      pixLength = mMaxX / mMapWidth / mRatio; // Pixel length in meters
     
     // Determine absolute coordinates of the screen center
     PointF P = null;
@@ -438,11 +382,10 @@ public class MeasuringActivity extends Activity
     mMatrix      = new Matrix();
     mMaxX        = subLoc.width;
     mMaxY        = subLoc.height;
-    mMinX        = 0.0f;
-    mMinY        = 0.0f;
     mRatio       = 1.0f;
-    mMinRatio    = subLoc.width / mMapWidth / 1.0f;
-    mMaxRatio    = subLoc.width / mMapWidth / 0.01f;
+    mMinRatio    = Math.min((float)mViewWidth / mMapWidth, (float)mViewHeight / mMapHeight);
+    mMaxRatio    = Math.min((float)mViewWidth / mMapWidth * subLoc.width / 2, (float)mViewHeight / mMapHeight * subLoc.height / 2);
+    mMaxRatio    = Math.max(mMaxRatio, mMinRatio);
     mDrawScale   = true;
     
     // Calculating new pixel length in meters
@@ -457,7 +400,7 @@ public class MeasuringActivity extends Activity
     else
     {
       doScroll(mViewWidth / 2 - mMapWidth / 2, mViewHeight / 2 - mMapHeight / 2);
-      doZoom(Math.min((float)mViewWidth / mMapWidth, (float)mViewHeight / mMapHeight));
+      doZoom(mMinRatio);
     }
     
     mCurrentSubLocationIndex = index;
@@ -513,6 +456,7 @@ public class MeasuringActivity extends Activity
     mMatrix.mapRect(mMapRect, new RectF(0, 0, mMapWidth, mMapHeight));
     mRatio *= r;
     mDrawScale = true;
+    Log.d(TAG, String.format(Locale.ENGLISH, "Ratio limits: (%.3f, %.3f), current: %.3f", mMinRatio, mMaxRatio, mRatio));
     //Log.d(TAG, String.format(Locale.ENGLISH, "Map rect: (%.2f, %.2f) - (%.2f, %.2f)",
     //      mMapRect.left, mMapRect.top, mMapRect.right, mMapRect.bottom));
     mHandler.post(mRunnable);
@@ -521,21 +465,18 @@ public class MeasuringActivity extends Activity
   // Convert absolute coordinates (x,y) to SVG coordinates
   private PointF getSvgCoordinates(float x, float y)
   {
-    return new PointF((x - mMinX) / (mMaxX - mMinX) * mMapWidth,
-                      (mMaxY - y) / (mMaxY - mMinY) * mMapHeight);
+    return new PointF(x / mMaxX * mMapWidth, (mMaxY - y) / mMaxY * mMapHeight);
   }
   
   private float getSvgLength(float d)
   {
-    return Math.max(d * mMapWidth / (mMaxX - mMinX),
-                    d * mMapHeight / (mMaxY - mMinY));
+    return Math.max(d * mMapWidth / mMaxX, d * mMapHeight / mMaxY);
   }
   
   // Convert absolute coordinates (x,y) to screen coordinates
   private PointF getScreenCoordinates(float x, float y)
   {
-    float[] pts = {(x - mMinX) / (mMaxX - mMinX) * mMapWidth,
-                   (mMaxY - y) / (mMaxY - mMinY) * mMapHeight};
+    float[] pts = {x / mMaxX * mMapWidth, (mMaxY - y) / mMaxY * mMapHeight};
     mMatrix.mapPoints(pts);
     return new PointF(pts[0], pts[1]);
   }
@@ -548,8 +489,8 @@ public class MeasuringActivity extends Activity
     
     float[] pts = {x, y};
     invMatrix.mapPoints(pts);
-    return new PointF(pts[0] / mMapWidth  * (mMaxX - mMinX) + mMinX,
-                     -pts[1] / mMapHeight * (mMaxY - mMinY) + mMaxY);
+    return new PointF( pts[0] / mMapWidth  * mMaxX,
+                      -pts[1] / mMapHeight * mMaxY + mMaxY);
   }
   
   private void doTouch(MotionEvent event)
@@ -646,6 +587,16 @@ public class MeasuringActivity extends Activity
     canvas.drawPath(path, paint);
   }
   
+  private void drawBeacon(PointF P, float size, Paint paint, Canvas canvas)
+  {
+    int color = paint.getColor();
+    canvas.drawCircle(P.x, P.y, size, paint);
+    paint.setARGB(255, 255, 255, 255);
+    canvas.drawCircle(P.x, P.y, size * 0.66f, paint);
+    paint.setColor(color);
+    canvas.drawCircle(P.x, P.y, size * 0.33f, paint);
+  }
+  
   private void drawMeasureObjects(Canvas canvas)
   {
     if (mLocation == null || mCurrentSubLocationIndex < 0)
@@ -654,14 +605,17 @@ public class MeasuringActivity extends Activity
     SubLocation subLoc = mLocation.subLocations.get(mCurrentSubLocationIndex);
     
     float ratio = Math.min(Math.max(mRatio, mMinRatio), mMaxRatio);
-    float textSize = Math.round(12.0f / ratio + 1.0f);
-    float crossSize = 4.0f / ratio;
+    float textSize = Math.round(24.0f / ratio + 1.0f);
+    float crossSize = 10.0f / ratio;
     
-    Paint paint = new Paint();
-    paint.setStrokeWidth(0);
-    paint.setARGB(255, 255, 0, 0);
-    paint.setTextSize(textSize);
-    paint.setStyle(Paint.Style.FILL);
+    Paint drawPaint = new Paint();
+    drawPaint.setStyle(Paint.Style.FILL_AND_STROKE);
+    drawPaint.setStrokeWidth(0);
+    
+    Paint textPaint = new Paint();
+    textPaint.setStyle(Paint.Style.FILL_AND_STROKE);
+    textPaint.setStrokeWidth(0);
+    textPaint.setTextSize(textSize);
     
     for(int i = 0; i < subLoc.measureList.size(); ++i)
     {
@@ -677,47 +631,32 @@ public class MeasuringActivity extends Activity
       {
         case MeasureObject.MEASURE_POINT:
         {
-          paint.setARGB(255, 255, 0, 0);
+          drawPaint.setStrokeWidth(4.0f / ratio);
+          drawPaint.setARGB(255, 160, 0, 0);
+          textPaint.setARGB(255, 160, 0, 0);
           String text = object.status == 0 ?
                         String.format(Locale.ENGLISH, "%s (%d%%)", object.name, object.quality):
                         String.format(Locale.ENGLISH, "%s* (%d%%)", object.name, object.quality);
           PointF Q = new PointF(object.kx1 * subLoc.width, object.ky1 * subLoc.height);
           PointF P = getSvgCoordinates(Q.x, Q.y);
-          canvas.drawLine(P.x - crossSize, P.y - crossSize, P.x + crossSize, P.y + crossSize, paint);
-          canvas.drawLine(P.x - crossSize, P.y + crossSize, P.x + crossSize, P.y - crossSize, paint);
-          canvas.drawText(text, P.x + crossSize, P.y, paint);
-          break;
-        }
-        
-        case MeasureObject.MEASURE_LINE:
-        {
-          paint.setARGB(255, 255, 0, 0);
-          String text = object.status == 0 ?
-                        String.format(Locale.ENGLISH, "%s (%d%%)", object.name, object.quality):
-                        String.format(Locale.ENGLISH, "%s* (%d%%)", object.name, object.quality);
-          PointF Q1 = new PointF(object.kx1 * subLoc.width, object.ky1 * subLoc.height);
-          PointF Q2 = new PointF(object.kx2 * subLoc.width, object.ky2 * subLoc.height);
-          PointF P1 = getSvgCoordinates(Q1.x, Q1.y);
-          PointF P2 = getSvgCoordinates(Q2.x, Q2.y);
-          drawArrow(P1, P2, paint, canvas);
-          canvas.drawText(text, P2.x + crossSize, P2.y, paint);
+          canvas.drawLine(P.x - crossSize, P.y - crossSize, P.x + crossSize, P.y + crossSize, drawPaint);
+          canvas.drawLine(P.x - crossSize, P.y + crossSize, P.x + crossSize, P.y - crossSize, drawPaint);
+          //drawBeacon(P, crossSize, drawPaint, canvas);
+          canvas.drawText(text, P.x + crossSize, P.y, textPaint);
           break;
         }
         
         case MeasureObject.BEACON:
         {
-          paint.setARGB(255, 0, 0, 255);
+          drawPaint.setARGB(255, 0, 0, 255);
+          textPaint.setARGB(255, 0, 0, 255);
           String text = object.status == 0 ?
                         String.format(Locale.ENGLISH, "%s", object.name):
                         String.format(Locale.ENGLISH, "%s*", object.name);
           PointF Q = new PointF(object.kx1 * subLoc.width, object.ky1 * subLoc.height);
           PointF P = getSvgCoordinates(Q.x, Q.y);
-          canvas.drawCircle(P.x, P.y, crossSize, paint);
-          paint.setARGB(255, 255, 255, 255);
-          canvas.drawCircle(P.x, P.y, crossSize * 0.66f, paint);
-          paint.setARGB(255, 0, 0, 255);
-          canvas.drawCircle(P.x, P.y, crossSize * 0.33f, paint);
-          canvas.drawText(text, P.x + crossSize, P.y, paint);
+          drawBeacon(P, crossSize, drawPaint, canvas);
+          canvas.drawText(text, P.x + crossSize, P.y, textPaint);
           break;
         }
       }
@@ -730,8 +669,8 @@ public class MeasuringActivity extends Activity
       return;
     
     float ratio = Math.min(Math.max(mRatio, mMinRatio), mMaxRatio);
-    float length = 100.0f / mRatio / mMapWidth * (mMaxX - mMinX);
-    float textSize = Math.round(10.0f / ratio);
+    float length = 100.0f / mRatio / mMapWidth * mMaxX;
+    float textSize = Math.round(20.0f / ratio);
     
     Paint paint = new Paint();
     paint.setStrokeWidth(0);
@@ -754,10 +693,10 @@ public class MeasuringActivity extends Activity
     for(int i = 0; i < steps.length && steps[i] < length; ++i)
       step = steps[i];
     
-    float x = mMinX;
+    float x = 0.0f;
     while (x < mMaxX)
     {
-      PointF W = getScreenCoordinates(x, mMinY);
+      PointF W = getScreenCoordinates(x, 0.0f);
       if (W.x < -mViewWidth/2 || W.x > 3*mViewWidth/2)
       {
         x += step;
@@ -766,12 +705,12 @@ public class MeasuringActivity extends Activity
       
       for(int i = 0; i < 5; ++i)
       {
-        PointF P = getSvgCoordinates(x, mMinY);
+        PointF P = getSvgCoordinates(x, 0.0f);
         PointF Q = getSvgCoordinates(x, mMaxY);
         canvas.drawLine(P.x, P.y, Q.x, Q.y, i == 0 ? paint : paint2);
         if (i == 0)
         {
-          PointF R = getScreenCoordinates(x, mMinY);
+          PointF R = getScreenCoordinates(x, 0.0f);
           if (R.y > mViewHeight - 1)
             R.y = mViewHeight - 1;
           PointF S = getAbsCoordinates(R.x, R.y);
@@ -782,10 +721,10 @@ public class MeasuringActivity extends Activity
       }
     }
     
-    float y = mMinY;
+    float y = 0.0f;
     while (y < mMaxY)
     {
-      PointF W = getScreenCoordinates(mMinY, y);
+      PointF W = getScreenCoordinates(0.0f, y);
       if (W.y < -mViewHeight/2 || W.y > 3*mViewHeight/2)
       {
         y += step;
@@ -794,12 +733,12 @@ public class MeasuringActivity extends Activity
       
       for(int i = 0; i < 5; ++i)
       {
-        PointF P = getSvgCoordinates(mMinX, y);
+        PointF P = getSvgCoordinates(0.0f, y);
         PointF Q = getSvgCoordinates(mMaxX, y);
         canvas.drawLine(P.x, P.y, Q.x, Q.y, i == 0 ? paint : paint2);
         if (i == 0)
         {
-          PointF R = getScreenCoordinates(mMinX, y);
+          PointF R = getScreenCoordinates(0.0f, y);
           if (R.x < 1)
             R.x = 1;
           PointF S = getAbsCoordinates(R.x, R.y);
@@ -822,7 +761,7 @@ public class MeasuringActivity extends Activity
     Canvas canvas = new Canvas(bitmap);
     
     // Calculate scale meter-length
-    float length = 70.0f / mRatio / mMapWidth * (mMaxX - mMinX);
+    float length = 70.0f / mRatio / mMapWidth * mMaxX;
     String text = "";
     
     if (length < 0.1f)
@@ -886,9 +825,6 @@ public class MeasuringActivity extends Activity
       case MeasureObject.MEASURE_POINT:
         return String.format(Locale.ENGLISH, "P.%d.%d", subLoc.id, subLoc.measureList.size() + 1);
       
-      case MeasureObject.MEASURE_LINE:
-        return String.format(Locale.ENGLISH, "L.%d.%d", subLoc.id, subLoc.measureList.size() + 1);
-      
       case MeasureObject.BEACON:
         return String.format(Locale.ENGLISH, "B.%d.%d", subLoc.id, subLoc.measureList.size() + 1);
       
@@ -923,58 +859,6 @@ public class MeasuringActivity extends Activity
       mSelectedObject.deviceId      = NavigineApp.Navigation.getDeviceId();
       mSelectedObject.deviceModel   = NavigineApp.Navigation.getDeviceName();
       mSelectedObject.deviceAddress = NavigineApp.Navigation.getMacAddress();
-      showSelectedObjectDialog(false);
-    }
-  }
-  
-  // Function is called, when menu option "Create line" is selected
-  private void setLineBegin()
-  {
-    if (NavigineApp.Navigation == null)
-      return;
-    
-    if (mLocation == null || mCurrentSubLocationIndex < 0)
-      return;
-    
-    SubLocation subLoc = mLocation.subLocations.get(mCurrentSubLocationIndex);
-    
-    if (mState == STATE_NONE)
-    {
-      mState = STATE_LINE_BEGIN;
-      PointF P = getAbsCoordinates(mViewWidth / 2, mViewHeight / 2);
-      mSelectedObject               = new MeasureObject();
-      mSelectedObject.status        = MeasureObject.STATUS_NEW;
-      mSelectedObject.type          = MeasureObject.MEASURE_LINE;
-      mSelectedObject.name          = suggestObjectName(MeasureObject.MEASURE_LINE);
-      mSelectedObject.uuid          = UUID.randomUUID().toString();
-      mSelectedObject.kx1           = P.x / subLoc.width;
-      mSelectedObject.ky1           = P.y / subLoc.height;
-      mSelectedObject.location      = mLocation.id;
-      mSelectedObject.subLocation   = subLoc.id;
-      mSelectedObject.deviceId      = NavigineApp.Navigation.getDeviceId();
-      mSelectedObject.deviceModel   = NavigineApp.Navigation.getDeviceName();
-      mSelectedObject.deviceAddress = NavigineApp.Navigation.getMacAddress();
-    }
-  }
-  
-  // Function is called, when line end is selected ("Ok" button is clicked)
-  private void setLineEnd()
-  {
-    if (NavigineApp.Navigation == null)
-      return;
-    
-    if (mLocation == null || mCurrentSubLocationIndex < 0)
-      return;
-    
-    SubLocation subLoc = mLocation.subLocations.get(mCurrentSubLocationIndex);
-    
-    if (mState == STATE_LINE_BEGIN &&
-        mSelectedObject != null &&
-        mSelectedObject.type == MeasureObject.MEASURE_LINE)
-    {
-      PointF P = getAbsCoordinates(mViewWidth / 2, mViewHeight / 2);
-      mSelectedObject.kx2 = P.x / subLoc.width;
-      mSelectedObject.ky2 = P.y / subLoc.height;
       showSelectedObjectDialog(false);
     }
   }
@@ -1032,7 +916,6 @@ public class MeasuringActivity extends Activity
         switch (type)
         {
           case MeasureObject.MEASURE_POINT:
-          case MeasureObject.MEASURE_LINE:
             Parser.saveMeasureXml(mLocation);
             break;
           
@@ -1099,16 +982,6 @@ public class MeasuringActivity extends Activity
           break;
         }
         
-        case MeasureObject.MEASURE_LINE:
-        {
-          PointF Q1 = new PointF(object.kx1 * subLoc.width, object.ky1 * subLoc.height);
-          PointF Q2 = new PointF(object.kx2 * subLoc.width, object.ky2 * subLoc.height);
-          PointF P1 = getScreenCoordinates(Q1.x, Q1.y);
-          PointF P2 = getScreenCoordinates(Q2.x, Q2.y);
-          dist = lineDist(P1.x, P1.y, P2.x, P2.y, x, y);
-          break;
-        }
-        
         case MeasureObject.BEACON:
         {
           PointF Q = new PointF(object.kx1 * subLoc.width, object.ky1 * subLoc.height);
@@ -1136,18 +1009,22 @@ public class MeasuringActivity extends Activity
       showSelectedObjectDialog(true);
   }
   
-  private TextView _xLabel1   = null;
-  private TextView _yLabel1   = null;
-  private TextView _xLabel2   = null;
-  private TextView _yLabel2   = null;
-  private EditText _xEdit1    = null;
-  private EditText _yEdit1    = null;
-  private EditText _xEdit2    = null;
-  private EditText _yEdit2    = null;
-  private EditText _nameEdit  = null;
-  private EditText _beaconIdEdit = null;
-  private TextView _beaconIdLabel = null;
-  private boolean _existing   = false;
+  private EditText _xEdit             = null;
+  private EditText _yEdit             = null;
+  private TextView _nameLabel         = null;
+  private EditText _nameEdit          = null;
+  private TextView _beaconMajorLabel  = null;
+  private EditText _beaconMajorEdit   = null;
+  private TextView _beaconMinorLabel  = null;
+  private EditText _beaconMinorEdit   = null;
+  private TextView _beaconUuidLabel   = null;
+  private EditText _beaconUuidEdit    = null;
+  private Button   _deleteButton      = null;
+  private Button   _startButton       = null;
+  private Button   _cancelButton      = null;
+  private boolean  _existing          = false;
+  
+  private AlertDialog _alertDialog = null;
   
   private void showSelectedObjectDialog(boolean existing)
   {
@@ -1170,85 +1047,86 @@ public class MeasuringActivity extends Activity
     _existing = existing;
     
     LayoutInflater inflater = getLayoutInflater();
-    View view = inflater.inflate(R.layout.measuring_object_dialog, null);
-    _nameEdit = (EditText)view.findViewById(R.id.measuring_object_dialog_name);
-    _nameEdit.setText(mSelectedObject.name);
-    _nameEdit.setFocusable(!existing); _nameEdit.setCursorVisible(!existing);
-    _beaconIdEdit = (EditText)view.findViewById(R.id.measuring_object_dialog_beacon_id);
-    _beaconIdLabel = (TextView)view.findViewById(R.id.measuring_object_text_view_beacon_id);
+    View view         = inflater.inflate(R.layout.measuring_object_dialog, null);
+    _nameLabel        = (TextView)view.findViewById(R.id.measuring_object_dialog__name_label);
+    _nameEdit         = (EditText)view.findViewById(R.id.measuring_object_dialog__name_edit);
+    _beaconMajorLabel = (TextView)view.findViewById(R.id.measuring_object_dialog__beacon_major_label);
+    _beaconMajorEdit  = (EditText)view.findViewById(R.id.measuring_object_dialog__beacon_major_edit);
+    _beaconMinorLabel = (TextView)view.findViewById(R.id.measuring_object_dialog__beacon_minor_label);
+    _beaconMinorEdit  = (EditText)view.findViewById(R.id.measuring_object_dialog__beacon_minor_edit);
+    _beaconUuidLabel  = (TextView)view.findViewById(R.id.measuring_object_dialog__beacon_uuid_label);
+    _beaconUuidEdit   = (EditText)view.findViewById(R.id.measuring_object_dialog__beacon_uuid_edit);
+    _deleteButton     = (Button)view.findViewById(R.id.measuring_object_dialog__delete_button);
+    _startButton      = (Button)view.findViewById(R.id.measuring_object_dialog__start_button);
+    _cancelButton     = (Button)view.findViewById(R.id.measuring_object_dialog__cancel_button);
     
-    _beaconIdEdit.setFocusable(false); _beaconIdEdit.setCursorVisible(false);
-    _xLabel1 = (TextView)view.findViewById(R.id.measuring_object_text_view_x1);
-    _yLabel1 = (TextView)view.findViewById(R.id.measuring_object_text_view_y1);
-    _xLabel2 = (TextView)view.findViewById(R.id.measuring_object_text_view_x2);
-    _yLabel2 = (TextView)view.findViewById(R.id.measuring_object_text_view_y2);
-    _xEdit1  = (EditText)view.findViewById(R.id.measuring_object_dialog_x1);
-    _yEdit1  = (EditText)view.findViewById(R.id.measuring_object_dialog_y1);
-    _xEdit2  = (EditText)view.findViewById(R.id.measuring_object_dialog_x2);
-    _yEdit2  = (EditText)view.findViewById(R.id.measuring_object_dialog_y2);
-    _xEdit1.setText(String.format(Locale.ENGLISH, "%.2f", mSelectedObject.kx1 * subLoc.width));
-    _yEdit1.setText(String.format(Locale.ENGLISH, "%.2f", mSelectedObject.ky1 * subLoc.height));
-    _xEdit2.setText(String.format(Locale.ENGLISH, "%.2f", mSelectedObject.kx2 * subLoc.width));
-    _yEdit2.setText(String.format(Locale.ENGLISH, "%.2f", mSelectedObject.ky2 * subLoc.height));
-    _xEdit1.setFocusable(!existing); _xEdit1.setCursorVisible(!existing);
-    _yEdit1.setFocusable(!existing); _yEdit1.setCursorVisible(!existing);
-    _xEdit2.setFocusable(!existing); _xEdit2.setCursorVisible(!existing);
-    _yEdit2.setFocusable(!existing); _yEdit2.setCursorVisible(!existing);
+    _nameLabel.setVisibility(existing ? View.GONE : View.VISIBLE);
+    _nameEdit.setVisibility (existing ? View.GONE : View.VISIBLE);
+    
+    if (!existing)
+      _nameEdit.setText(suggestObjectName(mSelectedObject.type));
+    
+    _beaconMajorEdit.setFocusable(false); _beaconMajorEdit.setCursorVisible(false);
+    _beaconMinorEdit.setFocusable(false); _beaconMinorEdit.setCursorVisible(false);
+    _beaconUuidEdit.setFocusable(false);  _beaconUuidEdit.setCursorVisible(false);
+    
+    _cancelButton.setVisibility(View.GONE);
+    _deleteButton.setVisibility(View.GONE);
+    
+    _xEdit  = (EditText)view.findViewById(R.id.measuring_object_dialog__x_edit);
+    _yEdit  = (EditText)view.findViewById(R.id.measuring_object_dialog__y_edit);
+    _xEdit.setFocusable(!existing); _xEdit.setCursorVisible(!existing);
+    _yEdit.setFocusable(!existing); _yEdit.setCursorVisible(!existing);
+    _xEdit.setText(String.format(Locale.ENGLISH, "%.2f", mSelectedObject.kx1 * subLoc.width));
+    _yEdit.setText(String.format(Locale.ENGLISH, "%.2f", mSelectedObject.ky1 * subLoc.height));
     
     String title = getString(R.string.set_measuring_object);
     switch (mSelectedObject.type)
     {
       case MeasureObject.MEASURE_POINT:
-        title = getString(R.string.set_measuring_point);
-        _xLabel2.setVisibility(View.GONE);
-        _yLabel2.setVisibility(View.GONE);
-        _xEdit2.setVisibility(View.GONE);
-        _yEdit2.setVisibility(View.GONE);
-        _beaconIdLabel.setVisibility(View.GONE);
-        _beaconIdEdit.setVisibility(View.GONE);
+        title = existing ? String.format(Locale.ENGLISH, "Point  '%s'", mSelectedObject.name) : "New measuring point:";
+        _beaconMajorLabel.setVisibility(View.GONE);
+        _beaconMajorEdit.setVisibility(View.GONE);
+        _beaconMinorLabel.setVisibility(View.GONE);
+        _beaconMinorEdit.setVisibility(View.GONE);
+        _beaconUuidLabel.setVisibility(View.GONE);
+        _beaconUuidEdit.setVisibility(View.GONE);
         break;
         
-      case MeasureObject.MEASURE_LINE:
-        title = getString(R.string.set_measuring_line);
-        _xLabel2.setVisibility(View.VISIBLE);
-        _yLabel2.setVisibility(View.VISIBLE);
-        _xEdit2.setVisibility(View.VISIBLE);
-        _yEdit2.setVisibility(View.VISIBLE);
-        _beaconIdLabel.setVisibility(View.GONE);
-        _beaconIdEdit.setVisibility(View.GONE);
-        break;
-      
       case MeasureObject.BEACON:
-        title = getString(R.string.set_measuring_beacon);
-        _xLabel2.setVisibility(View.GONE);
-        _yLabel2.setVisibility(View.GONE);
-        _xEdit2.setVisibility(View.GONE);
-        _yEdit2.setVisibility(View.GONE);
+        title = existing ? String.format(Locale.ENGLISH, "Beacon  '%s'", mSelectedObject.name) : "New beacon:";
         if (mSelectedObject.uuid.length() == 0)
         {
-          _beaconIdEdit.setVisibility(View.GONE);
-          _beaconIdLabel.setVisibility(View.GONE);
+          _beaconMajorLabel.setVisibility(View.GONE);
+          _beaconMajorEdit.setVisibility(View.GONE);
+          _beaconMinorLabel.setVisibility(View.GONE);
+          _beaconMinorEdit.setVisibility(View.GONE);
+          _beaconUuidLabel.setVisibility(View.GONE);
+          _beaconUuidEdit.setVisibility(View.GONE);
         }
         else
         {
-          _beaconIdEdit.setVisibility(View.VISIBLE);
-          _beaconIdLabel.setVisibility(View.VISIBLE);
-          _beaconIdEdit.setText(String.format(Locale.ENGLISH, "(%05d,%05d,%s)",
-                              mSelectedObject.beaconMajor,
-                              mSelectedObject.beaconMinor,
-                              mSelectedObject.uuid));
+          _beaconMajorLabel.setVisibility(View.VISIBLE);
+          _beaconMajorEdit.setVisibility(View.VISIBLE);
+          _beaconMinorLabel.setVisibility(View.VISIBLE);
+          _beaconMinorEdit.setVisibility(View.VISIBLE);
+          _beaconUuidLabel.setVisibility(View.VISIBLE);
+          _beaconUuidEdit.setVisibility(View.VISIBLE);
+          _beaconMajorEdit.setText(Integer.toString(mSelectedObject.beaconMajor));
+          _beaconMinorEdit.setText(Integer.toString(mSelectedObject.beaconMinor));
+          _beaconUuidEdit.setText(mSelectedObject.uuid);
         }
         break;
     }
     
-    AlertDialog.Builder alertBuilder = new AlertDialog.Builder(mContext);
-    alertBuilder.setView(view);
-    alertBuilder.setTitle(title);
-    alertBuilder.setPositiveButton(getString(R.string.ok_button),
-      new DialogInterface.OnClickListener()
+    _startButton.setOnClickListener(
+      new OnClickListener()
       {
-        @Override public void onClick(DialogInterface dlg, int id)
+        @Override public void onClick(View v)
         {
+          if (_alertDialog == null)
+            return;
+          
           if (mLocation == null)
             return;
           
@@ -1262,15 +1140,11 @@ public class MeasuringActivity extends Activity
           
           Log.d(TAG, "Measuring dialog accepted");
           float x1, y1, x2, y2;
-          try { x1 = Float.parseFloat(_xEdit1.getText().toString()); } catch (Throwable e) { x1 = 0.0f; }
-          try { y1 = Float.parseFloat(_yEdit1.getText().toString()); } catch (Throwable e) { y1 = 0.0f; }
-          try { x2 = Float.parseFloat(_xEdit2.getText().toString()); } catch (Throwable e) { x2 = 0.0f; }
-          try { y2 = Float.parseFloat(_yEdit2.getText().toString()); } catch (Throwable e) { y2 = 0.0f; }
+          try { x1 = Float.parseFloat(_xEdit.getText().toString()); } catch (Throwable e) { x1 = 0.0f; }
+          try { y1 = Float.parseFloat(_yEdit.getText().toString()); } catch (Throwable e) { y1 = 0.0f; }
           mSelectedObject.name = _nameEdit.getText().toString();
           mSelectedObject.kx1 = x1 / subLoc.width;
           mSelectedObject.ky1 = y1 / subLoc.height;
-          mSelectedObject.kx2 = x2 / subLoc.width;
-          mSelectedObject.ky2 = y2 / subLoc.height;
           
           if (subLoc != null && !_existing)
           {
@@ -1285,28 +1159,38 @@ public class MeasuringActivity extends Activity
           switch (mSelectedObject.type)
           {
             case MeasureObject.MEASURE_POINT: mState = STATE_POINT_READY;  break;
-            case MeasureObject.MEASURE_LINE:  mState = STATE_LINE_READY;   break;
             case MeasureObject.BEACON:        mState = STATE_BEACON_READY; break;
           }
           startMeasuring();
+          _alertDialog.cancel();
         }
       });
     
-    alertBuilder.setNegativeButton(getString(R.string.cancel_button),
-      new DialogInterface.OnClickListener()
-      {
-        @Override public void onClick(DialogInterface dlg, int id)
+    if (!existing)
+    {
+      _cancelButton.setVisibility(View.VISIBLE);
+      _cancelButton.setOnClickListener(
+        new OnClickListener()
         {
-          Log.d(TAG, "Measuring dialog rejected");
-        }
-      });
+          @Override public void onClick(View v)
+          {
+            if (_alertDialog != null)
+              _alertDialog.cancel();
+          }
+        });
+    }
     
     if (existing)
-      alertBuilder.setNeutralButton(getString(R.string.delete_button),
-        new DialogInterface.OnClickListener()
+    {
+      _deleteButton.setVisibility(View.VISIBLE);
+      _deleteButton.setOnClickListener(
+        new OnClickListener()
         {
-          @Override public void onClick(DialogInterface dlg, int id)
+          @Override public void onClick(View v)
           {
+            if (_alertDialog == null)
+              return;
+            
             if (mSelectedObject == null)
               return;
             
@@ -1331,7 +1215,6 @@ public class MeasuringActivity extends Activity
               switch (type)
               {
                 case MeasureObject.MEASURE_POINT:
-                case MeasureObject.MEASURE_LINE:
                   Parser.saveMeasureXml(mLocation);
                   break;
                 
@@ -1343,12 +1226,18 @@ public class MeasuringActivity extends Activity
             mSelectedIndex  = -1;
             mSelectedObject = null;
             mState = STATE_NONE;
+            _alertDialog.cancel();
           }
         });
+    }
     
-    AlertDialog alertDialog = alertBuilder.create();
-    alertDialog.setCanceledOnTouchOutside(false);
-    alertDialog.show();
+    AlertDialog.Builder alertBuilder = new AlertDialog.Builder(mContext);
+    alertBuilder.setView(view);
+    alertBuilder.setTitle(title);
+    
+    _alertDialog = alertBuilder.create();
+    _alertDialog.setCanceledOnTouchOutside(false);
+    _alertDialog.show();
   }
   
   private void addScanResult(WScanResult result)
@@ -1537,12 +1426,6 @@ public class MeasuringActivity extends Activity
         Toast.makeText(mContext, text, Toast.LENGTH_LONG).show();
         break;
       
-      case STATE_LINE_READY:
-        mState = STATE_LINE_RUN;
-        text = "Follow along the line uniformly while measuring";
-        Toast.makeText(mContext, text, Toast.LENGTH_LONG).show();
-        break;
-      
       case STATE_BEACON_READY:
         mState = STATE_BEACON_RUN;
         text = "Keep beacon close to the device while measuring";
@@ -1663,97 +1546,6 @@ public class MeasuringActivity extends Activity
         break;
       }
       
-      case STATE_LINE_RUN:
-      {
-        if (quality == 0)
-        {
-          cancelObject();
-          return;
-        }
-        for(Map.Entry<String, List<WScanResult>> entry : mScanMap.entrySet())
-        {
-          List<WScanResult> scanResults = entry.getValue();
-          if (scanResults.isEmpty())
-            continue;
-          
-          String value    = "";
-          String bssid    = entry.getKey();
-          String ssid     = scanResults.get(0).SSID;
-          int    type     = scanResults.get(0).type;
-          int    freq     = scanResults.get(0).frequency;
-          int    power    = scanResults.get(0).power;
-          int    battery  = scanResults.get(0).battery;
-          
-          for(int i = 0; i < scanResults.size(); ++i)
-          {
-            WScanResult result = scanResults.get(i);
-            if (result.time < mMeasuringTime)
-              continue;
-            
-            if (value.length() > 0)
-              value += " ";
-            value += String.format(Locale.ENGLISH, "%d:%d",
-                                   Math.abs(result.level),
-                                   result.time - mMeasuringTime);
-          }
-          
-          switch (type)
-          {
-            case WScanResult.TYPE_WIFI:
-              message = String.format(Locale.ENGLISH, "<entry type=\"WIFI\" bssid=\"%s\" frequency=\"%d\" value=\"%s\"/>",
-                                      bssid, freq, value);
-              break;
-            
-            case WScanResult.TYPE_BLE:
-              message = String.format(Locale.ENGLISH, "<entry type=\"BLE\" bssid=\"%s\" value=\"%s\"/>",
-                                      bssid, value);
-              break;
-            
-            case WScanResult.TYPE_BEACON:
-              message = String.format(Locale.ENGLISH, "<entry type=\"BEACON\" bssid=\"%s\" power=\"%d\" battery=\"%d\" value=\"%s\"/>",
-                                      bssid, power, battery, value);
-              break;
-          }
-          
-          mSelectedObject.entries.add(message);
-        }
-        
-        for(int i = 0; i < mSensorResults.size(); ++i)
-        {
-          SensorResult result = mSensorResults.get(i);
-          if (result.time < mMeasuringTime)
-            continue;
-          
-          switch (result.type)
-          {
-            case SensorResult.TYPE_ACCELEROMETER:
-              message = String.format(Locale.ENGLISH, "<entry type=\"ACCEL\" value=\"(%.4f,%.4f,%.4f):%d\"/>",
-                                      result.values[0], result.values[1], result.values[2],
-                                      result.time - mMeasuringTime);
-              mSelectedObject.entries.add(message);
-              break;
-            
-            case SensorResult.TYPE_MAGNETOMETER:
-              message = String.format(Locale.ENGLISH, "<entry type=\"MAGNET\" value=\"(%.4f,%.4f,%.4f):%d\"/>",
-                                      result.values[0], result.values[1], result.values[2],
-                                      result.time - mMeasuringTime);
-              mSelectedObject.entries.add(message);
-              break;
-            
-            case SensorResult.TYPE_GYROSCOPE:
-              message = String.format(Locale.ENGLISH, "<entry type=\"GYRO\" value=\"(%.4f,%.4f,%.4f):%d\"/>",
-                                      result.values[0], result.values[1], result.values[2],
-                                      result.time - mMeasuringTime);
-              mSelectedObject.entries.add(message);
-              break;
-          }
-        }
-        mSelectedObject.quality  = quality;
-        mSelectedObject.duration = duration;
-        Parser.saveMeasureXml(mLocation);
-        break;
-      }
-      
       case STATE_BEACON_RUN:
       {
         String beaconId = getCloseBeacon();
@@ -1843,7 +1635,6 @@ public class MeasuringActivity extends Activity
         {
           mMeasuringLayout.setVisibility(View.VISIBLE);
           mMeasuringPrompt.setVisibility(View.VISIBLE);
-          mMeasuringOkButton.setVisibility(View.GONE);
           mMeasuringStartButton.setVisibility(View.VISIBLE);
           mMeasuringStopButton.setVisibility(View.GONE);
           mMeasuringPrompt.setText(String.format(Locale.ENGLISH, "Point '%s': start",
@@ -1880,7 +1671,6 @@ public class MeasuringActivity extends Activity
           nsecs = (int)((timeNow - mMeasuringTime) / 1000);
           mMeasuringLayout.setVisibility(View.VISIBLE);
           mMeasuringPrompt.setVisibility(View.VISIBLE);
-          mMeasuringOkButton.setVisibility(View.GONE);
           mMeasuringStartButton.setVisibility(View.GONE);
           mMeasuringStopButton.setVisibility(View.VISIBLE);
           mMeasuringPrompt.setText(String.format(Locale.ENGLISH, "Point '%s': %d sec\n(W:%.1f, B:%.1f, quality %d%%)",
@@ -1893,72 +1683,6 @@ public class MeasuringActivity extends Activity
         }
         break;
       
-      case STATE_LINE_BEGIN:
-        mPrevFloorButton.setVisibility(View.INVISIBLE);
-        mNextFloorButton.setVisibility(View.INVISIBLE);
-        mMeasuringLayout.setVisibility(View.VISIBLE);
-        mMeasuringPrompt.setVisibility(View.VISIBLE);
-        mMeasuringOkButton.setVisibility(View.VISIBLE);
-        mMeasuringStartButton.setVisibility(View.GONE);
-        mMeasuringStopButton.setVisibility(View.GONE);
-        mMeasuringPrompt.setText(String.format(Locale.ENGLISH, "Set line end"));
-        break;
-      
-      case STATE_LINE_READY:
-        mPrevFloorButton.setVisibility(View.INVISIBLE);
-        mNextFloorButton.setVisibility(View.INVISIBLE);
-        if (mSelectedObject != null)
-        {
-          mMeasuringLayout.setVisibility(View.VISIBLE);
-          mMeasuringPrompt.setVisibility(View.VISIBLE);
-          mMeasuringOkButton.setVisibility(View.GONE);
-          mMeasuringStartButton.setVisibility(View.VISIBLE);
-          mMeasuringStopButton.setVisibility(View.GONE);
-          mMeasuringPrompt.setText(String.format(Locale.ENGLISH, "Line '%s': start",
-                                                 mSelectedObject.name));
-          mSensorResults.clear();
-          mScanMap.clear();
-        }
-        break;
-      
-      case STATE_LINE_RUN:
-        mPrevFloorButton.setVisibility(View.INVISIBLE);
-        mNextFloorButton.setVisibility(View.INVISIBLE);
-        if (mSelectedObject != null)
-        {
-          List<WScanResult> scanResults = NavigineApp.Navigation.getScanResults(mScanTime);
-          List<SensorResult> sensorResults = NavigineApp.Navigation.getSensorResults(mScanTime);
-          mScanTime = timeNow + 1;
-          
-          for(int i = 0; i < scanResults.size(); ++i)
-          {
-            WScanResult result = scanResults.get(i);
-            if (result.time <= timeNow)
-              addScanResult(result);
-          }
-          
-          for(int i = 0; i < sensorResults.size(); ++i)
-          {
-            SensorResult result = sensorResults.get(i);
-            if (result.time <= timeNow)
-              addSensorResult(result);
-          }
-          
-          mSelectedObject.quality = getMeasuringQuality();
-          nsecs = (int)((timeNow - mMeasuringTime) / 1000);
-          mMeasuringLayout.setVisibility(View.VISIBLE);
-          mMeasuringPrompt.setVisibility(View.VISIBLE);
-          mMeasuringOkButton.setVisibility(View.GONE);
-          mMeasuringStartButton.setVisibility(View.GONE);
-          mMeasuringStopButton.setVisibility(View.VISIBLE);
-          mMeasuringPrompt.setText(String.format(Locale.ENGLISH, "Line '%s': %d sec\n(W:%.1f, B:%.1f, quality %d%%)",
-                                                 mSelectedObject.name, nsecs,
-                                                 (float)getEntryCount(WScanResult.TYPE_WIFI, timeNow - 5000) / 5,
-                                                 (float)getEntryCount(WScanResult.TYPE_BEACON, timeNow - 5000) / 5,
-                                                 mSelectedObject.quality));
-        }
-        break;
-      
       case STATE_BEACON_READY:
         mPrevFloorButton.setVisibility(View.INVISIBLE);
         mNextFloorButton.setVisibility(View.INVISIBLE);
@@ -1966,7 +1690,6 @@ public class MeasuringActivity extends Activity
         {
           mMeasuringLayout.setVisibility(View.VISIBLE);
           mMeasuringPrompt.setVisibility(View.VISIBLE);
-          mMeasuringOkButton.setVisibility(View.GONE);
           mMeasuringStartButton.setVisibility(View.VISIBLE);
           mMeasuringStopButton.setVisibility(View.GONE);
           mMeasuringPrompt.setText(String.format(Locale.ENGLISH, "Beacon '%s': start",
@@ -1994,7 +1717,6 @@ public class MeasuringActivity extends Activity
           nsecs = (int)((timeNow - mMeasuringTime) / 1000);
           mMeasuringLayout.setVisibility(View.VISIBLE);
           mMeasuringPrompt.setVisibility(View.VISIBLE);
-          mMeasuringOkButton.setVisibility(View.GONE);
           mMeasuringStartButton.setVisibility(View.GONE);
           mMeasuringStopButton.setVisibility(View.VISIBLE);
           mMeasuringPrompt.setText(String.format(Locale.ENGLISH, "Beacon '%s': %d sec",
@@ -2005,30 +1727,6 @@ public class MeasuringActivity extends Activity
         }
         break;
       
-    }
-  }
-  
-  private void displayMeasuringState(Canvas canvas)
-  {
-    if (NavigineApp.Navigation == null)
-      return;
-    
-    if (mLocation == null || mCurrentSubLocationIndex < 0)
-      return;
-    
-    SubLocation subLoc = mLocation.subLocations.get(mCurrentSubLocationIndex);
-    
-    if (mState == STATE_LINE_BEGIN && mSelectedObject != null)
-    {
-      Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
-      paint.setStyle(Paint.Style.STROKE);
-      paint.setColor(Color.RED);
-      paint.setStrokeWidth(0);
-      PointF T = new PointF(mSelectedObject.kx1 * subLoc.width, mSelectedObject.ky1 * subLoc.height);
-      PointF P = getSvgCoordinates(T.x, T.y);
-      PointF Q = getAbsCoordinates(mViewWidth / 2, mViewHeight / 2);
-      PointF R = getSvgCoordinates(Q.x, Q.y);
-      canvas.drawLine(R.x, R.y, P.x, P.y, paint);
     }
   }
   
@@ -2055,6 +1753,10 @@ public class MeasuringActivity extends Activity
           mDrawScale = false;
         }
         
+        mTargetView.setVisibility(View.VISIBLE);
+        mAddPointButton.setVisibility(View.VISIBLE);
+        mAddBeaconButton.setVisibility(View.VISIBLE);
+        
         // Handling long touch gesture
         if (mTouchTimeout > 0 && timeNow >= mTouchTimeout)
         {
@@ -2068,7 +1770,6 @@ public class MeasuringActivity extends Activity
         Canvas canvas = pic.beginRecording(mMapWidth, mMapHeight);
         drawGrid(canvas);
         drawMeasureObjects(canvas);    // Drawing measuring objects
-        displayMeasuringState(canvas); // Display measuring state
         pic.endRecording();
         
         mImageView.invalidate();

@@ -28,7 +28,7 @@ import java.util.*;
 public class NavigationActivity extends Activity
 {
   // Constants
-  private static final String TAG = "Navigine.NavigationActivity";
+  private static final String TAG = "NAVIGINE.NavigationActivity";
   private static final int UPDATE_TIMEOUT = 100;
   
   // This context
@@ -80,9 +80,7 @@ public class NavigationActivity extends Activity
   private long    mAdjustTimeout = 7000;
   
   // Config parameters
-  private float   mMinX = 0.0f;
   private float   mMaxX = 0.0f;
-  private float   mMinY = 0.0f;
   private float   mMaxY = 0.0f;
   private float   mMinRatio = 0.1f;
   private float   mMaxRatio = 10.0f;
@@ -120,6 +118,7 @@ public class NavigationActivity extends Activity
     mPrevFloorButton.setVisibility(View.INVISIBLE);
     mNextFloorButton.setVisibility(View.INVISIBLE);
     
+    mImageView.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
     mImageView.setBackgroundColor(Color.argb(255, 235, 235, 235));
     mScaleView.setImageBitmap(Bitmap.createBitmap(100, 30, Bitmap.Config.ARGB_8888));
     mIconsView.setImageBitmap(Bitmap.createBitmap(100, 30, Bitmap.Config.ARGB_8888));
@@ -202,63 +201,6 @@ public class NavigationActivity extends Activity
     super.onPause();    
     if (!mImuMode)
       NavigineApp.setBackgroundMode();
-  }
-  
-  @Override public boolean onCreateOptionsMenu(Menu menu)
-  {
-    MenuInflater inflater = getMenuInflater();
-    inflater.inflate(R.menu.navigation_menu, menu);
-    menu.findItem(R.id.navigation_menu_tracking_on).setVisible(!mAdjustMode);
-    menu.findItem(R.id.navigation_menu_tracking_off).setVisible(mAdjustMode);
-    menu.findItem(R.id.navigation_menu_disconnect_imu).setVisible(mImuMode);
-    return true;
-  }
-  
-  @Override public boolean onPrepareOptionsMenu(Menu menu)
-  {
-    menu.findItem(R.id.navigation_menu_tracking_on).setVisible(!mAdjustMode);
-    menu.findItem(R.id.navigation_menu_tracking_off).setVisible(mAdjustMode);
-    menu.findItem(R.id.navigation_menu_disconnect_imu).setVisible(mImuMode);
-    return true;
-  }
-  
-  @Override public boolean onOptionsItemSelected(MenuItem item)
-  {
-    switch (item.getItemId())
-    {
-      case R.id.navigation_menu_tracking_on:
-        startTracking();
-        return true;
-      
-      case R.id.navigation_menu_tracking_off:
-        stopTracking();
-        return true;
-      
-      case R.id.navigation_menu_disconnect_imu:
-        disconnectFromIMU();
-        return true;
-      
-      default:
-        return super.onOptionsItemSelected(item);
-    }
-  }
-  
-  private void startTracking()
-  {
-    mAdjustMode = true;
-    mAdjustTime = 0;
-    SharedPreferences.Editor editor = NavigineApp.Settings.edit();
-    editor.putBoolean("adjust_mode", true);
-    editor.commit();
-  }
-  
-  private void stopTracking()
-  {
-    mAdjustMode = false;
-    mAdjustTime = 0;
-    SharedPreferences.Editor editor = NavigineApp.Settings.edit();
-    editor.putBoolean("adjust_mode", false);
-    editor.commit();
   }
   
   private boolean tryLoadMap()
@@ -365,7 +307,7 @@ public class NavigationActivity extends Activity
     // Updating image view size parameters
     float pixLength = 0.0f;
     if (mMatrix != null && mMapWidth > 0 && mRatio > 0)
-      pixLength = (mMaxX - mMinX) / mMapWidth / mRatio; // Pixel length in meters
+      pixLength = mMaxX / mMapWidth / mRatio; // Pixel length in meters
     
     // Determine absolute coordinates of the screen center
     PointF P = null;
@@ -390,11 +332,10 @@ public class NavigationActivity extends Activity
     mMatrix      = new Matrix();
     mMaxX        = subLoc.width;
     mMaxY        = subLoc.height;
-    mMinX        = 0.0f;
-    mMinY        = 0.0f;
     mRatio       = 1.0f;
-    mMinRatio    = subLoc.width / mMapWidth / 1.0f;
-    mMaxRatio    = subLoc.width / mMapWidth / 0.01f;
+    mMinRatio    = Math.min((float)mViewWidth / mMapWidth, (float)mViewHeight / mMapHeight);
+    mMaxRatio    = Math.min((float)mViewWidth / mMapWidth * subLoc.width / 2, (float)mViewHeight / mMapHeight * subLoc.height / 2);
+    mMaxRatio    = Math.max(mMaxRatio, mMinRatio);
     mAdjustAngle = 0.0f;
     mAdjustTime  = 0;
     mDrawScale   = true;
@@ -411,7 +352,7 @@ public class NavigationActivity extends Activity
     else
     {
       doScroll(mViewWidth / 2 - mMapWidth / 2, mViewHeight / 2 - mMapHeight / 2);
-      doZoom(Math.min((float)mViewWidth / mMapWidth, (float)mViewHeight / mMapHeight));
+      doZoom(mMinRatio);
     }
     
     mCurrentSubLocationIndex = index;
@@ -485,21 +426,18 @@ public class NavigationActivity extends Activity
   // Convert absolute coordinates (x,y) to SVG coordinates
   private PointF getSvgCoordinates(float x, float y)
   {
-    return new PointF((x - mMinX) / (mMaxX - mMinX) * mMapWidth,
-                      (mMaxY - y) / (mMaxY - mMinY) * mMapHeight);
+    return new PointF(x / mMaxX * mMapWidth, (mMaxY - y) / mMaxY * mMapHeight);
   }
   
   private float getSvgLength(float d)
   {
-    return Math.max(d * mMapWidth / (mMaxX - mMinX),
-                    d * mMapHeight / (mMaxY - mMinY));
+    return Math.max(d * mMapWidth / mMaxX, d * mMapHeight / mMaxY);
   }
   
   // Convert absolute coordinates (x,y) to screen coordinates
   private PointF getScreenCoordinates(float x, float y)
   {
-    float[] pts = {(x - mMinX) / (mMaxX - mMinX) * mMapWidth,
-                   (mMaxY - y) / (mMaxY - mMinY) * mMapHeight};
+    float[] pts = {x / mMaxX * mMapWidth, (mMaxY - y) / mMaxY * mMapHeight};
     mMatrix.mapPoints(pts);
     return new PointF(pts[0], pts[1]);
   }
@@ -512,8 +450,8 @@ public class NavigationActivity extends Activity
     
     float[] pts = {x, y};
     invMatrix.mapPoints(pts);
-    return new PointF(pts[0] / mMapWidth  * (mMaxX - mMinX) + mMinX,
-                     -pts[1] / mMapHeight * (mMaxY - mMinY) + mMaxY);
+    return new PointF( pts[0] / mMapWidth  * mMaxX,
+                      -pts[1] / mMapHeight * mMaxY + mMaxY);
   }
   
   private void doTouch(MotionEvent event)
@@ -755,7 +693,7 @@ public class NavigationActivity extends Activity
     Canvas canvas = new Canvas(bitmap);
     
     // Calculate scale meter-length
-    float length = 70.0f / mRatio / mMapWidth * (mMaxX - mMinX);
+    float length = 70.0f / mRatio / mMapWidth * mMaxX;
     String text = "";
     
     if (length < 0.1f)
@@ -834,6 +772,7 @@ public class NavigationActivity extends Activity
   }
   
   private PointF _targetPoint = null;
+  private AlertDialog _alertDialog = null;
   private void showTargetPopupDialog(PointF P)
   {
     // Check if location is loaded
@@ -844,57 +783,100 @@ public class NavigationActivity extends Activity
     
     LayoutInflater inflater = getLayoutInflater();
     View view = inflater.inflate(R.layout.target_point_dialog, null);
-    String title = String.format(Locale.ENGLISH, "Target point (%.2f, %.2f)", P.x, P.y);
+    String title = String.format(Locale.ENGLISH, "Target point (%.1f, %.1f)", P.x, P.y);
     TextView textView = (TextView)view.findViewById(R.id.target_point_dialog_description);
-    textView.setText("Make route to point?");
+    textView.setText("Select your action:");
+    
+    Button connectImuButton    = (Button)view.findViewById(R.id.target_point_dialog__connect_imu_button);
+    Button disconnectImuButton = (Button)view.findViewById(R.id.target_point_dialog__disconnect_imu_button);
+    Button makeRouteButton     = (Button)view.findViewById(R.id.target_point_dialog__make_route_button);
+    Button cancelRouteButton   = (Button)view.findViewById(R.id.target_point_dialog__cancel_route_button);
+    
+    connectImuButton.setVisibility(View.GONE);
+    disconnectImuButton.setVisibility(View.GONE);
+    makeRouteButton.setVisibility(View.GONE);
+    cancelRouteButton.setVisibility(View.GONE);
     
     AlertDialog.Builder alertBuilder = new AlertDialog.Builder(mContext);
     alertBuilder.setView(view);
     alertBuilder.setTitle(title);
     
-    alertBuilder.setPositiveButton(getString(R.string.make_route),
-      new DialogInterface.OnClickListener()
+    makeRouteButton.setVisibility(View.VISIBLE);
+    makeRouteButton.setOnClickListener(
+      new OnClickListener()
       {
-        @Override public void onClick(DialogInterface dlg, int id)
+        @Override public void onClick(View v)
         {
-          // Get the current sub-location
-          SubLocation subLoc = mLocation.subLocations.get(mCurrentSubLocationIndex);
-          if (NavigineApp.Navigation != null && subLoc != null)
+          if (_alertDialog != null)
           {
-            mTargetPoint = new LocationPoint(subLoc.id, _targetPoint.x, _targetPoint.y);
-            NavigineApp.Navigation.setTarget(mTargetPoint);
-          }
-          dlg.cancel();
-        }
-      });
-    
-    alertBuilder.setNegativeButton(getString(R.string.cancel_button),
-      new DialogInterface.OnClickListener()
-      {
-        @Override public void onClick(DialogInterface dlg, int id)
-        {
-          dlg.cancel();
-        }
-      });
-    
-    if (NavigineApp.IMU.getConnectionState() == IMU_Thread.STATE_IDLE)
-    {
-      alertBuilder.setNeutralButton("Connect IMU",
-        new DialogInterface.OnClickListener()
-        {
-          @Override public void onClick(DialogInterface dlg, int id)
-          {
+            // Get the current sub-location
             SubLocation subLoc = mLocation.subLocations.get(mCurrentSubLocationIndex);
-            if (subLoc != null)
-              connectToIMU(subLoc.id, _targetPoint.x, _targetPoint.y);
-            dlg.cancel();
+            if (NavigineApp.Navigation != null && subLoc != null)
+            {
+              mTargetPoint = new LocationPoint(subLoc.id, _targetPoint.x, _targetPoint.y);
+              NavigineApp.Navigation.setTarget(mTargetPoint);
+            }
+            _alertDialog.cancel();
+          }
+        }
+      });
+    
+    if (mDeviceInfo != null && mDeviceInfo.path != null && mDeviceInfo.path.length > 1)
+    {
+      cancelRouteButton.setVisibility(View.VISIBLE);
+      cancelRouteButton.setOnClickListener(
+        new OnClickListener()
+        {
+          @Override public void onClick(View v)
+          {
+            if (_alertDialog != null)
+            {
+              mDeviceInfo.path = null;
+              NavigineApp.Navigation.cancelTarget();
+              _alertDialog.cancel();
+            }
           }
         });
     }
     
-    AlertDialog alertDialog = alertBuilder.create();
-    alertDialog.setCanceledOnTouchOutside(false);
-    alertDialog.show();
+    if (NavigineApp.IMU.getConnectionState() == IMU_Thread.STATE_IDLE)
+    {
+      connectImuButton.setVisibility(View.VISIBLE);
+      connectImuButton.setOnClickListener(
+        new OnClickListener()
+        {
+          @Override public void onClick(View v)
+          {
+            if (_alertDialog != null)
+            {
+              SubLocation subLoc = mLocation.subLocations.get(mCurrentSubLocationIndex);
+              if (subLoc != null)
+                connectToIMU(subLoc.id, _targetPoint.x, _targetPoint.y);
+              _alertDialog.cancel();
+            }
+          }
+        });
+    }
+    else
+    {
+      disconnectImuButton.setVisibility(View.VISIBLE);
+      disconnectImuButton.setOnClickListener(
+        new OnClickListener()
+        {
+          @Override public void onClick(View v)
+          {
+            if (_alertDialog != null)
+            {
+              disconnectFromIMU();
+              _alertDialog.cancel();
+            }
+          }
+        });
+    }
+    
+    _alertDialog = alertBuilder.create();
+    _alertDialog.setCanceledOnTouchOutside(false);
+    _alertDialog.show();
   }
   
   private void connectToIMU(int subLocId, float x0, float y0)

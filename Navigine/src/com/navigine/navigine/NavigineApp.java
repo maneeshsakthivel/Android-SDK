@@ -17,7 +17,7 @@ import java.util.*;
 
 public class NavigineApp extends Application
 {
-  public static final String      TAG               = "NavigineApp";
+  public static final String      TAG               = "NAVIGINE.APP";
   public static final String      DEFAULT_SERVER    = "https://api.navigine.com";
   public static final String      DEFAULT_USER_HASH = "0000-0000-0000-0000";
   
@@ -66,7 +66,7 @@ public class NavigineApp extends Application
       AppContext = appContext;
       Settings   = AppContext.getSharedPreferences("NavigineSettings", 0);
       Navigation = new NavigationThread(Settings.getString("user_hash", ""), AppContext);
-      IMU = new IMU_Thread();    
+      IMU = new IMU_Thread();
     }
     catch (Throwable e)
     {

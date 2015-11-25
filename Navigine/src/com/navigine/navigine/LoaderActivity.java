@@ -27,7 +27,7 @@ import java.util.*;
 public class LoaderActivity extends Activity
 {
   // Constants
-  public static final String TAG = "Navigine.LoaderActivity";
+  public static final String TAG = "NAVIGINE.LoaderActivity";
   public static final int LOADER_TIMEOUT = 30000;
   
   // This context
@@ -205,11 +205,7 @@ public class LoaderActivity extends Activity
     mStatusLabel = (TextView)findViewById(R.id.content_status_label);
     mStatusLabel.setVisibility(View.VISIBLE);
     
-    String userHash = NavigineApp.Settings.getString("user_hash", "");
-    if (userHash.length() == 0)
-      showUserHashDialog();
-    else
-      refreshMapList();
+    refreshMapList();
   }
   
   @Override public void onDestroy()
@@ -242,106 +238,6 @@ public class LoaderActivity extends Activity
     
     mTimerTask.cancel();
     mTimerTask = null;
-  }
-  
-  @Override public boolean onCreateOptionsMenu(Menu menu)
-  {
-    Log.d(TAG, "Create menu options");
-    MenuInflater inflater = getMenuInflater();
-    inflater.inflate(R.menu.loader_menu, menu);
-    menu.findItem(R.id.loader_menu_refresh_map_list).setVisible(mLoader < 0);   
-    return true;
-  }
-  
-  @Override public boolean onPrepareOptionsMenu(Menu menu)
-  {
-    Log.d(TAG, "Prepare menu options");
-    menu.findItem(R.id.loader_menu_refresh_map_list).setVisible(mLoader < 0);   
-    return true;
-  }
-  
-  @Override public boolean onOptionsItemSelected(MenuItem item)
-  {
-    switch (item.getItemId())
-    {
-      case R.id.loader_menu_set_user_id:
-      {
-        showUserHashDialog();
-        return true;
-      }
-      
-      case R.id.loader_menu_refresh_map_list:
-      {
-        refreshMapList();
-        return true;
-      }
-      
-      default:
-        return super.onOptionsItemSelected(item);
-    }
-  }
-  
-  private EditText _userEdit = null;
-  
-  private void showUserHashDialog()
-  {
-    String userHash = NavigineApp.Settings.getString("user_hash", "");
-    
-    LayoutInflater inflater = getLayoutInflater();
-    View view = inflater.inflate(R.layout.user_hash_dialog, null);
-    _userEdit = (EditText)view.findViewById(R.id.user_hash_edit);
-    _userEdit.setText(userHash);
-    _userEdit.setTypeface(Typeface.MONOSPACE); 
-    //_userEdit.addTextChangedListener(new TextWatcher()
-    //  {
-    //    public void afterTextChanged(Editable s) { }
-    //    public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
-    //    public void onTextChanged(CharSequence s, int start, int before, int count)
-    //    {
-    //      String text = _userEdit.getText().toString();
-    //      int length  = _userEdit.getText().length();
-    //      
-    //      if (text.endsWith("-"))
-    //        return;
-    //      
-    //      if (count <= before)
-    //        return;
-    //      
-    //      if (length == 4 || length == 9 || length == 14)
-    //      {
-    //        _userEdit.setText((text + "-"));
-    //        _userEdit.setSelection(length + 1);
-    //      }
-    //    }
-    //  });
-    
-    AlertDialog.Builder alertBuilder = new AlertDialog.Builder(mContext);
-    alertBuilder.setView(view);
-    alertBuilder.setTitle("Enter user ID");
-    alertBuilder.setNegativeButton(getString(R.string.cancel_button),
-      new DialogInterface.OnClickListener()
-      {
-        @Override public void onClick(DialogInterface dlg, int id)
-        { }
-      });
-    
-    alertBuilder.setPositiveButton(getString(R.string.ok_button),
-      new DialogInterface.OnClickListener()
-      {
-        @Override public void onClick(DialogInterface dlg, int id)
-        {
-          String userHash = _userEdit.getText().toString();
-          SharedPreferences.Editor editor = NavigineApp.Settings.edit();
-          editor.putString("user_hash", userHash);
-          editor.commit();
-          NavigineApp.applySettings();
-          refreshMapList();
-        }
-      });
-    
-    AlertDialog dialog = alertBuilder.create();
-    dialog.setCanceledOnTouchOutside(false);
-    dialog.show();
   }
   
   LocationInfo _info = null;

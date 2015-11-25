@@ -4,6 +4,7 @@ import com.navigine.naviginesdk.*;
 
 import android.app.*;
 import android.content.*;
+import android.content.DialogInterface.OnDismissListener;
 import android.database.*;
 import android.graphics.*;
 import android.graphics.drawable.*;
@@ -27,10 +28,10 @@ import java.util.*;
 public class MainActivity extends Activity
 {
   // Constants
-  private static final String TAG = "Navigine.MainActivity";
+  private static final String TAG = "NAVIGINE.MainActivity";
   
   // This context
-  private final Context context = this;
+  private final Context mContext = this;
   
   // GUI parameters
   private Button mLocationManagementButton = null;
@@ -38,6 +39,7 @@ public class MainActivity extends Activity
   private Button mMeasuringModeButton  = null;
   private Button mTextModeButton       = null;
   private Button mSettingsButton       = null;
+  private Button mLoginButton          = null;
   
   private boolean mBeaconServiceStarted = false;
   
@@ -50,11 +52,21 @@ public class MainActivity extends Activity
     setContentView(R.layout.main);
     
     // Setting up GUI parameters
-    mLocationManagementButton = (Button)findViewById(R.id.location_management_button);
-    mNavigationModeButton = (Button)findViewById(R.id.navigation_mode_button);
-    mMeasuringModeButton  = (Button)findViewById(R.id.measuring_mode_button);
-    mTextModeButton       = (Button)findViewById(R.id.text_mode_button);
-    mSettingsButton       = (Button)findViewById(R.id.settings_button);
+    mLoginButton = (Button)findViewById(R.id.main_mode__login_button);
+    mLocationManagementButton = (Button)findViewById(R.id.main_mode__location_management_button);
+    mNavigationModeButton = (Button)findViewById(R.id.main_mode__navigation_mode_button);
+    mMeasuringModeButton  = (Button)findViewById(R.id.main_mode__measuring_mode_button);
+    mTextModeButton       = (Button)findViewById(R.id.main_mode__text_mode_button);
+    mSettingsButton       = (Button)findViewById(R.id.main_mode__settings_button);
+    
+    mLoginButton.setOnClickListener(
+      new OnClickListener()
+      {
+        @Override public void onClick(View v)
+        {
+          showUserHashDialog();
+        }
+      });
     
     mLocationManagementButton.setOnClickListener(
       new OnClickListener()
@@ -63,7 +75,7 @@ public class MainActivity extends Activity
         {
           // Starting Loader activity
           Log.d(TAG, "Loading location management mode");
-          Intent I = new Intent(context, LoaderActivity.class);
+          Intent I = new Intent(mContext, LoaderActivity.class);
           startActivity(I);
         }
       });
@@ -75,7 +87,7 @@ public class MainActivity extends Activity
         {
           // Starting Navigation activity
           Log.d(TAG, "Loading navigation mode");
-          Intent I = new Intent(context, NavigationActivity.class);
+          Intent I = new Intent(mContext, NavigationActivity.class);
           startActivity(I);
         }
       });
@@ -87,7 +99,7 @@ public class MainActivity extends Activity
         {
           // Starting Measuring activity
           Log.d(TAG, "Loading measuring mode");
-          Intent I = new Intent(context, MeasuringActivity.class);
+          Intent I = new Intent(mContext, MeasuringActivity.class);
           startActivity(I);
         }
       });
@@ -99,7 +111,7 @@ public class MainActivity extends Activity
         {
           // Starting Text activity
           Log.d(TAG, "Loading text mode");
-          Intent I = new Intent(context, TextActivity.class);
+          Intent I = new Intent(mContext, TextActivity.class);
           startActivity(I);
         }
       });
@@ -111,7 +123,7 @@ public class MainActivity extends Activity
         {
           // Starting Settings activity
           Log.d(TAG, "Loading settings mode");
-          Intent I = new Intent(context, SettingsActivity.class);
+          Intent I = new Intent(mContext, SettingsActivity.class);
           startActivity(I);
         }
       });
@@ -124,6 +136,91 @@ public class MainActivity extends Activity
     Log.d(TAG, "MainActivity started");
     super.onStart();
     
+    refresh();
+  }
+  
+  @Override public void onDestroy()
+  {
+    Log.d(TAG, "MainActivity destroyed");
+    super.onStart();
+    
+    NavigineApp.destroyNavigation();
+  }
+  
+  private EditText _userEdit = null;  
+  private AlertDialog _alertDialog = null;
+  private void showUserHashDialog()
+  {
+    mLoginButton.setVisibility(View.GONE);
+    mLocationManagementButton.setVisibility(View.GONE);
+    mNavigationModeButton.setVisibility(View.GONE);
+    mMeasuringModeButton.setVisibility (View.GONE);
+    mTextModeButton.setVisibility(View.GONE);
+    mSettingsButton.setVisibility(View.GONE);
+    
+    String userHash = NavigineApp.Settings.getString("user_hash", "");
+    
+    LayoutInflater inflater = getLayoutInflater();
+    View view = inflater.inflate(R.layout.user_hash_dialog, null);
+    _userEdit = (EditText)view.findViewById(R.id.user_hash_edit);
+    _userEdit.setText(userHash);
+    _userEdit.setTypeface(Typeface.MONOSPACE); 
+    
+    Button loginButton = (Button)view.findViewById(R.id.user_hash_dialog__login_button);
+    Button cancelButton = (Button)view.findViewById(R.id.user_hash_dialog__cancel_button);
+    
+    AlertDialog.Builder alertBuilder = new AlertDialog.Builder(mContext);
+    alertBuilder.setView(view);
+    alertBuilder.setTitle("Enter user ID");
+    
+    loginButton.setOnClickListener(
+      new OnClickListener()
+      {
+        @Override public void onClick(View v)
+        {
+          if (_alertDialog != null)
+          {
+            String userHash = _userEdit.getText().toString();
+            SharedPreferences.Editor editor = NavigineApp.Settings.edit();
+            editor.putString("user_hash", userHash);
+            editor.commit();
+            NavigineApp.applySettings();          
+            
+            refresh();
+            _alertDialog.cancel();
+          }
+        }
+      });
+    
+    cancelButton.setOnClickListener(
+      new OnClickListener()
+      {
+        @Override public void onClick(View v)
+        {
+          if (_alertDialog != null)
+          {
+            refresh();
+            _alertDialog.cancel();
+          }
+        }
+      });
+    
+    _alertDialog = alertBuilder.create();
+    _alertDialog.setCanceledOnTouchOutside(false);
+    _alertDialog.setOnDismissListener(
+      new OnDismissListener()
+      {
+        @Override public void onDismiss(DialogInterface dialog) 
+        {
+          refresh();
+        }
+      });
+    
+    _alertDialog.show();
+  }
+  
+  private void refresh()
+  {
     if (NavigineApp.Navigation == null)
     {
       Toast.makeText(getApplicationContext(), "Unable to create Navigation thread!", Toast.LENGTH_LONG).show();
@@ -134,17 +231,19 @@ public class MainActivity extends Activity
       return;
     }
     
-    String mapFile = NavigineApp.Settings.getString("map_file", "");
-    mNavigationModeButton.setVisibility(mapFile.length() > 0 ? View.VISIBLE : View.GONE);
-    mMeasuringModeButton.setVisibility (mapFile.length() > 0 ? View.VISIBLE : View.GONE);
-  }
-  
-  @Override public void onDestroy()
-  {
-    Log.d(TAG, "MainActivity destroyed");
-    super.onStart();
+    String mapFile  = NavigineApp.Settings.getString("map_file", "");
+    String userHash = NavigineApp.Settings.getString("user_hash", "");
     
-    NavigineApp.destroyNavigation();
+    boolean hasMap  = mapFile.length() > 0;
+    boolean hasHash = userHash.length() > 0;
+    boolean debugMode = NavigineApp.Settings.getBoolean("debug_mode_enabled", false);
+    
+    mLoginButton.setVisibility(View.VISIBLE);
+    mLocationManagementButton.setVisibility(hasHash ? View.VISIBLE : View.GONE);
+    mNavigationModeButton.setVisibility(hasHash && hasMap ? View.VISIBLE : View.GONE);
+    mMeasuringModeButton.setVisibility (hasHash && hasMap ? View.VISIBLE : View.GONE);
+    mTextModeButton.setVisibility(hasHash && debugMode ? View.VISIBLE : View.GONE);
+    mSettingsButton.setVisibility(View.VISIBLE);
   }
   
 }

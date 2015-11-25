@@ -5,119 +5,169 @@
     android:layout_height="match_parent"
     android:orientation="vertical">
     
+    <!-- Beacon major -->
     <LinearLayout android:orientation="horizontal"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:layout_marginRight="20dp">
         
-        <TextView android:id="@+id/measuring_object_text_view_beacon_id"
+        <TextView android:id="@+id/measuring_object_dialog__beacon_major_label"
             android:layout_width="100dp"
             android:layout_height="50dp"
             android:gravity="center"
             android:textSize="20sp"
-            android:text="@string/field_beacon_id"/>
+            android:text="Major"/>
         
-        <EditText android:id="@+id/measuring_object_dialog_beacon_id"
+        <EditText android:id="@+id/measuring_object_dialog__beacon_major_edit"
             android:layout_width="fill_parent"
             android:layout_height="50dp"
             android:scrollHorizontally="true"
-            android:singleLine="true"
-            android:textSize="9sp"/>
-    </LinearLayout>
-    
-    <LinearLayout android:orientation="horizontal"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginRight="20dp">
-        
-        <TextView android:id="@+id/measuring_object_text_view_name"
-            android:layout_width="100dp"
-            android:layout_height="50dp"
-            android:gravity="center"
-            android:textSize="20sp"
-            android:text="@string/field_name"/>
-        
-        <EditText android:id="@+id/measuring_object_dialog_name"
-            android:layout_width="fill_parent"
-            android:layout_height="50dp"
-            android:scrollHorizontally="true"
+            android:digits="1234567890"
+            android:maxLength="5"
             android:singleLine="true"/>
     </LinearLayout>
     
+    <!-- Beacon minor -->
     <LinearLayout android:orientation="horizontal"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:layout_marginRight="20dp">
         
-        <TextView android:id="@+id/measuring_object_text_view_x1"
+        <TextView android:id="@+id/measuring_object_dialog__beacon_minor_label"
             android:layout_width="100dp"
             android:layout_height="50dp"
             android:gravity="center"
             android:textSize="20sp"
-            android:text="@string/field_x1"/>
+            android:text="Minor"/>
         
-        <EditText android:id="@+id/measuring_object_dialog_x1"
+        <EditText android:id="@+id/measuring_object_dialog__beacon_minor_edit"
             android:layout_width="fill_parent"
             android:layout_height="50dp"
             android:scrollHorizontally="true"
+            android:digits="1234567890"
+            android:maxLength="5"
             android:singleLine="true"/>
     </LinearLayout>
     
+    <!-- Beacon uuid -->
     <LinearLayout android:orientation="horizontal"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:layout_marginRight="20dp">
         
-        <TextView android:id="@+id/measuring_object_text_view_y1"
+        <TextView android:id="@+id/measuring_object_dialog__beacon_uuid_label"
             android:layout_width="100dp"
             android:layout_height="50dp"
             android:gravity="center"
             android:textSize="20sp"
-            android:text="@string/field_y1"/>
+            android:text="UUID"/>
         
-        <EditText android:id="@+id/measuring_object_dialog_y1"
+        <EditText android:id="@+id/measuring_object_dialog__beacon_uuid_edit"
             android:layout_width="fill_parent"
             android:layout_height="50dp"
             android:scrollHorizontally="true"
+            android:digits="1234567890ABCDEFabcdef-"
+            android:maxLength="40"
             android:singleLine="true"/>
     </LinearLayout>
     
+    <!-- Name -->
     <LinearLayout android:orientation="horizontal"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:layout_marginRight="20dp">
         
-        <TextView android:id="@+id/measuring_object_text_view_x2"
+        <TextView android:id="@+id/measuring_object_dialog__name_label"
             android:layout_width="100dp"
             android:layout_height="50dp"
             android:gravity="center"
             android:textSize="20sp"
-            android:text="@string/field_x2"/>
+            android:text="Name"/>
         
-        <EditText android:id="@+id/measuring_object_dialog_x2"
+        <EditText android:id="@+id/measuring_object_dialog__name_edit"
             android:layout_width="fill_parent"
             android:layout_height="50dp"
             android:scrollHorizontally="true"
+            android:digits="1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz._- "
+            android:maxLength="20"
             android:singleLine="true"/>
     </LinearLayout>
     
+    <!-- X -->
     <LinearLayout android:orientation="horizontal"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:layout_marginRight="20dp">
         
-        <TextView android:id="@+id/measuring_object_text_view_y2"
+        <TextView android:id="@+id/measuring_object_dialog__x_label"
             android:layout_width="100dp"
             android:layout_height="50dp"
             android:gravity="center"
             android:textSize="20sp"
-            android:text="@string/field_y2"/>
+            android:text="X"/>
         
-        <EditText android:id="@+id/measuring_object_dialog_y2"
+        <EditText android:id="@+id/measuring_object_dialog__x_edit"
             android:layout_width="fill_parent"
             android:layout_height="50dp"
             android:scrollHorizontally="true"
+            android:digits="1234567890."
+            android:maxLength="10"
             android:singleLine="true"/>
+    </LinearLayout>
+    
+    <!-- Y -->
+    <LinearLayout android:orientation="horizontal"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginRight="20dp">
+        
+        <TextView android:id="@+id/measuring_object_dialog__y_label"
+            android:layout_width="100dp"
+            android:layout_height="50dp"
+            android:gravity="center"
+            android:textSize="20sp"
+            android:text="Y"/>
+        
+        <EditText android:id="@+id/measuring_object_dialog__y_edit"
+            android:layout_width="fill_parent"
+            android:layout_height="50dp"
+            android:scrollHorizontally="true"
+            android:digits="1234567890."
+            android:maxLength="10"
+            android:singleLine="true"/>
+    </LinearLayout>
+    
+    <!-- Buttons -->
+    <LinearLayout android:orientation="horizontal"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="15dp"
+        android:gravity="center">
+        
+        <Button android:id="@+id/measuring_object_dialog__start_button"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textColor="#FF8C00"
+            android:textSize="12sp"
+            android:text="START MEASURING"/>
+        
+        <Button android:id="@+id/measuring_object_dialog__delete_button"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textColor="#FF4500"
+            android:textSize="12sp"
+            android:text="DELETE"/>
+        
+        <Button android:id="@+id/measuring_object_dialog__cancel_button"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textColor="#FF8C00"
+            android:textSize="12sp"
+            android:text="CANCEL"/>
+    
     </LinearLayout>
     
 </LinearLayout>

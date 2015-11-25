@@ -5,6 +5,7 @@
     android:layout_height="match_parent"
     android:orientation="vertical">
     
+    <!-- User hash -->
     <LinearLayout android:orientation="horizontal"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
@@ -24,7 +25,32 @@
             android:inputType="textVisiblePassword|textCapCharacters"
             android:digits="1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ-"
             android:maxLength="20"
-            android:textSize="12sp"/>
+            android:textSize="14sp"/>
+    </LinearLayout>
+    
+    <!-- Buttons -->
+    <LinearLayout android:orientation="horizontal"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="15dp"
+        android:gravity="center">
+        
+        <Button android:id="@+id/user_hash_dialog__login_button"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textColor="#FF8C00"
+            android:textSize="14sp"
+            android:text="LOGIN"/>
+        
+        <Button android:id="@+id/user_hash_dialog__cancel_button"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textColor="#FF8C00"
+            android:textSize="14sp"
+            android:text="CANCEL"/>
+        
     </LinearLayout>
 
 </LinearLayout>

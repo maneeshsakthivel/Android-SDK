@@ -27,7 +27,7 @@ import java.util.*;
 public class SettingsActivity extends Activity
 {
   // Constants
-  private static final String TAG = "Navigine.SettingsActivity";
+  private static final String TAG = "NAVIGINE.SettingsActivity";
   private static final int REQUEST_PICK_FILE = 1;
   
   // This context
@@ -106,6 +106,7 @@ public class SettingsActivity extends Activity
     setCheckBox (R.id.settings__save_navigation_log_checkbox,   NavigineApp.Settings.getBoolean("navigation_log_enabled", false));
     setCheckBox (R.id.settings__save_navigation_track_checkbox, NavigineApp.Settings.getBoolean("navigation_track_enabled", false));
     setCheckBox (R.id.settings__post_messages_enabled_checkbox, NavigineApp.Settings.getBoolean("post_messages_enabled", true));
+    setCheckBox (R.id.settings__debug_mode_enabled_checkbox,    NavigineApp.Settings.getBoolean("debug_mode_enabled", false));
     
     mBackgroundMode = NavigineApp.Settings.getInt("background_navigation_mode", NavigationThread.MODE_NORMAL);
     switch (mBackgroundMode)
@@ -197,6 +198,7 @@ public class SettingsActivity extends Activity
     editor.putBoolean("navigation_log_enabled",       getCheckBox (R.id.settings__save_navigation_log_checkbox));
     editor.putBoolean("navigation_track_enabled",     getCheckBox (R.id.settings__save_navigation_track_checkbox));
     editor.putBoolean("post_messages_enabled",        getCheckBox (R.id.settings__post_messages_enabled_checkbox));
+    editor.putBoolean("debug_mode_enabled",           getCheckBox (R.id.settings__debug_mode_enabled_checkbox));
     editor.putBoolean("navigation_file_enabled",      mNavigationFileEnabled);
     editor.putString ("navigation_file",              mNavigationFileEnabled ? mNavigationFile : "");
     editor.commit();

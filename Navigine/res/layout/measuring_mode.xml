@@ -4,29 +4,29 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
     
-    <ImageView android:id="@+id/measuring_map_image_view"
+    <ImageView android:id="@+id/measuring_mode__map_image"
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"/>
     
-    <ImageView android:id="@+id/measuring_center_sight"
+    <ImageView android:id="@+id/measuring_mode__center_target_image"
         android:src="@drawable/target"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"/>
     
-    <ImageView android:id="@+id/measuring_scale_image_view"
+    <ImageView android:id="@+id/measuring_mode__scale_image"
         android:layout_width="100dp"
         android:layout_height="30dp"
         android:layout_marginBottom="10dp"
         android:layout_gravity="right|bottom"/>
     
-    <LinearLayout android:id="@+id/measuring_layout"
+    <LinearLayout android:id="@+id/measuring_mode__measuring_panel_layout"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:background="#AA000001">
         
-        <TextView android:id="@+id/map_measuring_prompt"
+        <TextView android:id="@+id/measuring_mode__measuring_panel_prompt_label"
             android:layout_width="0dp"
             android:layout_height="50dp"
             android:layout_margin="10dp"
@@ -34,48 +34,63 @@
             android:textSize="15dp"
             android:background="@null"/>
         
-        <Button android:id="@+id/map_measuring_ok_button"
+        <Button android:id="@+id/measuring_mode__measuring_panel_start_button"
             android:layout_width="60dp"
             android:layout_height="40dp"
             android:layout_margin="10dp"
-            android:text="@string/ok_button"
-            android:background="#cdcdcd"/>
-        
-        <Button android:id="@+id/map_measuring_start_button"
-            android:layout_width="60dp"
-            android:layout_height="40dp"
-            android:layout_margin="10dp"
-            android:background="#cdcdcd"
+            android:background="#00000001"
             android:text="@string/start_button"/>
         
-        <Button android:id="@+id/map_measuring_stop_button"
+        <Button android:id="@+id/measuring_mode__measuring_panel_stop_button"
             android:layout_width="60dp"
             android:layout_height="40dp"
             android:layout_margin="10dp"
-            android:background="#cdcdcd"
+            android:background="#00000001"
             android:text="@string/stop_button"/>
     
     </LinearLayout>
     
-    <Button android:id="@+id/measuring_prev_floor_button"
+    <Button android:id="@+id/measuring_mode__prev_floor_button"
         android:layout_width="32dp"
         android:layout_height="32dp"
         android:layout_marginLeft="0dp"
         android:layout_gravity="top|left"
         android:background="@drawable/back"/>
     
-    <TextView android:id="@+id/measuring_current_floor_text_view"
+    <TextView android:id="@+id/measuring_mode__current_floor_label"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="top|center"
         android:textSize="20dp"
         android:textColor="#000000"/>
         
-    <Button android:id="@+id/measuring_next_floor_button"
+    <Button android:id="@+id/measuring_mode__next_floor_button"
         android:layout_width="32dp"
         android:layout_height="32dp"
         android:layout_marginRight="0dp"
         android:layout_gravity="top|right"
         android:background="@drawable/forward"/>
     
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical|right">
+            
+        <Button android:id="@+id/measuring_mode__add_point_button"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:layout_marginBottom="20dp"
+            android:background="#80000001"
+            android:textSize="20sp"
+            android:text="+P"/>
+        
+        <Button android:id="@+id/measuring_mode__add_beacon_button"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:background="#80000001"
+            android:textSize="20sp"
+            android:text="+B"/>
+    </LinearLayout>
+        
 </FrameLayout>

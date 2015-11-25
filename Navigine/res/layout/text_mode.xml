@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
     
-    <TextView android:id="@+id/text_view"
+    <TextView android:id="@+id/text_mode__text_view"
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
         android:textSize="12dp"
@@ -12,12 +12,22 @@
         android:scrollbars="vertical"
         android:textColor="#ffffff"/>
     
-    <Button android:id="@+id/start_button"
-        android:layout_width="75dp"
+    <Button android:id="@+id/text_mode__start_button"
+        android:layout_width="90dp"
         android:layout_height="50dp"
         android:layout_gravity="right|top"
         android:layout_marginTop="10dp"
-        android:layout_marginRight="10dp"
+        android:layout_marginRight="5dp"
+        android:textSize="13sp"
         android:text="Start"/>
+    
+    <Button android:id="@+id/text_mode__load_map_button"
+        android:layout_width="90dp"
+        android:layout_height="50dp"
+        android:layout_gravity="right|top"
+        android:layout_marginTop="60dp"
+        android:layout_marginRight="5dp"
+        android:textSize="13sp"
+        android:text="Load map"/>
     
 </FrameLayout>

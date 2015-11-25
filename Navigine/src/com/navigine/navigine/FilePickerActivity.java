@@ -98,10 +98,6 @@ public class FilePickerActivity extends ListActivity {
     // Clear the files ArrayList
     mFiles.clear();
     
-    File parentDir = mDirectory.getParentFile();
-    if (parentDir != null)
-      mFiles.add(parentDir);
-    
     // Set the extension file filter
     ExtensionFilenameFilter filter = new ExtensionFilenameFilter(acceptedFileExtensions);
     
@@ -119,6 +115,10 @@ public class FilePickerActivity extends ListActivity {
       }
       
       Collections.sort(mFiles, new FileComparator());
+      
+      File parentDir = mDirectory.getParentFile();
+      if (parentDir != null)
+        mFiles.add(0, parentDir);
     }
     mAdapter.notifyDataSetChanged();
   }
