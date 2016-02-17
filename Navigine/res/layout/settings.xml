@@ -174,6 +174,26 @@
         
     </LinearLayout>
     
+    <!-- Orientation enabled -->
+    <LinearLayout android:orientation="horizontal"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content">
+        
+        <TextView android:id="@+id/settings__orientation_enabled_label"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="2"
+            android:gravity="left"
+            android:textSize="14sp"
+            android:text="Show device orientation"/>
+        
+        <CheckBox android:id="@+id/settings__orientation_enabled_checkbox"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"/>
+        
+    </LinearLayout>
+    
     <!-- File mode navigation -->
     <LinearLayout android:orientation="horizontal"
         android:layout_width="fill_parent"

@@ -17,7 +17,7 @@ import java.util.*;
 
 public class NavigineApp extends Application
 {
-  public static final String      TAG               = "NAVIGINE.APP";
+  public static final String      TAG               = "NAVIGINE";
   public static final String      DEFAULT_SERVER    = "https://api.navigine.com";
   public static final String      DEFAULT_USER_HASH = "0000-0000-0000-0000";
   
@@ -27,6 +27,8 @@ public class NavigineApp extends Application
   public static IMU_Thread        IMU               = null;
   public static int               IMU_Location      = 0;
   public static int               IMU_SubLocation   = 0;
+  
+  public static boolean           mBackgroundMode   = false;
   
   @Override public void onCreate()
   {
@@ -66,7 +68,7 @@ public class NavigineApp extends Application
       AppContext = appContext;
       Settings   = AppContext.getSharedPreferences("NavigineSettings", 0);
       Navigation = new NavigationThread(Settings.getString("user_hash", ""), AppContext);
-      IMU = new IMU_Thread();
+      IMU = new IMU_Thread(AppContext);
     }
     catch (Throwable e)
     {
@@ -99,7 +101,7 @@ public class NavigineApp extends Application
       return;
     
     // Setting up server parameters
-    String address = Settings.getString("location_server_address", NavigineApp.DEFAULT_SERVER);
+    String address = Settings.getString("location_server_address1", NavigineApp.DEFAULT_SERVER);
     String userHash = Settings.getString("user_hash", NavigineApp.DEFAULT_USER_HASH);
     LocationLoader.initialize(AppContext, userHash, address);
     
@@ -158,7 +160,9 @@ public class NavigineApp extends Application
     else
       Navigation.setTrackFile(null);
     
-    int mode = NavigationThread.MODE_NORMAL;
+    int mode = mBackgroundMode ?
+                  Settings.getInt("background_navigation_mode", NavigationThread.MODE_NORMAL) :
+                  NavigationThread.MODE_NORMAL;
     
     if (Settings.getBoolean("navigation_file_enabled", false))
     {
@@ -170,32 +174,21 @@ public class NavigineApp extends Application
     Navigation.setMode(mode);
   }
   
-  public static void setBackgroundMode()
+  public static void setBackgroundMode(boolean enabled)
   {
     if (AppContext == null || Navigation == null)
       return;
+    
+    mBackgroundMode = enabled;
     
     switch (Navigation.getMode())
     {
       case NavigationThread.MODE_NORMAL:
       case NavigationThread.MODE_ECONOMIC1:
       case NavigationThread.MODE_ECONOMIC2:
-        Navigation.setMode(Settings.getInt("background_navigation_mode", NavigationThread.MODE_NORMAL));
-        break;
-    }
-  }
-  
-  public static void setForegroundMode()
-  {
-    if (AppContext == null || Navigation == null)
-      return;
-    
-    switch (Navigation.getMode())
-    {
-      case NavigationThread.MODE_NORMAL:
-      case NavigationThread.MODE_ECONOMIC1:
-      case NavigationThread.MODE_ECONOMIC2:
-        Navigation.setMode(NavigationThread.MODE_NORMAL);
+        Navigation.setMode(mBackgroundMode ?
+            Settings.getInt("background_navigation_mode", NavigationThread.MODE_NORMAL) :
+            NavigationThread.MODE_NORMAL);
         break;
     }
   }

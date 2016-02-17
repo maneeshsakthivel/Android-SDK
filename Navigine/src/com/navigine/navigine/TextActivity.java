@@ -244,7 +244,7 @@ public class TextActivity extends Activity
           long timeNow = DateTimeUtils.currentTimeMillis();
           StringBuilder messageBuilder = new StringBuilder();
           
-          messageBuilder.append(String.format(Locale.ENGLISH, "Build version: %s\n", A.BUILD_VERSION_BRIEF));
+          messageBuilder.append(String.format(Locale.ENGLISH, "Build date: %s\n", A.BUILD_DATE));
           
           String archivePath = NavigineApp.Navigation.getArchivePath();
           if (archivePath != null && archivePath.length() > 0)

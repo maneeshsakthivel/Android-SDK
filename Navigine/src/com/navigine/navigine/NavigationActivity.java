@@ -25,6 +25,8 @@ import java.nio.*;
 import java.net.*;
 import java.util.*;
 
+import android.bluetooth.*;
+
 public class NavigationActivity extends Activity
 {
   // Constants
@@ -94,7 +96,12 @@ public class NavigationActivity extends Activity
   private int mCurrentSubLocationIndex = -1;
   
   private int mBackgroundNavigationMode = NavigationThread.MODE_NORMAL;
-  private boolean mImuMode = false;
+  private boolean mOrientationEnabled = false;
+  
+  // IMU parameters
+  private boolean mImuMode      = false;
+  private int     mImuState     = 0;
+  private long    mImuStateTime = 0;
   
   /** Called when the activity is first created */
   @Override public void onCreate(Bundle savedInstanceState)
@@ -126,6 +133,7 @@ public class NavigationActivity extends Activity
     if (NavigineApp.Settings != null)
     {
       mBackgroundNavigationMode = NavigineApp.Settings.getInt("background_navigation_mode", NavigationThread.MODE_NORMAL);
+      mOrientationEnabled = NavigineApp.Settings.getBoolean("orientation_enabled", false);
     }
     
     // Setting up touch listener
@@ -192,15 +200,13 @@ public class NavigationActivity extends Activity
   @Override public void onResume()
   {
     super.onResume();
-    if (!mImuMode)
-      NavigineApp.setForegroundMode();
+    NavigineApp.setBackgroundMode(false);
   }
   
   @Override public void onPause()
   {
     super.onPause();    
-    if (!mImuMode)
-      NavigineApp.setBackgroundMode();
+    NavigineApp.setBackgroundMode(true);
   }
   
   private boolean tryLoadMap()
@@ -629,15 +635,20 @@ public class NavigationActivity extends Activity
     // Drawing circle
     canvas.drawCircle(P.x, P.y, radius, fillPaintTransparent);
     
-    // Drawing orientation
-    Path path = new Path();
-    path.moveTo(Q.x, Q.y);
-    path.lineTo(R.x, R.y);
-    path.lineTo(P.x, P.y);
-    path.lineTo(S.x, S.y);
-    path.lineTo(Q.x, Q.y);
-    canvas.drawPath(path, fillPaintSolid);
-    canvas.drawPath(path, strokePaint);
+    // Drawing orientation (if necessary)
+    if (mOrientationEnabled)
+    {
+      Path path = new Path();
+      path.moveTo(Q.x, Q.y);
+      path.lineTo(R.x, R.y);
+      path.lineTo(P.x, P.y);
+      path.lineTo(S.x, S.y);
+      path.lineTo(Q.x, Q.y);
+      canvas.drawPath(path, fillPaintSolid);
+      canvas.drawPath(path, strokePaint);
+    }
+    else
+      canvas.drawCircle(P.x, P.y, getSvgLength(1.0f), fillPaintSolid);
   }
   
   private void adjustDevice(DeviceInfo info)
@@ -888,11 +899,7 @@ public class NavigationActivity extends Activity
     if (subLoc == null)
       return;
     
-    if (NavigineApp.IMU.getConnectionState() != IMU_Thread.STATE_IDLE)
-    {
-      Log.e(TAG, "Can't connect to IMU: not in IDLE state!");
-      return;
-    }
+    Log.d(TAG, "Connecting to IMU!");
     
     NavigineApp.stopNavigation();
     
@@ -920,18 +927,21 @@ public class NavigationActivity extends Activity
     NavigineApp.IMU_SubLocation = subLocId;
     NavigineApp.IMU.setStartPoint(x0, y0, 0.0f);
     NavigineApp.IMU.connect();
-    mImuMode = true;
+    
+    mImuMode      = true;
+    mImuState     = 0;
+    mImuStateTime = 0;
   }
   
   private void disconnectFromIMU()
   {
-    if (NavigineApp.IMU.getConnectionState() != IMU_Thread.STATE_NORMAL)
-    {
-      Log.e(TAG, "Can't disconnect from IMU: not in NORMAL state!");
-      return;
-    }
+    Log.d(TAG, "Disconnecting from IMU!");
     NavigineApp.IMU.disconnect();
-    mImuMode = false;
+    mImuMode      = false;
+    mImuState     = 0;
+    mImuStateTime = 0;
+    
+    NavigineApp.startNavigation();
   }
   
   final Runnable mRunnable =
@@ -975,10 +985,19 @@ public class NavigationActivity extends Activity
         if (mImuMode)
         {
           String error = NavigineApp.IMU.getConnectionError();
-          switch (NavigineApp.IMU.getConnectionState())
+          int state = NavigineApp.IMU.getConnectionState();
+          if (state != mImuState)
+          {
+            mImuState = state;
+            mImuStateTime = timeNow;
+          }
+          
+          switch (mImuState)
           {
             case IMU_Thread.STATE_IDLE:
               infoText = error;
+              if (Math.abs(timeNow - mImuStateTime) > 2500)
+                disconnectFromIMU();
               break;
             
             case IMU_Thread.STATE_CONNECT:

@@ -39,6 +39,8 @@ public class SettingsActivity extends Activity
   private boolean mNavigationFileEnabled = false;
   private String mNavigationFile = "";
   
+  private int mDebugCounter = 0;
+  
   /** Called when the activity is first created */
   @Override public void onCreate(Bundle savedInstanceState)
   {
@@ -72,6 +74,21 @@ public class SettingsActivity extends Activity
         }
       });
     
+    CheckBox debugModeCheckBox = (CheckBox)findViewById(R.id.settings__debug_mode_enabled_checkbox);
+    debugModeCheckBox.setOnClickListener(
+      new CompoundButton.OnClickListener()
+      {
+        @Override public void onClick(View v)
+        {
+          mDebugCounter++;
+          if (mDebugCounter >= 6)
+          {
+            findViewById(R.id.settings__orientation_enabled_label).setVisibility(View.VISIBLE);
+            findViewById(R.id.settings__orientation_enabled_checkbox).setVisibility(View.VISIBLE);
+          }
+        }
+      });
+    
     Button saveButton = (Button)findViewById(R.id.settings__save_settings_button);
     saveButton.setOnClickListener(
       new OnClickListener()
@@ -101,12 +118,16 @@ public class SettingsActivity extends Activity
       tv.setText("Navigation file enabled");
     }
     
-    setTextValue(R.id.settings__location_server_address_edit,   NavigineApp.Settings.getString ("location_server_address", NavigineApp.DEFAULT_SERVER));
+    findViewById(R.id.settings__orientation_enabled_label).setVisibility(View.GONE);
+    findViewById(R.id.settings__orientation_enabled_checkbox).setVisibility(View.GONE);
+    
+    setTextValue(R.id.settings__location_server_address_edit,   NavigineApp.Settings.getString ("location_server_address1", NavigineApp.DEFAULT_SERVER));
     setCheckBox (R.id.settings__beacon_service_checkbox,        NavigineApp.Settings.getBoolean("beacon_service_enabled", true));
     setCheckBox (R.id.settings__save_navigation_log_checkbox,   NavigineApp.Settings.getBoolean("navigation_log_enabled", false));
     setCheckBox (R.id.settings__save_navigation_track_checkbox, NavigineApp.Settings.getBoolean("navigation_track_enabled", false));
     setCheckBox (R.id.settings__post_messages_enabled_checkbox, NavigineApp.Settings.getBoolean("post_messages_enabled", true));
     setCheckBox (R.id.settings__debug_mode_enabled_checkbox,    NavigineApp.Settings.getBoolean("debug_mode_enabled", false));
+    setCheckBox (R.id.settings__orientation_enabled_checkbox,   NavigineApp.Settings.getBoolean("orientation_enabled", false));
     
     mBackgroundMode = NavigineApp.Settings.getInt("background_navigation_mode", NavigationThread.MODE_NORMAL);
     switch (mBackgroundMode)
@@ -192,13 +213,14 @@ public class SettingsActivity extends Activity
   private void saveSettings()
   {
     SharedPreferences.Editor editor = NavigineApp.Settings.edit();
-    editor.putString ("location_server_address",      getTextValue(R.id.settings__location_server_address_edit));
+    editor.putString ("location_server_address1",     getTextValue(R.id.settings__location_server_address_edit));
     editor.putInt("background_navigation_mode",       mBackgroundNavigationEnabled ? mBackgroundMode : NavigationThread.MODE_IDLE);
     editor.putBoolean("beacon_service_enabled",       getCheckBox (R.id.settings__beacon_service_checkbox));
     editor.putBoolean("navigation_log_enabled",       getCheckBox (R.id.settings__save_navigation_log_checkbox));
     editor.putBoolean("navigation_track_enabled",     getCheckBox (R.id.settings__save_navigation_track_checkbox));
     editor.putBoolean("post_messages_enabled",        getCheckBox (R.id.settings__post_messages_enabled_checkbox));
     editor.putBoolean("debug_mode_enabled",           getCheckBox (R.id.settings__debug_mode_enabled_checkbox));
+    editor.putBoolean("orientation_enabled",          getCheckBox (R.id.settings__orientation_enabled_checkbox));
     editor.putBoolean("navigation_file_enabled",      mNavigationFileEnabled);
     editor.putString ("navigation_file",              mNavigationFileEnabled ? mNavigationFile : "");
     editor.commit();
