@@ -14,8 +14,10 @@ import android.provider.MediaStore;
 import android.text.*;
 import android.text.method.*;
 import android.view.*;
+import android.view.animation.*;
 import android.view.View.*;
 import android.widget.*;
+import android.widget.AbsListView.*;
 import android.widget.ImageView.*;
 import android.util.*;
 import java.io.*;
@@ -33,15 +35,22 @@ public class LoaderActivity extends Activity
   // This context
   private Context mContext = this;
   
-  private ListView    mListView     = null;
+  private com.navigine.navigine.ListView mListView = null;
   private TextView    mStatusLabel  = null;
+  private Button      mMenuButton   = null;
+  private Button      mLogoutButton = null;
+  private TextView    mNameLabel    = null;
   private TimerTask   mTimerTask    = null;
   private Handler     mHandler      = new Handler();
   private Timer       mTimer        = new Timer();
   
+  private boolean     mMenuVisible  = false;
+  
   private int mLoader = -1;
   private long mLoaderTime = -1;
   private List<LocationInfo> mInfoList = new ArrayList<LocationInfo>();
+  
+  private int mSwipedLocation = 0;
   
   public static final int DOWNLOAD = 1;
   public static final int UPLOAD   = 2;
@@ -79,88 +88,117 @@ public class LoaderActivity extends Activity
     
     @Override public View getView(final int position, View convertView, ViewGroup parent)
     {
+      LocationInfo info = mInfoList.get(position);
+      
       View view = convertView;
       if (view == null)
       {
         LayoutInflater inflater = (LayoutInflater)mContext.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         view = inflater.inflate(R.layout.content_list_item, null);
       }
-      TextView titleTextView = (TextView)view.findViewById(R.id.list_item_title);
-      TextView stateTextView = (TextView)view.findViewById(R.id.list_item_state);
-      TextView downTextView = (TextView)view.findViewById(R.id.list_item_downbar);
-      Button downloadButton = (Button)view.findViewById(R.id.list_item_download_button);
-      Button uploadButton = (Button)view.findViewById(R.id.list_item_upload_button);
       
-      LocationInfo info = mInfoList.get(position);
+      TextView titleTextView = (TextView)view.findViewById(R.id.list_item__title_text_view);
+      TextView statusTextView = (TextView)view.findViewById(R.id.list_item__status_text_view);
+      Button downloadButton = (Button)view.findViewById(R.id.list_item__download_button);
+      Button uploadButton = (Button)view.findViewById(R.id.list_item__upload_button);
+      Button infoButton = (Button)view.findViewById(R.id.list_item__info_button);
+      Button deleteButton = (Button)view.findViewById(R.id.list_item__delete_button);
+      ProgressBar progressBar = (ProgressBar)view.findViewById(R.id.list_item__progress_bar);
+      Button downloadStopButton = (Button)view.findViewById(R.id.list_item__download_stop_button);
+      ImageView selectedMapIcon = (ImageView)view.findViewById(R.id.list_item__selected_map_icon);
+      HorizontalScrollView scrollView = (HorizontalScrollView)view.findViewById(R.id.list_item__horizontal_scroll_view);
+      View updateView = (View)view.findViewById(R.id.list_item__update_view);
+      ProgressBar updateProgressBar = (ProgressBar)view.findViewById(R.id.list_item__update_progress_bar);
+      
+      progressBar.getIndeterminateDrawable().setColorFilter(Color.rgb(0x14, 0x27, 0x3D), android.graphics.PorterDuff.Mode.SRC_IN);
+      
+      do {
+        FrameLayout frameLayout = (FrameLayout)view.findViewById(R.id.list_item__main_frame_layout);
+        LinearLayout.LayoutParams layoutParams = (LinearLayout.LayoutParams)frameLayout.getLayoutParams();
+        layoutParams.width = Math.round(NavigineApp.DisplayWidthPx);
+        frameLayout.setLayoutParams(layoutParams);
+      } while (false);
+      
+      if (info.id == 0)
+      {
+        scrollView.setVisibility(View.GONE);
+        updateView.setVisibility(View.VISIBLE);
+        return view;
+      }
+      
+      scrollView.setVisibility(View.VISIBLE);
+      updateView.setVisibility(View.GONE);
+      
       String titleText = info.title;
-      String stateText = "";
-      
       if (titleText.length() > 30)
         titleText = titleText.substring(0, 28) + "...";
-      
-      synchronized (mLoaderMap)
-      {
-        if (mLoaderMap.containsKey(info.title))
-        {
-          LoaderState loader = mLoaderMap.get(info.title);
-          if (loader.state < 100)
-            stateText = String.format(Locale.ENGLISH, "%d%%", loader.state);
-          else if (loader.state == 100)
-            stateText = String.format(Locale.ENGLISH, "Done!");
-          else
-            stateText = String.format(Locale.ENGLISH, "Failed!");
-        }
-      }
-      
-      if (info.localVersion < 0)
-        titleText += " (?)";
-      else
-      {
-        if (info.localModified)
-          titleText += String.format(Locale.ENGLISH, " (v. %d+)", info.localVersion);
-        else
-          titleText += String.format(Locale.ENGLISH, " (v. %d)", info.localVersion);
-      }
-      
-      String mapFile = NavigineApp.Settings.getString("map_file", "");
-      if (mapFile.equals(info.archiveFile))
-      {
-        titleTextView.setTypeface(null, Typeface.BOLD);
-        view.setBackgroundColor(Color.parseColor("#590E0E"));
-      }
-      else
-      {
-        titleTextView.setTypeface(null, Typeface.NORMAL);
-        view.setBackgroundColor(Color.BLACK);
-      }
-      
       titleTextView.setText(titleText);
-      stateTextView.setText(stateText);
       
-      if (info.localModified)
+      String statusText = null;
+      
+      if (mLoaderMap.containsKey(info.title))
+      {
+        LoaderState loader = mLoaderMap.get(info.title);
+        downloadButton.setVisibility(View.GONE);
+        uploadButton.setVisibility(View.GONE);
+        infoButton.setVisibility(View.GONE);
+        progressBar.setVisibility(View.VISIBLE);
+        downloadStopButton.setVisibility(View.VISIBLE);
+        progressBar.setProgress(loader.state);
+        statusTextView.setVisibility(View.VISIBLE);
+        statusTextView.setText(String.format(Locale.ENGLISH, "Downloading... %d%%", loader.state));
+      }
+      else if (info.localModified)
       {
         downloadButton.setVisibility(View.GONE);
         uploadButton.setVisibility(View.VISIBLE);
-        downTextView.setText("Version is modified. Upload?");
+        infoButton.setVisibility(View.GONE);
+        progressBar.setVisibility(View.GONE);
+        downloadStopButton.setVisibility(View.GONE);
+        statusTextView.setVisibility(View.VISIBLE);
+        statusTextView.setText("Version is modified. Upload?");
       }
       else if (info.serverVersion > info.localVersion)
       {
         downloadButton.setVisibility(View.VISIBLE);
         uploadButton.setVisibility(View.GONE);
-        String downText = String.format(Locale.ENGLISH, "Version available: %d", info.serverVersion);
-        downTextView.setText(downText);
+        infoButton.setVisibility(View.GONE);
+        progressBar.setVisibility(View.GONE);
+        downloadStopButton.setVisibility(View.GONE);
+        statusTextView.setVisibility(View.VISIBLE);
+        statusTextView.setText(String.format(Locale.ENGLISH, "Version available: %d", info.serverVersion));
       }
       else
       {
-        downloadButton.setVisibility(View.INVISIBLE);
+        downloadButton.setVisibility(View.GONE);
         uploadButton.setVisibility(View.GONE);
-        downTextView.setText("Version is up to date");
+        infoButton.setVisibility(View.VISIBLE);
+        progressBar.setVisibility(View.GONE);
+        downloadStopButton.setVisibility(View.GONE);
+        statusTextView.setVisibility(View.GONE);
       }
+      
+      String mapFile = NavigineApp.Settings.getString("map_file", "");
+      boolean selected = mapFile.equals(info.archiveFile);
+      selectedMapIcon.setVisibility(selected ? View.VISIBLE : View.GONE);
+      
+      boolean mapExists = (new File(info.archiveFile)).exists();
+      deleteButton.setVisibility(mapExists ? View.VISIBLE : View.GONE);
+      
+      if (info.id == mSwipedLocation)
+        scrollView.scrollTo(Math.round(75 * NavigineApp.DisplayDensity), 0);
+      else
+        scrollView.scrollTo(0, 0);
       
       downloadButton.setOnClickListener(new View.OnClickListener()
         {
           @Override public void onClick(View v)
           {
+            if (mSwipedLocation > 0)
+            {
+              mSwipedLocation = 0;
+              mAdapter.updateList();
+            }
             startDownload(position);
           }
         });
@@ -169,7 +207,161 @@ public class LoaderActivity extends Activity
         {
           @Override public void onClick(View v)
           {
+            if (mSwipedLocation > 0)
+            {
+              mSwipedLocation = 0;
+              mAdapter.updateList();
+            }
             startUpload(position);
+          }
+        });
+      
+      downloadStopButton.setOnClickListener(new View.OnClickListener()
+        {
+          @Override public void onClick(View v)
+          {
+            if (mSwipedLocation > 0)
+            {
+              mSwipedLocation = 0;
+              mAdapter.updateList();
+            }
+            stopDownload(position);
+          }
+        });
+      
+      deleteButton.setOnClickListener(new View.OnClickListener()
+        {
+          @Override public void onClick(View v)
+          {
+            if (mSwipedLocation > 0)
+            {
+              mSwipedLocation = 0;
+              mAdapter.updateList();
+            }
+            deleteLocation(mInfoList.get(position));
+          }
+        });
+      
+      infoButton.setOnClickListener(new View.OnClickListener()
+        {
+          @Override public void onClick(View v)
+          {
+            if (mSwipedLocation > 0)
+            {
+              mSwipedLocation = 0;
+              mAdapter.updateList();
+            }
+            showLocation(mInfoList.get(position));
+          }
+        });
+      
+      scrollView.setOnTouchListener(
+        new OnTouchListener()
+        {
+          private static final int TOUCH_SHORT_TIMEOUT = 200;
+          private static final int TOUCH_LONG_TIMEOUT  = 600;
+          private static final int TOUCH_SENSITIVITY   = 20;
+          
+          private long    mTouchTime    = 0;
+          private PointF  mTouchPoint0  = null;
+          private PointF  mTouchPoint1  = null;
+          private float   mTouchLength  = 0.0f;
+          
+          private LocationInfo info     = mInfoList.get(position);
+          boolean mapExists             = (new File(info.archiveFile)).exists();
+          
+          @Override public boolean onTouch(View v, MotionEvent event)
+          {
+            long timeNow = DateTimeUtils.currentTimeMillis();
+            int actionMask = event.getActionMasked();
+            int pointerIndex = event.getActionIndex();
+            int pointerCount = event.getPointerCount();
+            
+            // Ignoring incorrect touch events
+            if (pointerCount != 1)
+              return true;
+            
+            if (mMenuVisible)
+              toggleMenuLayout(null);
+            
+            PointF P = new PointF(event.getX(0), event.getY(0));
+            
+            if (mSwipedLocation > 0 && mSwipedLocation != info.id)
+            {
+              mSwipedLocation = 0;
+              mAdapter.updateList();
+            }
+            
+            switch (actionMask)
+            {
+              case MotionEvent.ACTION_DOWN:
+              {
+                Log.d(TAG, String.format(Locale.ENGLISH, "Action down (%.2f, %.2f)", P.x, P.y));
+                mTouchTime    = timeNow;
+                mTouchPoint0  = P;
+                mTouchPoint1  = P;
+                mTouchLength  = 0.0f;
+                break;
+              }
+              
+              case MotionEvent.ACTION_MOVE:
+              {
+                if (mTouchPoint0 == null)
+                  mTouchPoint0 = P;
+                if (mTouchPoint1 == null)
+                  mTouchPoint1 = P;
+                
+                float delta0 = P.x - mTouchPoint0.x;
+                float delta1 = P.x - mTouchPoint1.x;
+                
+                mTouchPoint1 = P;
+                mTouchLength += Math.abs(delta1);
+                
+                Log.d(TAG, String.format(Locale.ENGLISH, "Action move: (delta0=%.2f, delta1=%.2f)", delta0, delta1));
+                
+                if (mapExists)
+                {
+                  if (delta0 < -TOUCH_SENSITIVITY * NavigineApp.DisplayDensity)
+                  {
+                    if (mSwipedLocation == 0)
+                    {
+                      mSwipedLocation = info.id;
+                      Log.d(TAG, String.format(Locale.ENGLISH, "Swiping location %d", info.id));
+                      ((HorizontalScrollView)v).scrollTo(Math.round(75 * NavigineApp.DisplayDensity), 0);
+                    }
+                  }
+                  else if (delta0 > TOUCH_SENSITIVITY * NavigineApp.DisplayDensity)
+                  {
+                    if (mSwipedLocation == info.id)
+                    {
+                      mSwipedLocation = 0;
+                      Log.d(TAG, String.format(Locale.ENGLISH, "Swiping back location %d", info.id));
+                      ((HorizontalScrollView)v).scrollTo(0, 0);
+                    }
+                  }
+                }
+                break;
+              }
+              
+              case MotionEvent.ACTION_UP:
+              {
+                Log.d(TAG, String.format(Locale.ENGLISH, "Action up (%.2f, %.2f)", P.x, P.y));
+                if (mTouchTime > 0 &&
+                    mTouchTime + TOUCH_SHORT_TIMEOUT > timeNow &&
+                    mTouchLength < TOUCH_SENSITIVITY * NavigineApp.DisplayDensity)
+                {
+                  LocationInfo info = mInfoList.get(position);
+                  Log.d(TAG, String.format(Locale.ENGLISH, "Selecting location %s", info.title));
+                  selectLocation(info);
+                }
+                mTouchTime   = 0;
+                mTouchLength = 0.0f;
+                mTouchPoint0 = null;
+                mTouchPoint1 = null;
+                break;
+              }
+            }
+            return true;
           }
         });
       
@@ -183,6 +375,10 @@ public class LoaderActivity extends Activity
   {
     Log.d(TAG, "LoaderActivity created");
     super.onCreate(savedInstanceState);
+    
+    getWindow().setFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS,
+                         WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+    
     requestWindowFeature(Window.FEATURE_NO_TITLE);
     setContentView(R.layout.content);
     
@@ -190,28 +386,69 @@ public class LoaderActivity extends Activity
     mAdapter = new LoaderAdapter();
     
     // Handle listview and assign adapter
-    mListView = (ListView)findViewById(R.id.content_list_view);
+    mListView = (com.navigine.navigine.ListView)findViewById(R.id.content__list_view);
     mListView.setAdapter(mAdapter);
-    mListView.setVisibility(View.GONE);
-    mListView.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener()
+    mListView.setVisibility(View.VISIBLE);
+    
+    mListView.setOnOverScrollListener(new com.navigine.navigine.ListView.OnOverScrollListener()
       {
-        public boolean onItemLongClick(AdapterView parent, View view, int position, long id)
+        private long mScrollTime0 = 0;
+        private long mScrollTime  = 0;
+        private int mTotalScroll  = 0;
+        
+        public void onOverScroll(int scrollY)
         {
-          selectItem(position);
-          return true;
+          long timeNow = DateTimeUtils.currentTimeMillis();
+          if (timeNow - mScrollTime > 100)
+          {
+            mTotalScroll = 0;
+            mScrollTime0 = timeNow;
+          }
+          else
+            mTotalScroll += scrollY;
+          
+          mScrollTime = timeNow;
+          
+          Log.d(TAG, String.format(Locale.ENGLISH, "onOverScroll: %d, total: %d", scrollY, mTotalScroll));
+          if (mTotalScroll < -Math.round(NavigineApp.DisplayHeightPx / 2) && timeNow - mScrollTime0 < 250)
+            refreshMapList();
         }
       });
     
-    mStatusLabel = (TextView)findViewById(R.id.content_status_label);
-    mStatusLabel.setVisibility(View.VISIBLE);
+    mStatusLabel = (TextView)findViewById(R.id.content__status_label);
+    mStatusLabel.setVisibility(View.GONE);
     
-    refreshMapList();
+    mMenuButton = (Button)findViewById(R.id.content__menu_button);
+    
+    mLogoutButton = (Button)findViewById(R.id.content__logout_button);
+    
+    if (NavigineApp.Navigation == null)
+      return;
+    
+    if (NavigineApp.UserInfo == null)
+    {
+      logout(null);
+      return;
+    }
+    
+    mNameLabel = (TextView)findViewById(R.id.content__name_text_view);
+    mNameLabel.setText(NavigineApp.UserInfo.name.toUpperCase());
+    
+    if (!readMapList())
+      refreshMapList();
   }
   
   @Override public void onDestroy()
   {
     Log.d(TAG, "LoaderActivity destroyed");
     super.onDestroy();
+    
+    if (mTimerTask != null)
+    {
+      mTimerTask.cancel();
+      mTimerTask = null;
+    }
+    stopLoaders();
   }
   
   @Override public void onResume()
@@ -236,84 +473,130 @@ public class LoaderActivity extends Activity
     Log.d(TAG, "LoaderActivity paused");
     super.onPause();
     
-    mTimerTask.cancel();
-    mTimerTask = null;
+    if (mTimerTask != null)
+    {
+      mTimerTask.cancel();
+      mTimerTask = null;
+    }
+    stopLoaders();
   }
   
-  LocationInfo _info = null;
-  private void selectItem(int index)
+  @Override public void onBackPressed()
   {
-    _info = mInfoList.get(index);
-    if (!(new File(_info.archiveFile)).exists())
+    toggleMenuLayout(null);
+  }
+  
+  public void onLocationManagementMode(View v)
+  {
+    if (mMenuVisible)
+      toggleMenuLayout(null);
+  }
+  
+  public void onMeasuringMode(View v)
+  {
+    if (mMenuVisible)
+      toggleMenuLayout(null);
+    Intent intent = new Intent(mContext, MeasuringActivity.class);
+    startActivity(intent);
+  }
+  
+  public void onNavigationMode(View v)
+  {
+    if (mMenuVisible)
+      toggleMenuLayout(null);
+    Intent intent = new Intent(mContext, NavigationActivity.class);
+    startActivity(intent);
+  }
+  
+  public void onDebugMode(View v)
+  {
+    if (mMenuVisible)
+      toggleMenuLayout(null);
+    Intent intent = new Intent(mContext, DebugActivity.class);
+    startActivity(intent);
+  }
+  
+  public void onSettingsMode(View v)
+  {
+    if (mMenuVisible)
+      toggleMenuLayout(null);
+    Intent intent = new Intent(mContext, SettingsActivity.class);
+    startActivity(intent);
+  }
+  
+  public void toggleMenuLayout(View v)
+  {
+    mSwipedLocation = 0;
+    mAdapter.updateList();
+    
+    LinearLayout topLayout  = (LinearLayout)findViewById(R.id.content__top_layout);
+    LinearLayout menuLayout = (LinearLayout)findViewById(R.id.content__menu_layout);
+    RelativeLayout mainLayout = (RelativeLayout)findViewById(R.id.content__main_layout);
+    ViewGroup.MarginLayoutParams layoutParams = null;
+    
+    boolean hasMapFile   = (NavigineApp.Settings != null && NavigineApp.Settings.getString("map_file", "").length() > 0);
+    boolean hasDebugMode = (NavigineApp.Settings != null && NavigineApp.Settings.getBoolean("debug_mode_enabled", false));
+    findViewById(R.id.content__menu_measuring_mode).setVisibility(hasMapFile ? View.VISIBLE : View.GONE);
+    findViewById(R.id.content__menu_navigation_mode).setVisibility(hasMapFile ? View.VISIBLE : View.GONE);
+    findViewById(R.id.content__menu_debug_mode).setVisibility(hasDebugMode ? View.VISIBLE : View.GONE);
+    
+    if (!mMenuVisible)
     {
-      String text = String.format(Locale.ENGLISH, "Location '%s' cannot be selected!\n" +
-                                                  "Please, download location first!",
-                                                  _info.title);
-      Toast.makeText(mContext, text, Toast.LENGTH_LONG).show();
+      mMenuVisible = true;
+      layoutParams = (ViewGroup.MarginLayoutParams)menuLayout.getLayoutParams();
+      layoutParams.leftMargin  += 250.0f * NavigineApp.DisplayDensity;
+      layoutParams.rightMargin -= 250.0f * NavigineApp.DisplayDensity;
+      menuLayout.setVisibility(View.VISIBLE);
+      menuLayout.setLayoutParams(layoutParams);
+      
+      layoutParams = (ViewGroup.MarginLayoutParams)topLayout.getLayoutParams();
+      layoutParams.leftMargin  += 250.0f * NavigineApp.DisplayDensity;
+      layoutParams.rightMargin -= 250.0f * NavigineApp.DisplayDensity;
+      topLayout.setLayoutParams(layoutParams);
+      
+      layoutParams = (ViewGroup.MarginLayoutParams)mainLayout.getLayoutParams();
+      layoutParams.leftMargin  += 250.0f * NavigineApp.DisplayDensity;
+      layoutParams.rightMargin -= 250.0f * NavigineApp.DisplayDensity;
+      mainLayout.setLayoutParams(layoutParams);
+    }
+    else
+    {
+      mMenuVisible = false;
+      layoutParams = (ViewGroup.MarginLayoutParams)menuLayout.getLayoutParams();
+      layoutParams.leftMargin  -= 250.0f * NavigineApp.DisplayDensity;
+      layoutParams.rightMargin += 250.0f * NavigineApp.DisplayDensity;
+      menuLayout.setVisibility(View.GONE);
+      menuLayout.setLayoutParams(layoutParams);
+      
+      layoutParams = (ViewGroup.MarginLayoutParams)topLayout.getLayoutParams();
+      layoutParams.leftMargin  -= 250.0f * NavigineApp.DisplayDensity;
+      layoutParams.rightMargin += 250.0f * NavigineApp.DisplayDensity;
+      topLayout.setLayoutParams(layoutParams);
+      
+      layoutParams = (ViewGroup.MarginLayoutParams)mainLayout.getLayoutParams();
+      layoutParams.leftMargin  -= 250.0f * NavigineApp.DisplayDensity;
+      layoutParams.rightMargin += 250.0f * NavigineApp.DisplayDensity;
+      mainLayout.setLayoutParams(layoutParams);
+    }
+  }
+  
+  public void logout(View v)
+  {
+    if (mMenuVisible)
+    {
+      toggleMenuLayout(null);
       return;
     }
     
-    AlertDialog.Builder alertBuilder = new AlertDialog.Builder(mContext);
-    alertBuilder.setTitle(String.format(Locale.ENGLISH, "Location '%s'", _info.title));
-    
-    alertBuilder.setNegativeButton("Delete location",
-      new DialogInterface.OnClickListener()
-      {
-        @Override public void onClick(DialogInterface dlg, int id)
-        {
-          deleteLocation(_info);
-        }
-      });
-    alertBuilder.setPositiveButton("Select location",
-      new DialogInterface.OnClickListener()
-      {
-        @Override public void onClick(DialogInterface dlg, int id)
-        {
-          selectLocation(_info);
-        }
-      });
-    
-    AlertDialog dialog = alertBuilder.create();
-    dialog.setCanceledOnTouchOutside(false);
-    dialog.show();
+    NavigineApp.logout();
+    Intent intent = new Intent(mContext, LoginActivity.class);
+    startActivity(intent);
   }
   
-  private void deleteLocation(LocationInfo info)
+  public void onMainLayoutClicked(View v)
   {
-    if (NavigineApp.Navigation == null)
-      return;
-    
-    if (info != null)
-    {
-      try
-      {
-        (new File(info.archiveFile)).delete();
-        info.localVersion = -1;
-        info.localModified = false;
-        
-        String locationDir = LocationLoader.getLocationDir(mContext, info.title);
-        File dir = new File(locationDir);
-        File[] files = dir.listFiles();
-        for(int i = 0; i < files.length; ++i)
-          files[i].delete();
-        dir.delete();
-        
-        String mapFile = NavigineApp.Settings.getString("map_file", "");
-        if (mapFile.equals(info.archiveFile))
-        {
-          NavigineApp.Navigation.loadArchive(null);
-          SharedPreferences.Editor editor = NavigineApp.Settings.edit();
-          editor.putString("map_file", "");
-          editor.commit();
-        }
-        
-        mAdapter.updateList();
-      }
-      catch (Throwable e)
-      {
-        Log.e(TAG, Log.getStackTraceString(e));
-      }
-    }
+    if (mMenuVisible)
+      toggleMenuLayout(null);
   }
   
   private void selectLocation(LocationInfo info)
@@ -321,13 +604,87 @@ public class LoaderActivity extends Activity
     if (NavigineApp.Navigation == null)
       return;
     
-    if (info != null && NavigineApp.Navigation.loadArchive(info.archiveFile))
+    if (info == null)
+      return;
+    
+    File f = new File(info.archiveFile);
+    if (!f.exists())
     {
-      SharedPreferences.Editor editor = NavigineApp.Settings.edit();
-      editor.putString("map_file", info.archiveFile);
-      editor.commit();
+      Log.d(TAG, String.format(Locale.ENGLISH, "Location '%s' is not downloaded: missing file '%s'",
+            info.title, info.archiveFile));
+      return;
+    }
+    
+    Log.d(TAG, "Selecting location " + info.id + " " + info.archiveFile);
+    
+    SharedPreferences.Editor editor = NavigineApp.Settings.edit();
+    editor.putInt("map_id", info.id);
+    editor.putString("map_file", info.archiveFile);
+    editor.commit();
+    mAdapter.updateList();
+  }
+  
+  private void deleteLocation(LocationInfo info)
+  {
+    if (NavigineApp.Navigation == null)
+      return;
+    
+    if (info == null)
+      return;
+    
+    try
+    {
+      (new File(info.archiveFile)).delete();
+      info.localVersion = -1;
+      info.localModified = false;
+      
+      String locationDir = LocationLoader.getLocationDir(mContext, info.title);
+      File dir = new File(locationDir);
+      File[] files = dir.listFiles();
+      for(int i = 0; i < files.length; ++i)
+        files[i].delete();
+      dir.delete();
+      
+      String mapFile = NavigineApp.Settings.getString("map_file", "");
+      if (mapFile.equals(info.archiveFile))
+      {
+        NavigineApp.Navigation.loadArchive(null);
+        SharedPreferences.Editor editor = NavigineApp.Settings.edit();
+        editor.putInt("map_id", 0);
+        editor.putString("map_file", "");
+        editor.commit();
+      }
+      
       mAdapter.updateList();
     }
+    catch (Throwable e)
+    {
+      Log.e(TAG, Log.getStackTraceString(e));
+    }
+  }
+  
+  private void showLocation(LocationInfo info)
+  {
+    if (NavigineApp.Navigation == null)
+      return;
+    
+    if (info == null)
+      return;
+    
+    if (mMenuVisible)
+      toggleMenuLayout(null);
+    
+    Bundle b = new Bundle();
+    b.putInt("location_id", info.id);
+    b.putInt("location_version", info.localVersion);
+    b.putString("location_title", info.title);
+    b.putString("location_description", info.description);
+    b.putString("location_archive_file", info.archiveFile);
+    b.putBoolean("location_modified", info.localModified);
+    
+    Intent intent = new Intent(mContext, LocationInfoActivity.class);
+    intent.putExtras(b);
+    startActivity(intent);
   }
   
   private void refreshMapList()
@@ -335,27 +692,155 @@ public class LoaderActivity extends Activity
     if (mLoader >= 0)
       return;
     
-    String userHash = NavigineApp.Settings.getString("user_hash", "");
-    if (userHash.length() == 0)
+    if (NavigineApp.Navigation == null)
+      return;
+    
+    if (NavigineApp.UserInfo == null)
       return;
     
     // Starting new loader
-    String fileName = LocationLoader.getLocationDir(NavigineApp.AppContext, null) + "/maps.xml";
-    new File(fileName).delete();
+    Log.d(TAG, "Refresh map list: started");
+    String fileName = LocationLoader.getHomeDir(NavigineApp.AppContext) + "/maps.xml";
     mLoader = LocationLoader.startLocationLoader(null, fileName, true);
     mLoaderTime = DateTimeUtils.currentTimeMillis();
-    mInfoList = new ArrayList<LocationInfo>();
     Log.d(TAG, String.format(Locale.ENGLISH, "Location loader started: %d", mLoader));
+    
+    LocationInfo info0 = new LocationInfo();
+    mInfoList.add(0, info0);
+    mAdapter.updateList();
   }
   
-  private void updateLocalVersions()
+  private boolean readMapList()
+  {
+    try
+    {
+      String fileName = LocationLoader.getLocationDir(NavigineApp.AppContext, null) + "/maps.xml";
+      List<LocationInfo> infoList = Parser.parseMapsXml(NavigineApp.AppContext, fileName);
+      if (infoList != null)
+      {
+        mInfoList = infoList;
+        mAdapter.updateList();
+        return true;
+      }
+      return false;
+    }
+    catch (Throwable e)
+    {
+      Log.e(TAG, Log.getStackTraceString(e));
+    }
+    return false;
+  }
+  
+  private void updateLoader()
   {
     if (NavigineApp.Navigation == null)
       return;
     
+    //Log.d(TAG, String.format(Locale.ENGLISH, "Update loader: %d", mLoader));
+    
+    long timeNow = DateTimeUtils.currentTimeMillis();
+    if (mLoader < 0)
+      return;
+    
+    int status = LocationLoader.checkLocationLoader(mLoader);
+    if (status >= 0 && status < 100)
+    {
+      if ((Math.abs(timeNow - mLoaderTime) > LOADER_TIMEOUT / 3 && status == 0) ||
+          (Math.abs(timeNow - mLoaderTime) > LOADER_TIMEOUT))
+      {
+        // TODO: show notification
+        Log.d(TAG, String.format(Locale.ENGLISH, "Refresh map list: stopped on timeout!"));
+        LocationLoader.stopLocationLoader(mLoader);
+        mLoader = -1;
+      }
+    }
+    else
+    {
+      Log.d(TAG, String.format(Locale.ENGLISH, "Refresh map list: finished with result: %d", status));
+      LocationLoader.stopLocationLoader(mLoader);
+      mLoader = -1;
+      
+      if (status == 100)
+      {
+        if (readMapList() && mInfoList.isEmpty())
+        {
+          mStatusLabel.setVisibility(View.VISIBLE);
+          mStatusLabel.setText("No locations available");
+        }
+        else
+        {
+          mStatusLabel.setVisibility(View.GONE);
+        }
+      }
+      else
+      {
+        // TODO: show notification (check your id)
+      }
+    }
+  }
+  
+  long mUpdateLocationLoadersTime = 0;
+  private void updateLocationLoaders()
+  {
+    if (NavigineApp.Navigation == null)
+      return;
+    
+    long timeNow = DateTimeUtils.currentTimeMillis();
+    mUpdateLocationLoadersTime = timeNow;
+    
+    Iterator<Map.Entry<String,LoaderState> > iter = mLoaderMap.entrySet().iterator();
+    while (iter.hasNext())
+    {
+      Map.Entry<String,LoaderState> entry = iter.next();
+      
+      LoaderState loader = entry.getValue();
+      if (loader.state >= 0 && loader.state < 100)
+      {
+        loader.timeLabel = timeNow;
+        if (loader.type == DOWNLOAD)
+          loader.state = LocationLoader.checkLocationLoader(loader.id);
+        if (loader.type == UPLOAD)
+          loader.state = LocationLoader.checkLocationUploader(loader.id);
+      }
+      else if (loader.state == 100)
+      {
+        String locationFile = LocationLoader.getLocationFile(NavigineApp.AppContext, loader.location);
+        for(int i = 0; i < mInfoList.size(); ++i)
+        {
+          LocationInfo info = mInfoList.get(i);
+          if (info.archiveFile.equals(locationFile))
+          {
+            selectLocation(info);
+            break;
+          }
+        }
+        if (loader.type == DOWNLOAD)
+          LocationLoader.stopLocationLoader(loader.id);
+        if (loader.type == UPLOAD)
+          LocationLoader.stopLocationUploader(loader.id);
+        iter.remove();
+      }
+      else
+      {
+        // Load failed
+        if (Math.abs(timeNow - loader.timeLabel) > 5000)
+        {
+          if (loader.type == DOWNLOAD)
+            LocationLoader.stopLocationLoader(loader.id);
+          if (loader.type == UPLOAD)
+            LocationLoader.stopLocationUploader(loader.id);
+          iter.remove();
+        }
+      }
+    }
+    
+    // Updating local versions
     for(int i = 0; i < mInfoList.size(); ++i)
     {
       LocationInfo info = mInfoList.get(i);
+      if (info.id == 0)
+        continue;
+      
       String versionStr = LocationLoader.getLocalVersion(NavigineApp.AppContext, info.title);
       if (versionStr != null)
       {
@@ -374,154 +859,14 @@ public class LoaderActivity extends Activity
         {
           NavigineApp.Navigation.loadArchive(null);
           SharedPreferences.Editor editor = NavigineApp.Settings.edit();
+          editor.putInt("map_id", 0);
           editor.putString("map_file", "");
           editor.commit();
         }
       }
     }
+    
     mAdapter.updateList();
-  }
-  
-  private void updateLoader()
-  {
-    if (NavigineApp.Navigation == null)
-      return;
-    
-    //Log.d(TAG, String.format(Locale.ENGLISH, "Update loader: %d", mLoader));
-    
-    long timeNow = DateTimeUtils.currentTimeMillis();
-    if (mLoader < 0)
-      return;
-    
-    int status = LocationLoader.checkLocationLoader(mLoader);
-    if (status < 100)
-    {
-      if ((Math.abs(timeNow - mLoaderTime) > LOADER_TIMEOUT / 3 && status == 0) ||
-          (Math.abs(timeNow - mLoaderTime) > LOADER_TIMEOUT))
-      {
-        mListView.setVisibility(View.GONE);
-        mStatusLabel.setVisibility(View.VISIBLE);
-        mStatusLabel.setText("Loading timeout!\nPlease, check your internet connection!");
-        Log.d(TAG, String.format(Locale.ENGLISH, "Load stopped on timeout!"));
-        LocationLoader.stopLocationLoader(mLoader);
-        mLoader = -1;
-      }
-      else
-      {
-        mListView.setVisibility(View.GONE);
-        mStatusLabel.setVisibility(View.VISIBLE);
-        mStatusLabel.setText(String.format(Locale.ENGLISH, "Loading content (%d%%)", status));
-      }
-    }
-    else
-    {
-      Log.d(TAG, String.format(Locale.ENGLISH, "Load finished with result: %d", status));
-      LocationLoader.stopLocationLoader(mLoader);
-      mLoader = -1;
-      
-      if (status == 100)
-      {
-        parseMapsXml();
-        if (mInfoList.isEmpty())
-        {
-          mListView.setVisibility(View.GONE);
-          mStatusLabel.setVisibility(View.VISIBLE);
-          mStatusLabel.setText("No locations available");
-        }
-        else
-        {
-          mListView.setVisibility(View.VISIBLE);
-          mStatusLabel.setVisibility(View.GONE);
-        }
-      }
-      else
-      {
-        mListView.setVisibility(View.GONE);
-        mStatusLabel.setVisibility(View.VISIBLE);
-        mStatusLabel.setText("Error loading!\nPlease, check your ID!");
-      }
-    }
-  }
-  
-  long mUpdateLocationLoadersTime = 0;
-  private void updateLocationLoaders()
-  {
-    if (NavigineApp.Navigation == null)
-      return;
-    
-    long timeNow = DateTimeUtils.currentTimeMillis();
-    mUpdateLocationLoadersTime = timeNow;
-    
-    synchronized (mLoaderMap)
-    {
-      Iterator<Map.Entry<String,LoaderState> > iter = mLoaderMap.entrySet().iterator();
-      while (iter.hasNext())
-      {
-        Map.Entry<String,LoaderState> entry = iter.next();
-        
-        LoaderState loader = entry.getValue();
-        if (loader.state < 100)
-        {
-          loader.timeLabel = timeNow;
-          if (loader.type == DOWNLOAD)
-            loader.state = LocationLoader.checkLocationLoader(loader.id);
-          if (loader.type == UPLOAD)
-            loader.state = LocationLoader.checkLocationUploader(loader.id);
-        }
-        else if (loader.state == 100)
-        {
-          String archivePath = NavigineApp.Navigation.getArchivePath();
-          String locationFile = LocationLoader.getLocationFile(NavigineApp.AppContext, loader.location);
-          if (archivePath != null && archivePath.equals(locationFile))
-          {
-            Log.d(TAG, "Reloading archive " + archivePath);
-            if (NavigineApp.Navigation.loadArchive(archivePath))
-            {
-              SharedPreferences.Editor editor = NavigineApp.Settings.edit();
-              editor.putString("map_file", archivePath);
-              editor.commit();
-            }
-          }
-          if (loader.type == DOWNLOAD)
-            LocationLoader.stopLocationLoader(loader.id);
-          if (loader.type == UPLOAD)
-            LocationLoader.stopLocationUploader(loader.id);
-          iter.remove();
-        }
-        else
-        {
-          // Load failed
-          if (Math.abs(timeNow - loader.timeLabel) > 5000)
-          {
-            if (loader.type == DOWNLOAD)
-              LocationLoader.stopLocationLoader(loader.id);
-            if (loader.type == UPLOAD)
-              LocationLoader.stopLocationUploader(loader.id);
-            iter.remove();
-          }
-        }
-      }
-    }
-    updateLocalVersions();
-    mAdapter.updateList();
-  }
-  
-  private void parseMapsXml()
-  {
-    try
-    {
-      String fileName = LocationLoader.getLocationDir(NavigineApp.AppContext, null) + "/maps.xml";
-      List<LocationInfo> infoList = Parser.parseMapsXml(NavigineApp.AppContext, fileName);
-      mInfoList = new ArrayList<LocationInfo>();
-      if (infoList != null)
-        mInfoList = infoList;
-      mAdapter.updateList();
-      new File(fileName).delete();
-    }
-    catch (Throwable e)
-    {
-      Log.e(TAG, Log.getStackTraceString(e));
-    }
   }
   
   private void startDownload(int index)
@@ -529,24 +874,17 @@ public class LoaderActivity extends Activity
     if (NavigineApp.Navigation == null)
       return;
     
-    String userHash = NavigineApp.Settings.getString("user_hash", "");
-    if (userHash.length() == 0)
-      return;
-    
     LocationInfo info = mInfoList.get(index);
     String location = new String(info.title);
     Log.d(TAG, String.format(Locale.ENGLISH, "Start download: %s", location));
     
-    synchronized (mLoaderMap)
+    if (!mLoaderMap.containsKey(location))
     {
-      if (!mLoaderMap.containsKey(location))
-      {
-        LoaderState loader = new LoaderState();
-        loader.location = location;
-        loader.type = DOWNLOAD;
-        loader.id = LocationLoader.startLocationLoader(location, info.archiveFile, true);
-        mLoaderMap.put(location, loader);
-      }
+      LoaderState loader = new LoaderState();
+      loader.location = location;
+      loader.type = DOWNLOAD;
+      loader.id = LocationLoader.startLocationLoader(location, info.archiveFile, true);
+      mLoaderMap.put(location, loader);
     }
     mAdapter.updateList();
   }
@@ -556,26 +894,54 @@ public class LoaderActivity extends Activity
     if (NavigineApp.Navigation == null)
       return;
     
-    String userHash = NavigineApp.Settings.getString("user_hash", "");
-    if (userHash.length() == 0)
-      return;
-    
     LocationInfo info = mInfoList.get(index);
     String location = new String(info.title);
     Log.d(TAG, String.format(Locale.ENGLISH, "Start upload: %s", location));
     
-    synchronized (mLoaderMap)
+    if (!mLoaderMap.containsKey(location))
     {
-      if (!mLoaderMap.containsKey(location))
-      {
-        LoaderState loader = new LoaderState();
-        loader.location = location;
-        loader.type = UPLOAD;
-        loader.id = LocationLoader.startLocationUploader(location, info.archiveFile, true);
-        mLoaderMap.put(location, loader);
-      }
+      LoaderState loader = new LoaderState();
+      loader.location = location;
+      loader.type = UPLOAD;
+      loader.id = LocationLoader.startLocationUploader(location, info.archiveFile, true);
+      mLoaderMap.put(location, loader);
     }
     mAdapter.updateList();
+  }
+  
+  private void stopDownload(int index)
+  {
+    if (NavigineApp.Navigation == null)
+      return;
+    
+    LocationInfo info = mInfoList.get(index);
+    String location = new String(info.title);
+    Log.d(TAG, String.format(Locale.ENGLISH, "Stop loader: %s", location));
+    
+    if (mLoaderMap.containsKey(location))
+    {
+      LoaderState loader = mLoaderMap.get(location);
+      LocationLoader.stopLocationLoader(loader.id);
+      mLoaderMap.remove(location);
+    }
+    mAdapter.updateList();
+  }
+  
+  private void stopLoaders()
+  {
+    Log.d(TAG, "Stop loaders");
+    if (mLoader >= 0)
+    {
+      LocationLoader.stopLocationLoader(mLoader);
+      mLoader = -1;
+    }
+    
+    for(Map.Entry<String, LoaderState> entry : mLoaderMap.entrySet())
+    {
+      LoaderState loader = entry.getValue();
+      LocationLoader.stopLocationLoader(loader.id);
+    }
+    mLoaderMap.clear();
   }
   
   final Runnable mRunnable =
@@ -586,11 +952,15 @@ public class LoaderActivity extends Activity
         if (NavigineApp.Navigation == null)
           return;
         
-        long timeNow = DateTimeUtils.currentTimeMillis();
-        
-        String userHash = NavigineApp.Settings.getString("user_hash", "");
-        if (userHash.length() == 0)
+        if (NavigineApp.UserInfo == null)
+        {
+          logout(null);
           return;
+        }
+        
+        mNameLabel.setText(NavigineApp.UserInfo.name.toUpperCase());
+        
+        long timeNow = DateTimeUtils.currentTimeMillis();
         
         if (mLoader >= 0)
           updateLoader();

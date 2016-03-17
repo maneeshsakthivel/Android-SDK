@@ -31,7 +31,10 @@ public class SettingsActivity extends Activity
   private static final int REQUEST_PICK_FILE = 1;
   
   // This context
-  private final Context context = this;
+  private final Context mContext = this;
+  
+  private Button  mMenuButton  = null;
+  private boolean mMenuVisible = false;
   
   private boolean mBackgroundNavigationEnabled = true;
   private int mBackgroundMode = NavigationThread.MODE_NORMAL;
@@ -47,6 +50,11 @@ public class SettingsActivity extends Activity
     super.onCreate(savedInstanceState);
     requestWindowFeature(Window.FEATURE_NO_TITLE);
     setContentView(R.layout.settings);
+    
+    getWindow().setFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS,
+                         WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+    
+    mMenuButton = (Button)findViewById(R.id.settings__menu_button);
     
     CheckBox backgroundNavigationCheckBox = (CheckBox)findViewById(R.id.settings__background_navigation_checkbox);
     backgroundNavigationCheckBox.setOnCheckedChangeListener(
@@ -121,7 +129,7 @@ public class SettingsActivity extends Activity
     findViewById(R.id.settings__orientation_enabled_label).setVisibility(View.GONE);
     findViewById(R.id.settings__orientation_enabled_checkbox).setVisibility(View.GONE);
     
-    setTextValue(R.id.settings__location_server_address_edit,   NavigineApp.Settings.getString ("location_server_address1", NavigineApp.DEFAULT_SERVER));
+    setTextValue(R.id.settings__location_server_address_edit,   NavigineApp.Settings.getString ("location_server_address", NavigineApp.DEFAULT_SERVER));
     setCheckBox (R.id.settings__beacon_service_checkbox,        NavigineApp.Settings.getBoolean("beacon_service_enabled", true));
     setCheckBox (R.id.settings__save_navigation_log_checkbox,   NavigineApp.Settings.getBoolean("navigation_log_enabled", false));
     setCheckBox (R.id.settings__save_navigation_track_checkbox, NavigineApp.Settings.getBoolean("navigation_track_enabled", false));
@@ -152,6 +160,11 @@ public class SettingsActivity extends Activity
     }
   }
   
+  @Override public void onBackPressed()
+  {
+    toggleMenuLayout(null);
+  }
+  
   public void onRadioButtonClicked(View view)
   {
     boolean checked = ((RadioButton)view).isChecked();
@@ -173,6 +186,103 @@ public class SettingsActivity extends Activity
         mBackgroundMode = NavigationThread.MODE_ECONOMIC2;
         break;
     }
+  }
+  
+  public void onLocationManagementMode(View v)
+  {
+    if (mMenuVisible)
+      toggleMenuLayout(null);
+    Intent intent = new Intent(mContext, LoaderActivity.class);
+    startActivity(intent);
+  }
+  
+  public void onMeasuringMode(View v)
+  {
+    if (mMenuVisible)
+      toggleMenuLayout(null);
+    Intent intent = new Intent(mContext, MeasuringActivity.class);
+    startActivity(intent);
+  }
+  
+  public void onNavigationMode(View v)
+  {
+    if (mMenuVisible)
+      toggleMenuLayout(null);
+    Intent intent = new Intent(mContext, NavigationActivity.class);
+    startActivity(intent);
+  }
+  
+  public void onDebugMode(View v)
+  {
+    if (mMenuVisible)
+      toggleMenuLayout(null);
+    Intent intent = new Intent(mContext, DebugActivity.class);
+    startActivity(intent);
+  }
+  
+  public void onSettingsMode(View v)
+  {
+    if (mMenuVisible)
+      toggleMenuLayout(null);
+  }
+  
+  public void toggleMenuLayout(View v)
+  {
+    LinearLayout topLayout  = (LinearLayout)findViewById(R.id.settings__top_layout);
+    LinearLayout menuLayout = (LinearLayout)findViewById(R.id.settings__menu_layout);
+    LinearLayout mainLayout = (LinearLayout)findViewById(R.id.settings__main_layout);
+    ViewGroup.MarginLayoutParams layoutParams = null;
+    
+    boolean hasMapFile   = (NavigineApp.Settings != null && NavigineApp.Settings.getString("map_file", "").length() > 0);
+    boolean hasDebugMode = (NavigineApp.Settings != null && NavigineApp.Settings.getBoolean("debug_mode_enabled", false));
+    findViewById(R.id.settings__menu_measuring_mode).setVisibility(hasMapFile ? View.VISIBLE : View.GONE);
+    findViewById(R.id.settings__menu_navigation_mode).setVisibility(hasMapFile ? View.VISIBLE : View.GONE);
+    findViewById(R.id.settings__menu_debug_mode).setVisibility(hasDebugMode ? View.VISIBLE : View.GONE);
+    
+    if (!mMenuVisible)
+    {
+      mMenuVisible = true;
+      layoutParams = (ViewGroup.MarginLayoutParams)menuLayout.getLayoutParams();
+      layoutParams.leftMargin  += 250.0f * NavigineApp.DisplayDensity;
+      layoutParams.rightMargin -= 250.0f * NavigineApp.DisplayDensity;
+      menuLayout.setVisibility(View.VISIBLE);
+      menuLayout.setLayoutParams(layoutParams);
+      
+      layoutParams = (ViewGroup.MarginLayoutParams)topLayout.getLayoutParams();
+      layoutParams.leftMargin  += 250.0f * NavigineApp.DisplayDensity;
+      layoutParams.rightMargin -= 250.0f * NavigineApp.DisplayDensity;
+      topLayout.setLayoutParams(layoutParams);
+      
+      layoutParams = (ViewGroup.MarginLayoutParams)mainLayout.getLayoutParams();
+      layoutParams.leftMargin  += 250.0f * NavigineApp.DisplayDensity;
+      layoutParams.rightMargin -= 250.0f * NavigineApp.DisplayDensity;
+      mainLayout.setLayoutParams(layoutParams);
+    }
+    else
+    {
+      mMenuVisible = false;
+      layoutParams = (ViewGroup.MarginLayoutParams)menuLayout.getLayoutParams();
+      layoutParams.leftMargin  -= 250.0f * NavigineApp.DisplayDensity;
+      layoutParams.rightMargin += 250.0f * NavigineApp.DisplayDensity;
+      menuLayout.setVisibility(View.GONE);
+      menuLayout.setLayoutParams(layoutParams);
+      
+      layoutParams = (ViewGroup.MarginLayoutParams)topLayout.getLayoutParams();
+      layoutParams.leftMargin  -= 250.0f * NavigineApp.DisplayDensity;
+      layoutParams.rightMargin += 250.0f * NavigineApp.DisplayDensity;
+      topLayout.setLayoutParams(layoutParams);
+      
+      layoutParams = (ViewGroup.MarginLayoutParams)mainLayout.getLayoutParams();
+      layoutParams.leftMargin  -= 250.0f * NavigineApp.DisplayDensity;
+      layoutParams.rightMargin += 250.0f * NavigineApp.DisplayDensity;
+      mainLayout.setLayoutParams(layoutParams);
+    }
+  }
+  
+  public void onMainLayoutClicked(View v)
+  {
+    if (mMenuVisible)
+      toggleMenuLayout(null);
   }
   
   private void setTextValue(int id, String text)
@@ -213,7 +323,7 @@ public class SettingsActivity extends Activity
   private void saveSettings()
   {
     SharedPreferences.Editor editor = NavigineApp.Settings.edit();
-    editor.putString ("location_server_address1",     getTextValue(R.id.settings__location_server_address_edit));
+    editor.putString ("location_server_address",      getTextValue(R.id.settings__location_server_address_edit));
     editor.putInt("background_navigation_mode",       mBackgroundNavigationEnabled ? mBackgroundMode : NavigationThread.MODE_IDLE);
     editor.putBoolean("beacon_service_enabled",       getCheckBox (R.id.settings__beacon_service_checkbox));
     editor.putBoolean("navigation_log_enabled",       getCheckBox (R.id.settings__save_navigation_log_checkbox));
