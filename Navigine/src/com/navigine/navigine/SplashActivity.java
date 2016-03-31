@@ -33,6 +33,7 @@ public class SplashActivity extends Activity
   // This context
   private final Context mContext = this;
   
+  private TextView  mErrorLabel  = null;
   private TimerTask mTimerTask   = null;
   private Handler   mHandler     = new Handler();
   private Timer     mTimer       = new Timer();
@@ -49,18 +50,11 @@ public class SplashActivity extends Activity
     
     getWindow().setFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS,
                          WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
-  }
-  
-  @Override public void onDestroy()
-  {
-    Log.d(TAG, "SplashActivity destroyed");
-    super.onStart();
-  }
-  
-  @Override public void onStart()
-  {
-    Log.d(TAG, "SplashActivity started");
-    super.onStart();
+    
+    NavigineApp.startSentry(mContext);
+    
+    mErrorLabel = (TextView)findViewById(R.id.splash__error_label);
+    mErrorLabel.setVisibility(View.GONE);
     
     // Starting interface updates
     mTimerTask = 
@@ -71,19 +65,7 @@ public class SplashActivity extends Activity
           update();
         }
       };
-    mTimer.schedule(mTimerTask, 500, 500);
-  }
-  
-  @Override public void onStop()
-  {
-    Log.d(TAG, "SplashActivity stopped");
-    super.onStop();
-    
-    if (mTimerTask != null)
-    {
-      mTimerTask.cancel();
-      mTimerTask = null;
-    }
+    mTimer.schedule(mTimerTask, 1000, 1000);
   }
   
   @Override public void onBackPressed()
@@ -101,23 +83,18 @@ public class SplashActivity extends Activity
     {
       public void run()
       {
-        if (!mInitialized)
-        {
-          NavigineApp.initialize(getApplicationContext());
-          mInitialized = true;
+        if (mInitialized)
           return;
-        }
-        else
+        
+        mInitialized = true;
+        if (NavigineApp.initialize(getApplicationContext()))
         {
           // Starting loader activity
           Intent intent = new Intent(mContext, LoaderActivity.class);
           startActivity(intent);
-          if (mTimerTask != null)
-          {
-            mTimerTask.cancel();
-            mTimerTask = null;
-          }
         }
+        else
+          mErrorLabel.setVisibility(View.VISIBLE);
       }
     };
 }

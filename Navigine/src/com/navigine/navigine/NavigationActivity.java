@@ -132,6 +132,12 @@ public class NavigationActivity extends Activity
     getWindow().setFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS,
                          WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
     
+    if (NavigineApp.Navigation == null)
+    {
+      finish();
+      return;
+    }
+    
     // Setting up GUI parameters
     mMapImageView = (ImageView)findViewById(R.id.navigation__map_image);
     mPicImageView = (ImageView)findViewById(R.id.navigation__ext_image);
@@ -176,9 +182,10 @@ public class NavigationActivity extends Activity
       });
   }
   
-  @Override public void onResume()
+  @Override public void onStart()
   {
-    super.onResume();
+    Log.d(TAG, "NavigationActivity started");
+    super.onStart();
     
     // Reading settings
     if (NavigineApp.Settings != null)
@@ -204,14 +211,15 @@ public class NavigationActivity extends Activity
         }
       };
     mTimer.schedule(mTimerTask, UPDATE_TIMEOUT, UPDATE_TIMEOUT);
-
+    
     // Switch to foreground mode
     NavigineApp.setBackgroundMode(false);
   }
   
-  @Override public void onPause()
+  @Override public void onStop()
   {
-    super.onPause();    
+    Log.d(TAG, "NavigationActivity stopped");
+    super.onStop();
     
     // Stop interface updates
     if (mTimerTask != null)

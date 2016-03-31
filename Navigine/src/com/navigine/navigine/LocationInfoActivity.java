@@ -63,6 +63,8 @@ public class LocationInfoActivity extends Activity
     requestWindowFeature(Window.FEATURE_NO_TITLE);
     setContentView(R.layout.location_info);
     
+    NavigineApp.startSentry(mContext);
+    
     // Extracting parameters from the intent
     Bundle b = getIntent().getExtras();
     mLocationInfo.id = b.getInt("location_id");
@@ -108,7 +110,15 @@ public class LocationInfoActivity extends Activity
   
   @Override public void onStart()
   {
+    Log.d(TAG, "LocationInfoActivity started");
     super.onStart();
+    
+    // Stop interface updates
+    if (mTimerTask != null)
+    {
+      mTimerTask.cancel();
+      mTimerTask = null;
+    }
     
     // Starting interface updates
     mTimerTask = 
@@ -124,9 +134,20 @@ public class LocationInfoActivity extends Activity
   
   @Override public void onStop()
   {
+    Log.d(TAG, "LocationInfoActivity stopped");
     super.onStop();
-    mTimerTask.cancel();
-    mTimerTask = null;
+    
+    // Stop interface updates
+    if (mTimerTask != null)
+    {
+      mTimerTask.cancel();
+      mTimerTask = null;
+    }
+  }
+  
+  @Override public void onBackPressed()
+  {
+    finish();
   }
   
   public void onBackButtonClicked(View v)

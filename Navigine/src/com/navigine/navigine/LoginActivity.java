@@ -30,6 +30,7 @@ public class LoginActivity extends Activity
   // Constants
   private static final String TAG = "NAVIGINE.LoginActivity";
   private static final int AUTH_TIMEOUT = 15000;
+  private static final int UPDATE_TIMEOUT = 100;
   
   // This context
   private final Context mContext        = this;
@@ -62,6 +63,14 @@ public class LoginActivity extends Activity
     
     requestWindowFeature(Window.FEATURE_NO_TITLE);
     setContentView(R.layout.login);
+    
+    if (NavigineApp.Navigation == null)
+    {
+      finish();
+      return;
+    }
+    
+    NavigineApp.startSentry(mContext);
     
     mLoginEdit    = (EditText)findViewById(R.id.login__login_edit);
     mPasswordEdit = (EditText)findViewById(R.id.login__password_edit);
@@ -98,12 +107,11 @@ public class LoginActivity extends Activity
           stopLogin();
         }
       });
-  }
-  
-  @Override public void onDestroy()
-  {
-    Log.d(TAG, "LoginActivity destroyed");
-    super.onStart();
+    
+    NavigineApp.logout();
+    NavigineApp.Navigation.stopAuthentication();
+    mLoginEdit.setText(NavigineApp.Settings.getString("login", ""));
+    mPasswordEdit.setText(NavigineApp.Settings.getString("password", ""));
   }
   
   @Override public void onStart()
@@ -111,13 +119,12 @@ public class LoginActivity extends Activity
     Log.d(TAG, "LoginActivity started");
     super.onStart();
     
-    if (NavigineApp.Navigation == null)
-      return;
-    
-    NavigineApp.logout();
-    NavigineApp.Navigation.stopAuthentication();
-    mLoginEdit.setText(NavigineApp.Settings.getString("login", ""));
-    mPasswordEdit.setText(NavigineApp.Settings.getString("password", ""));
+    // Stop interface updates
+    if (mTimerTask != null)
+    {
+      mTimerTask.cancel();
+      mTimerTask = null;
+    }
     
     // Starting interface updates
     mTimerTask = 
@@ -128,7 +135,7 @@ public class LoginActivity extends Activity
           update();
         }
       };
-    mTimer.schedule(mTimerTask, 100, 100);
+    mTimer.schedule(mTimerTask, UPDATE_TIMEOUT, UPDATE_TIMEOUT);
   }
   
   @Override public void onStop()
@@ -136,6 +143,7 @@ public class LoginActivity extends Activity
     Log.d(TAG, "LoginActivity stopped");
     super.onStop();
     
+    // Stop interface updates
     if (mTimerTask != null)
     {
       mTimerTask.cancel();
@@ -148,6 +156,16 @@ public class LoginActivity extends Activity
     toggleMenuLayout(null);
   }
   
+  private void cleanup()
+  {
+    // Stop interface updates
+    if (mTimerTask != null)
+    {
+      mTimerTask.cancel();
+      mTimerTask = null;
+    }
+  }
+  
   public void onLocationManagementMode(View v)
   {
     if (mMenuVisible)
@@ -158,6 +176,9 @@ public class LoginActivity extends Activity
   {
     if (mMenuVisible)
       toggleMenuLayout(null);
+    
+    cleanup();
+    
     Intent intent = new Intent(mContext, MeasuringActivity.class);
     startActivity(intent);
   }
@@ -166,6 +187,9 @@ public class LoginActivity extends Activity
   {
     if (mMenuVisible)
       toggleMenuLayout(null);
+    
+    cleanup();
+    
     Intent intent = new Intent(mContext, NavigationActivity.class);
     startActivity(intent);
   }
@@ -174,6 +198,9 @@ public class LoginActivity extends Activity
   {
     if (mMenuVisible)
       toggleMenuLayout(null);
+    
+    cleanup();
+    
     Intent intent = new Intent(mContext, DebugActivity.class);
     startActivity(intent);
   }
@@ -182,6 +209,9 @@ public class LoginActivity extends Activity
   {
     if (mMenuVisible)
       toggleMenuLayout(null);
+    
+    cleanup();
+    
     Intent intent = new Intent(mContext, SettingsActivity.class);
     startActivity(intent);
   }
@@ -322,12 +352,9 @@ public class LoginActivity extends Activity
     else if (status.equals("AUTH_SUCCESS"))
     {
       mProgressBar.setVisibility(View.INVISIBLE);
-      if (mTimerTask != null)
-      {
-        mTimerTask.cancel();
-        mTimerTask = null;
-      }
       NavigineApp.login(NavigineApp.Navigation.getAuthenticatedUser());
+      
+      cleanup();
       Intent intent = new Intent(mContext, LoaderActivity.class);
       startActivity(intent);
     }

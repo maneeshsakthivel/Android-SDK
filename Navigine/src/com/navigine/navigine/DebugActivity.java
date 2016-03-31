@@ -58,6 +58,12 @@ public class DebugActivity extends Activity
     getWindow().setFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS,
                          WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
     
+    if (NavigineApp.Navigation == null)
+    {
+      finish();
+      return;
+    }
+    
     // Initializing variables
     mTextView       = (TextView)findViewById(R.id.debug__text_view);
     mMenuButton     = (Button)findViewById(R.id.debug__menu_button);
@@ -72,19 +78,17 @@ public class DebugActivity extends Activity
       NavigineApp.Navigation.setMode(NavigationThread.MODE_SCAN);
   }
   
-  @Override public void onDestroy()
+  @Override public void onStart()
   {
-    Log.d(TAG, "DebugActivity destroyed");
-    super.onDestroy();
+    Log.d(TAG, "DebugActivity started");
+    super.onStart();
     
-    if (NavigineApp.Navigation != null)
-      NavigineApp.Navigation.setMode(NavigationThread.MODE_IDLE);
-  }
-  
-  @Override public void onResume()
-  {
-    Log.d(TAG, "DebugActivity resumed");
-    super.onResume();
+    // Stopping interface updates
+    if (mTimerTask != null)
+    {
+      mTimerTask.cancel();
+      mTimerTask = null;
+    }
     
     // Starting interface updates
     mTimerTask = 
@@ -98,12 +102,17 @@ public class DebugActivity extends Activity
     mTimer.schedule(mTimerTask, UPDATE_TIMEOUT, UPDATE_TIMEOUT);
   }
   
-  @Override public void onPause()
+  @Override public void onStop()
   {
-    Log.d(TAG, "DebugActivity paused");
-    super.onPause();
-    mTimerTask.cancel();
-    mTimerTask = null;
+    Log.d(TAG, "DebugActivity stopped");
+    super.onStop();
+    
+    // Stopping interface updates
+    if (mTimerTask != null)
+    {
+      mTimerTask.cancel();
+      mTimerTask = null;
+    }
   }
   
   @Override public void onBackPressed()
@@ -111,10 +120,19 @@ public class DebugActivity extends Activity
     toggleMenuLayout(null);
   }
   
+  private void cleanup()
+  {
+    if (NavigineApp.Navigation != null)
+      NavigineApp.Navigation.setMode(NavigationThread.MODE_IDLE);
+  }
+  
   public void onLocationManagementMode(View v)
   {
     if (mMenuVisible)
       toggleMenuLayout(null);
+    
+    cleanup();
+    
     Intent intent = new Intent(mContext, LoaderActivity.class);
     startActivity(intent);
   }
@@ -123,6 +141,9 @@ public class DebugActivity extends Activity
   {
     if (mMenuVisible)
       toggleMenuLayout(null);
+    
+    cleanup();
+    
     Intent intent = new Intent(mContext, MeasuringActivity.class);
     startActivity(intent);
   }
@@ -131,6 +152,9 @@ public class DebugActivity extends Activity
   {
     if (mMenuVisible)
       toggleMenuLayout(null);
+    
+    cleanup();
+    
     Intent intent = new Intent(mContext, NavigationActivity.class);
     startActivity(intent);
   }
@@ -145,6 +169,9 @@ public class DebugActivity extends Activity
   {
     if (mMenuVisible)
       toggleMenuLayout(null);
+    
+    cleanup();
+    
     Intent intent = new Intent(mContext, SettingsActivity.class);
     startActivity(intent);
   }

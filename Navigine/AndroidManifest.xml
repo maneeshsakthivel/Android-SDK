@@ -8,6 +8,7 @@
     <uses-sdk android:minSdkVersion="19"/>
     
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
     <uses-permission android:name="android.permission.CHANGE_WIFI_STATE"/>
     <uses-permission android:name="android.permission.BLUETOOTH"/>
@@ -37,7 +38,8 @@
         
         <activity android:name="LoginActivity"
                   android:configChanges="keyboardHidden|orientation"
-                  android:screenOrientation="portrait"/>
+                  android:screenOrientation="portrait"
+                  android:noHistory="true"/>
         
         <activity android:name="LoaderActivity"
                   android:configChanges="keyboardHidden|orientation"

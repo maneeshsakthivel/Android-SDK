@@ -135,6 +135,12 @@ public class MeasuringActivity extends Activity
     getWindow().setFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS,
                          WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
     
+    if (NavigineApp.Navigation == null)
+    {
+      finish();
+      return;
+    }
+    
     // Setting up GUI parameters
     mMapImageView  = (ImageView)findViewById(R.id.measuring_mode__map_image);
     mMapImageView.setBackgroundColor(Color.argb(255, 235, 235, 235));
@@ -201,14 +207,12 @@ public class MeasuringActivity extends Activity
       });
   }
   
-  @Override public void onResume()
+  @Override public void onStart()
   {
-    super.onResume();
+    Log.d(TAG, "MeasuringActivity started");
+    super.onStart();
     
-    // Start scanning
-    NavigineApp.startScanning();
-    
-    // Clearing the previous timer task
+    // Stop interface updates
     if (mTimerTask != null)
     {
       mTimerTask.cancel();
@@ -225,6 +229,23 @@ public class MeasuringActivity extends Activity
         }
       };
     mTimer.schedule(mTimerTask, UPDATE_TIMEOUT, UPDATE_TIMEOUT);
+    
+    // Start scanning
+    Log.d(TAG, "MeasuringActivity: start scannning");
+    NavigineApp.startScanning();
+  }
+  
+  @Override public void onStop()
+  {
+    Log.d(TAG, "MeasuringActivity stopped");
+    super.onStart();
+    
+    // Stop interface updates
+    if (mTimerTask != null)
+    {
+      mTimerTask.cancel();
+      mTimerTask = null;
+    }
   }
   
   @Override public void onBackPressed()
@@ -237,14 +258,17 @@ public class MeasuringActivity extends Activity
     // Stop uploader
     if (mUploader >= 0)
     {
+      Log.d(TAG, "MeasuringActivity: stop uploader");
       LocationLoader.stopLocationLoader(mUploader);
       mUploader = -1;
     }
     
     // Stop measuring
+    Log.d(TAG, "MeasuringActivity: stop measuring");
     stopMeasuring();
     
     // Stop scanning 
+    Log.d(TAG, "MeasuringActivity: stop scannning");
     NavigineApp.stopScanning();
     
     // Stop interface updates

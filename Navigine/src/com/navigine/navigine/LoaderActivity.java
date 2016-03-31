@@ -31,6 +31,7 @@ public class LoaderActivity extends Activity
   // Constants
   public static final String TAG = "NAVIGINE.LoaderActivity";
   public static final int LOADER_TIMEOUT = 30000;
+  public static final int UPDATE_TIMEOUT = 100;
   
   // This context
   private Context mContext = this;
@@ -382,6 +383,12 @@ public class LoaderActivity extends Activity
     requestWindowFeature(Window.FEATURE_NO_TITLE);
     setContentView(R.layout.content);
     
+    if (NavigineApp.Navigation == null)
+    {
+      finish();
+      return;
+    }
+    
     // Instantiate custom adapter
     mAdapter = new LoaderAdapter();
     
@@ -409,7 +416,7 @@ public class LoaderActivity extends Activity
           
           mScrollTime = timeNow;
           
-          Log.d(TAG, String.format(Locale.ENGLISH, "onOverScroll: %d, total: %d", scrollY, mTotalScroll));
+          //Log.d(TAG, String.format(Locale.ENGLISH, "onOverScroll: %d, total: %d", scrollY, mTotalScroll));
           if (mTotalScroll < -Math.round(NavigineApp.DisplayHeightPx / 2) && timeNow - mScrollTime0 < 250)
             refreshMapList();
         }
@@ -421,9 +428,6 @@ public class LoaderActivity extends Activity
     mMenuButton = (Button)findViewById(R.id.content__menu_button);
     
     mLogoutButton = (Button)findViewById(R.id.content__logout_button);
-    
-    if (NavigineApp.Navigation == null)
-      return;
     
     if (NavigineApp.UserInfo == null)
     {
@@ -438,23 +442,17 @@ public class LoaderActivity extends Activity
       refreshMapList();
   }
   
-  @Override public void onDestroy()
+  @Override public void onStart()
   {
-    Log.d(TAG, "LoaderActivity destroyed");
-    super.onDestroy();
+    Log.d(TAG, "LoaderActivity started");
+    super.onStart();
     
+    // Stop interface updates
     if (mTimerTask != null)
     {
       mTimerTask.cancel();
       mTimerTask = null;
     }
-    stopLoaders();
-  }
-  
-  @Override public void onResume()
-  {
-    Log.d(TAG, "LoaderActivity resumed");
-    super.onResume();
     
     // Starting interface updates
     mTimerTask = 
@@ -465,25 +463,37 @@ public class LoaderActivity extends Activity
           mHandler.post(mRunnable);
         }
       };
-    mTimer.schedule(mTimerTask, 100, 100);
+    mTimer.schedule(mTimerTask, UPDATE_TIMEOUT, UPDATE_TIMEOUT);
   }
   
-  @Override public void onPause()
+  @Override public void onStop()
   {
-    Log.d(TAG, "LoaderActivity paused");
-    super.onPause();
+    Log.d(TAG, "LoaderActivity stopped");
+    super.onStop();
     
+    // Stop interface updates
     if (mTimerTask != null)
     {
       mTimerTask.cancel();
       mTimerTask = null;
     }
-    stopLoaders();
   }
   
   @Override public void onBackPressed()
   {
     toggleMenuLayout(null);
+  }
+  
+  private void cleanup()
+  {
+    stopLoaders();
+    
+    // Stop interface updates
+    if (mTimerTask != null)
+    {
+      mTimerTask.cancel();
+      mTimerTask = null;
+    }
   }
   
   public void onLocationManagementMode(View v)
@@ -496,6 +506,9 @@ public class LoaderActivity extends Activity
   {
     if (mMenuVisible)
       toggleMenuLayout(null);
+    
+    cleanup();
+    
     Intent intent = new Intent(mContext, MeasuringActivity.class);
     startActivity(intent);
   }
@@ -504,6 +517,9 @@ public class LoaderActivity extends Activity
   {
     if (mMenuVisible)
       toggleMenuLayout(null);
+    
+    cleanup();
+    
     Intent intent = new Intent(mContext, NavigationActivity.class);
     startActivity(intent);
   }
@@ -512,6 +528,9 @@ public class LoaderActivity extends Activity
   {
     if (mMenuVisible)
       toggleMenuLayout(null);
+    
+    cleanup();
+    
     Intent intent = new Intent(mContext, DebugActivity.class);
     startActivity(intent);
   }
@@ -520,6 +539,9 @@ public class LoaderActivity extends Activity
   {
     if (mMenuVisible)
       toggleMenuLayout(null);
+    
+    cleanup();
+    
     Intent intent = new Intent(mContext, SettingsActivity.class);
     startActivity(intent);
   }
@@ -588,7 +610,9 @@ public class LoaderActivity extends Activity
       return;
     }
     
+    cleanup();
     NavigineApp.logout();
+    
     Intent intent = new Intent(mContext, LoginActivity.class);
     startActivity(intent);
   }
@@ -929,7 +953,7 @@ public class LoaderActivity extends Activity
   
   private void stopLoaders()
   {
-    Log.d(TAG, "Stop loaders");
+    Log.d(TAG, "LoaderActivity: stop loaders");
     if (mLoader >= 0)
     {
       LocationLoader.stopLocationLoader(mLoader);

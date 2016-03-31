@@ -26,6 +26,7 @@ public class NavigineApp extends Application
   public static SharedPreferences Settings          = null;
   public static NavigationThread  Navigation        = null;
   public static IMU_Thread        IMU               = null;
+  public static SentryThread      Sentry            = null;
   public static int               IMU_Location      = 0;
   public static int               IMU_SubLocation   = 0;
   
@@ -39,9 +40,13 @@ public class NavigineApp extends Application
   
   public static boolean           BackgroundMode    = false;
   
+  public static NavigineExceptionHandler ExceptionHandler = null;
+  
   @Override public void onCreate()
   {
     super.onCreate();
+    
+    Log.d(TAG, "NAVIGINE APP STARTED");
     
     registerReceiver(
       new BroadcastReceiver()
@@ -59,7 +64,7 @@ public class NavigineApp extends Application
     );
   }
   
-  public static void initialize(Context appContext)
+  public static boolean initialize(Context appContext)
   {
     // Setting static parameters
     BeaconService.DEBUG_LEVEL     = 2;
@@ -77,8 +82,7 @@ public class NavigineApp extends Application
       AppContext = appContext;
       Settings   = AppContext.getSharedPreferences("NavigineSettings", 0);
       Navigation = new NavigationThread(null, AppContext);
-      IMU = new IMU_Thread(AppContext);
-      
+      IMU        = new IMU_Thread(AppContext);
       DisplayMetrics displayMetrics = AppContext.getResources().getDisplayMetrics();
       DisplayWidthPx  = displayMetrics.widthPixels;
       DisplayHeightPx = displayMetrics.heightPixels;
@@ -94,16 +98,19 @@ public class NavigineApp extends Application
     {
       Navigation = null;
       Log.e(TAG, Log.getStackTraceString(e));
-      return;
+      if (ExceptionHandler != null)
+        ExceptionHandler.addException(e);
+      return false;
     }
     
     Log.d(TAG, String.format(Locale.ENGLISH, "Root directory: %s",
           LocationLoader.getLocationDir(AppContext, "")));
     
     if (AppContext == null || Navigation == null || Settings == null)
-      return;
+      return false;
     
     applySettings();
+    return true;
   }
   
   public static void login(UserInfo userInfo)
@@ -146,6 +153,39 @@ public class NavigineApp extends Application
     {
       String fileName = LocationLoader.getLocationDir(AppContext, null) + "/maps.xml";
       (new File(fileName)).delete();
+    }
+  }
+  
+  public static void startSentry(Context appContext)
+  {
+    if (ExceptionHandler == null)
+    {
+      String homeDir = LocationLoader.getHomeDir(appContext);
+      ExceptionHandler = new NavigineExceptionHandler(homeDir);
+      Thread.setDefaultUncaughtExceptionHandler(ExceptionHandler);
+      
+      SharedPreferences settings = appContext.getSharedPreferences("NavigineSettings", 0);
+      if (settings.getBoolean("crash_messages_enabled", true))
+        Sentry = new SentryThread(homeDir + "/crashes");
+    }
+  }
+  
+  public static void stopSentry()
+  {
+    if (Sentry != null)
+    {
+      Sentry.terminate();
+      try
+      {
+        Log.d(TAG, "Joining with Sentry thread");
+        Sentry.join();
+      }
+      catch (Throwable e)
+      {
+        Log.e(TAG, "Joining error!");
+        Log.e(TAG, Log.getStackTraceString(e));
+      }
+      Sentry = null;
     }
   }
   
@@ -352,9 +392,11 @@ public class NavigineApp extends Application
       Log.e(TAG, "Joining error!");
       Log.e(TAG, Log.getStackTraceString(e));
     }
-    IMU = null;
-    Navigation = null;
-    AppContext = null;
+    IMU         = null;
+    Navigation  = null;
+    AppContext  = null;    
+    
+    stopSentry();
   }
   
   public static DeviceInfo getDeviceInfoByIMU(IMU_Device imuDevice)

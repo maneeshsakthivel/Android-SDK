@@ -59,10 +59,10 @@ public class BeaconActivity extends Activity
     Log.d(TAG, "BeaconActivity created");
     super.onCreate(savedInstanceState);
     
+    NavigineApp.startSentry(mContext);
+    
     if (NavigineApp.Navigation == null)
-    {
       NavigineApp.initialize(getApplicationContext());
-    }
     
     requestWindowFeature(Window.FEATURE_NO_TITLE);
     setContentView(R.layout.notification);
@@ -75,7 +75,7 @@ public class BeaconActivity extends Activity
     mImageUrl    = getIntent().getStringExtra("beacon_action_image_url");
     mImagePath   = getIntent().getStringExtra("beacon_action_image_path");
     
-    mImageUrl    = "http://36.media.tumblr.com/tumblr_lvswa6enIm1r7jy1ao1_500.jpg";
+    //mImageUrl    = "http://36.media.tumblr.com/tumblr_lvswa6enIm1r7jy1ao1_500.jpg";
     
     mTitleLabel  = (TextView)findViewById(R.id.notification__title_label);
     mTextLabel   = (TextView)findViewById(R.id.notification__text_label);
@@ -114,6 +114,7 @@ public class BeaconActivity extends Activity
       //}
     }
     
+    // Starting interface updates
     mTimerTask = 
       new TimerTask()
       {

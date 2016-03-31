@@ -65,6 +65,7 @@
                 android:layout_width="48dp"
                 android:layout_height="29dp"
                 android:layout_margin="5dp"
+                android:onClick="onButtonClicked"
                 android:button="@drawable/toggle_button"/>
         </LinearLayout>
         
@@ -82,7 +83,7 @@
                 android:textSize="14sp"
                 android:text="NORM"
                 android:textColor="#14273D"
-                android:onClick="onRadioButtonClicked"/>
+                android:onClick="onButtonClicked"/>
             
             <RadioButton android:id="@+id/settings__radio_economic_mode"
                 android:layout_width="0dp"
@@ -91,7 +92,7 @@
                 android:textSize="14sp"
                 android:text="ECO-1"
                 android:textColor="#14273D"
-                android:onClick="onRadioButtonClicked"/>
+                android:onClick="onButtonClicked"/>
             
             <RadioButton android:id="@+id/settings__radio_economic2_mode"
                 android:layout_width="0dp"
@@ -100,7 +101,7 @@
                 android:textSize="14sp"
                 android:text="ECO-2"
                 android:textColor="#14273D"
-                android:onClick="onRadioButtonClicked"/>
+                android:onClick="onButtonClicked"/>
         </RadioGroup>
         
         <!-- Location server label -->
@@ -149,6 +150,7 @@
                 android:layout_width="48dp"
                 android:layout_height="29dp"
                 android:layout_margin="5dp"
+                android:onClick="onButtonClicked"
                 android:button="@drawable/toggle_button"/>
         
         </LinearLayout>
@@ -172,6 +174,7 @@
                 android:layout_width="48dp"
                 android:layout_height="29dp"
                 android:layout_margin="5dp"
+                android:onClick="onButtonClicked"
                 android:button="@drawable/toggle_button"/>
         </LinearLayout>
         
@@ -194,6 +197,7 @@
                 android:layout_width="48dp"
                 android:layout_height="29dp"
                 android:layout_margin="5dp"
+                android:onClick="onButtonClicked"
                 android:button="@drawable/toggle_button"/>
         </LinearLayout>
         
@@ -216,6 +220,30 @@
                 android:layout_width="48dp"
                 android:layout_height="29dp"
                 android:layout_margin="5dp"
+                android:onClick="onButtonClicked"
+                android:button="@drawable/toggle_button"/>
+        </LinearLayout>
+        
+        <!-- Crash messages enabled -->
+        <LinearLayout android:orientation="horizontal"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="10dp">
+            
+            <TextView android:id="@+id/settings__crash_messages_enabled_label"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="2"
+                android:gravity="left"
+                android:textColor="#14273D"
+                android:textSize="14sp"
+                android:text="Send crashes to the server"/>
+            
+            <CheckBox android:id="@+id/settings__crash_messages_enabled_checkbox"
+                android:layout_width="48dp"
+                android:layout_height="29dp"
+                android:layout_margin="5dp"
+                android:onClick="onButtonClicked"
                 android:button="@drawable/toggle_button"/>
         </LinearLayout>
         
@@ -238,6 +266,7 @@
                 android:layout_width="48dp"
                 android:layout_height="29dp"
                 android:layout_margin="5dp"
+                android:onClick="onButtonClicked"
                 android:button="@drawable/toggle_button"/>
             
         </LinearLayout>
@@ -261,6 +290,7 @@
                 android:layout_width="48dp"
                 android:layout_height="29dp"
                 android:layout_margin="5dp"
+                android:onClick="onButtonClicked"
                 android:button="@drawable/toggle_button"/>
             
         </LinearLayout>
@@ -284,6 +314,7 @@
                 android:layout_width="48dp"
                 android:layout_height="29dp"
                 android:layout_margin="5dp"
+                android:onClick="onButtonClicked"
                 android:button="@drawable/toggle_button"/>
             
         </LinearLayout>
@@ -293,18 +324,6 @@
           android:layout_height="0dp"
           android:layout_weight="1"/>
         
-        <!-- Save button -->
-        <LinearLayout android:orientation="horizontal"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center">
-            
-            <Button android:id="@+id/settings__save_settings_button"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Save settings"/>
-        
-        </LinearLayout>
     </LinearLayout> <!-- Main layout -->
     
     <!-- Menu layout -->

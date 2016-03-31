@@ -47,6 +47,7 @@ public class SettingsActivity extends Activity
   /** Called when the activity is first created */
   @Override public void onCreate(Bundle savedInstanceState)
   {
+    Log.d(TAG, "SettingsActivity created");
     super.onCreate(savedInstanceState);
     requestWindowFeature(Window.FEATURE_NO_TITLE);
     setContentView(R.layout.settings);
@@ -54,58 +55,13 @@ public class SettingsActivity extends Activity
     getWindow().setFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS,
                          WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
     
+    if (NavigineApp.Navigation == null)
+    {
+      finish();
+      return;
+    }
+    
     mMenuButton = (Button)findViewById(R.id.settings__menu_button);
-    
-    CheckBox backgroundNavigationCheckBox = (CheckBox)findViewById(R.id.settings__background_navigation_checkbox);
-    backgroundNavigationCheckBox.setOnCheckedChangeListener(
-      new CompoundButton.OnCheckedChangeListener()
-      {
-        @Override public void onCheckedChanged(CompoundButton button, boolean checked)
-        {
-          mBackgroundNavigationEnabled = checked;
-          findViewById(R.id.settings__radio_group).setVisibility(checked ? View.VISIBLE : View.GONE);
-        }
-      });
-    
-    CheckBox navigationFileCheckBox = (CheckBox)findViewById(R.id.settings__navigation_file_enabled_checkbox);
-    navigationFileCheckBox.setOnClickListener(
-      new CompoundButton.OnClickListener()
-      {
-        @Override public void onClick(View v)
-        {
-          mNavigationFileEnabled = ((CheckBox)findViewById(R.id.settings__navigation_file_enabled_checkbox)).isChecked();
-          if (mNavigationFileEnabled)
-          {
-            Intent intent = new Intent(NavigineApp.AppContext, FilePickerActivity.class);
-            startActivityForResult(intent, REQUEST_PICK_FILE);
-          }
-        }
-      });
-    
-    CheckBox debugModeCheckBox = (CheckBox)findViewById(R.id.settings__debug_mode_enabled_checkbox);
-    debugModeCheckBox.setOnClickListener(
-      new CompoundButton.OnClickListener()
-      {
-        @Override public void onClick(View v)
-        {
-          mDebugCounter++;
-          if (mDebugCounter >= 6)
-          {
-            findViewById(R.id.settings__orientation_enabled_label).setVisibility(View.VISIBLE);
-            findViewById(R.id.settings__orientation_enabled_checkbox).setVisibility(View.VISIBLE);
-          }
-        }
-      });
-    
-    Button saveButton = (Button)findViewById(R.id.settings__save_settings_button);
-    saveButton.setOnClickListener(
-      new OnClickListener()
-      {
-        @Override public void onClick(View v)
-        {
-          saveSettings();
-        }
-      });
     
     if (NavigineApp.Settings.getBoolean("navigation_file_enabled", false) &&
         NavigineApp.Settings.getString("navigation_file", "").length() > 0)
@@ -129,13 +85,14 @@ public class SettingsActivity extends Activity
     findViewById(R.id.settings__orientation_enabled_label).setVisibility(View.GONE);
     findViewById(R.id.settings__orientation_enabled_checkbox).setVisibility(View.GONE);
     
-    setTextValue(R.id.settings__location_server_address_edit,   NavigineApp.Settings.getString ("location_server_address", NavigineApp.DEFAULT_SERVER));
-    setCheckBox (R.id.settings__beacon_service_checkbox,        NavigineApp.Settings.getBoolean("beacon_service_enabled", true));
-    setCheckBox (R.id.settings__save_navigation_log_checkbox,   NavigineApp.Settings.getBoolean("navigation_log_enabled", false));
-    setCheckBox (R.id.settings__save_navigation_track_checkbox, NavigineApp.Settings.getBoolean("navigation_track_enabled", false));
-    setCheckBox (R.id.settings__post_messages_enabled_checkbox, NavigineApp.Settings.getBoolean("post_messages_enabled", true));
-    setCheckBox (R.id.settings__debug_mode_enabled_checkbox,    NavigineApp.Settings.getBoolean("debug_mode_enabled", false));
-    setCheckBox (R.id.settings__orientation_enabled_checkbox,   NavigineApp.Settings.getBoolean("orientation_enabled", false));
+    setTextValue(R.id.settings__location_server_address_edit,     NavigineApp.Settings.getString ("location_server_address", NavigineApp.DEFAULT_SERVER));
+    setCheckBox (R.id.settings__beacon_service_checkbox,          NavigineApp.Settings.getBoolean("beacon_service_enabled", true));
+    setCheckBox (R.id.settings__save_navigation_log_checkbox,     NavigineApp.Settings.getBoolean("navigation_log_enabled", false));
+    setCheckBox (R.id.settings__save_navigation_track_checkbox,   NavigineApp.Settings.getBoolean("navigation_track_enabled", false));
+    setCheckBox (R.id.settings__post_messages_enabled_checkbox,   NavigineApp.Settings.getBoolean("post_messages_enabled", true));
+    setCheckBox (R.id.settings__crash_messages_enabled_checkbox,  NavigineApp.Settings.getBoolean("crash_messages_enabled", true));
+    setCheckBox (R.id.settings__debug_mode_enabled_checkbox,      NavigineApp.Settings.getBoolean("debug_mode_enabled", false));
+    setCheckBox (R.id.settings__orientation_enabled_checkbox,     NavigineApp.Settings.getBoolean("orientation_enabled", false));
     
     mBackgroundMode = NavigineApp.Settings.getInt("background_navigation_mode", NavigationThread.MODE_NORMAL);
     switch (mBackgroundMode)
@@ -165,33 +122,58 @@ public class SettingsActivity extends Activity
     toggleMenuLayout(null);
   }
   
-  public void onRadioButtonClicked(View view)
+  public void onButtonClicked(View view)
   {
-    boolean checked = ((RadioButton)view).isChecked();
-    if (!checked)
-      return;
-    
-    // Check which radio button was clicked
+    // Check which button was clicked
     switch (view.getId())
     {
+      case R.id.settings__background_navigation_checkbox:
+        mBackgroundNavigationEnabled = ((CheckBox)view).isChecked();
+        findViewById(R.id.settings__radio_group).setVisibility(mBackgroundNavigationEnabled ? View.VISIBLE : View.GONE);
+        break;
+      
       case R.id.settings__radio_normal_mode:
-        mBackgroundMode = NavigationThread.MODE_NORMAL;
+        if (((RadioButton)view).isChecked())
+          mBackgroundMode = NavigationThread.MODE_NORMAL;
         break;
       
       case R.id.settings__radio_economic_mode:
-        mBackgroundMode = NavigationThread.MODE_ECONOMIC1;
+        if (((RadioButton)view).isChecked())
+          mBackgroundMode = NavigationThread.MODE_ECONOMIC1;
         break;
       
       case R.id.settings__radio_economic2_mode:
-        mBackgroundMode = NavigationThread.MODE_ECONOMIC2;
+        if (((RadioButton)view).isChecked())
+          mBackgroundMode = NavigationThread.MODE_ECONOMIC2;
+        break;
+      
+      case R.id.settings__debug_mode_enabled_checkbox:
+        if (++mDebugCounter >= 6)
+        {
+          findViewById(R.id.settings__orientation_enabled_label).setVisibility(View.VISIBLE);
+          findViewById(R.id.settings__orientation_enabled_checkbox).setVisibility(View.VISIBLE);
+        }
+        break;
+      
+      case R.id.settings__navigation_file_enabled_checkbox:
+        mNavigationFileEnabled = ((CheckBox)view).isChecked();
+        if (mNavigationFileEnabled)
+        {
+          Intent intent = new Intent(NavigineApp.AppContext, FilePickerActivity.class);
+          startActivityForResult(intent, REQUEST_PICK_FILE);
+        }
         break;
     }
+    saveSettings();
   }
   
   public void onLocationManagementMode(View v)
   {
     if (mMenuVisible)
       toggleMenuLayout(null);
+    
+    saveSettings();
+    
     Intent intent = new Intent(mContext, LoaderActivity.class);
     startActivity(intent);
   }
@@ -200,6 +182,9 @@ public class SettingsActivity extends Activity
   {
     if (mMenuVisible)
       toggleMenuLayout(null);
+    
+    saveSettings();
+    
     Intent intent = new Intent(mContext, MeasuringActivity.class);
     startActivity(intent);
   }
@@ -208,6 +193,9 @@ public class SettingsActivity extends Activity
   {
     if (mMenuVisible)
       toggleMenuLayout(null);
+    
+    saveSettings();
+    
     Intent intent = new Intent(mContext, NavigationActivity.class);
     startActivity(intent);
   }
@@ -216,6 +204,9 @@ public class SettingsActivity extends Activity
   {
     if (mMenuVisible)
       toggleMenuLayout(null);
+    
+    saveSettings();
+    
     Intent intent = new Intent(mContext, DebugActivity.class);
     startActivity(intent);
   }
@@ -322,6 +313,7 @@ public class SettingsActivity extends Activity
   
   private void saveSettings()
   {
+    Log.d(TAG, "SettingsActivity: saving settings");
     SharedPreferences.Editor editor = NavigineApp.Settings.edit();
     editor.putString ("location_server_address",      getTextValue(R.id.settings__location_server_address_edit));
     editor.putInt("background_navigation_mode",       mBackgroundNavigationEnabled ? mBackgroundMode : NavigationThread.MODE_IDLE);
@@ -329,12 +321,19 @@ public class SettingsActivity extends Activity
     editor.putBoolean("navigation_log_enabled",       getCheckBox (R.id.settings__save_navigation_log_checkbox));
     editor.putBoolean("navigation_track_enabled",     getCheckBox (R.id.settings__save_navigation_track_checkbox));
     editor.putBoolean("post_messages_enabled",        getCheckBox (R.id.settings__post_messages_enabled_checkbox));
+    editor.putBoolean("crash_messages_enabled",       getCheckBox (R.id.settings__crash_messages_enabled_checkbox));
     editor.putBoolean("debug_mode_enabled",           getCheckBox (R.id.settings__debug_mode_enabled_checkbox));
     editor.putBoolean("orientation_enabled",          getCheckBox (R.id.settings__orientation_enabled_checkbox));
     editor.putBoolean("navigation_file_enabled",      mNavigationFileEnabled);
     editor.putString ("navigation_file",              mNavigationFileEnabled ? mNavigationFile : "");
     editor.commit();
     
+    applySettings();
+  }
+  
+  private void applySettings()
+  {
+    Log.d(TAG, "SettingsActivity: applying settings");
     NavigineApp.applySettings();
   }
   
@@ -367,5 +366,6 @@ public class SettingsActivity extends Activity
       TextView tv = (TextView)findViewById(R.id.settings__navigation_file_enabled_label);
       tv.setText("Navigation file enabled");
     }
+    saveSettings();
   }
 }
