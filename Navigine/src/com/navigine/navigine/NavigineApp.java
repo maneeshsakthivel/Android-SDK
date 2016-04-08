@@ -151,6 +151,7 @@ public class NavigineApp extends Application
     // Removing 'maps.xml' file
     if (AppContext != null)
     {
+      Log.d(TAG, "Removing file 'maps.xml'");
       String fileName = LocationLoader.getLocationDir(AppContext, null) + "/maps.xml";
       (new File(fileName)).delete();
     }

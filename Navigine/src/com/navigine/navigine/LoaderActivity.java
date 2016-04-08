@@ -147,7 +147,10 @@ public class LoaderActivity extends Activity
         downloadStopButton.setVisibility(View.VISIBLE);
         progressBar.setProgress(loader.state);
         statusTextView.setVisibility(View.VISIBLE);
-        statusTextView.setText(String.format(Locale.ENGLISH, "Downloading... %d%%", loader.state));
+        if (loader.type == DOWNLOAD)
+          statusTextView.setText(String.format(Locale.ENGLISH, "Downloading... %d%%", loader.state));
+        else if (loader.type == UPLOAD)
+          statusTextView.setText(String.format(Locale.ENGLISH, "Uploading... %d%%", loader.state));
       }
       else if (info.localModified)
       {
@@ -297,7 +300,7 @@ public class LoaderActivity extends Activity
             {
               case MotionEvent.ACTION_DOWN:
               {
-                Log.d(TAG, String.format(Locale.ENGLISH, "Action down (%.2f, %.2f)", P.x, P.y));
+                //Log.d(TAG, String.format(Locale.ENGLISH, "Action down (%.2f, %.2f)", P.x, P.y));
                 mTouchTime    = timeNow;
                 mTouchPoint0  = P;
                 mTouchPoint1  = P;
@@ -318,7 +321,7 @@ public class LoaderActivity extends Activity
                 mTouchPoint1 = P;
                 mTouchLength += Math.abs(delta1);
                 
-                Log.d(TAG, String.format(Locale.ENGLISH, "Action move: (delta0=%.2f, delta1=%.2f)", delta0, delta1));
+                //Log.d(TAG, String.format(Locale.ENGLISH, "Action move: (delta0=%.2f, delta1=%.2f)", delta0, delta1));
                 
                 if (mapExists)
                 {
@@ -327,7 +330,7 @@ public class LoaderActivity extends Activity
                     if (mSwipedLocation == 0)
                     {
                       mSwipedLocation = info.id;
-                      Log.d(TAG, String.format(Locale.ENGLISH, "Swiping location %d", info.id));
+                      //Log.d(TAG, String.format(Locale.ENGLISH, "Swiping location %d", info.id));
                       ((HorizontalScrollView)v).scrollTo(Math.round(75 * NavigineApp.DisplayDensity), 0);
                     }
                   }
@@ -336,7 +339,7 @@ public class LoaderActivity extends Activity
                     if (mSwipedLocation == info.id)
                     {
                       mSwipedLocation = 0;
-                      Log.d(TAG, String.format(Locale.ENGLISH, "Swiping back location %d", info.id));
+                      //Log.d(TAG, String.format(Locale.ENGLISH, "Swiping back location %d", info.id));
                       ((HorizontalScrollView)v).scrollTo(0, 0);
                     }
                   }
@@ -346,13 +349,13 @@ public class LoaderActivity extends Activity
               
               case MotionEvent.ACTION_UP:
               {
-                Log.d(TAG, String.format(Locale.ENGLISH, "Action up (%.2f, %.2f)", P.x, P.y));
+                //Log.d(TAG, String.format(Locale.ENGLISH, "Action up (%.2f, %.2f)", P.x, P.y));
                 if (mTouchTime > 0 &&
                     mTouchTime + TOUCH_SHORT_TIMEOUT > timeNow &&
                     mTouchLength < TOUCH_SENSITIVITY * NavigineApp.DisplayDensity)
                 {
                   LocationInfo info = mInfoList.get(position);
-                  Log.d(TAG, String.format(Locale.ENGLISH, "Selecting location %s", info.title));
+                  //Log.d(TAG, String.format(Locale.ENGLISH, "Selecting location %s", info.title));
                   selectLocation(info);
                 }
                 mTouchTime   = 0;
@@ -370,6 +373,11 @@ public class LoaderActivity extends Activity
     }
   }
   private LoaderAdapter mAdapter = null;
+  
+  // Scroll parameters
+  private int mScrollState      = 0;
+  private int mScrollPosition   = 0;
+  private int mOverScroll       = 0;
   
   /** Called when the activity is first created */
   @Override public void onCreate(Bundle savedInstanceState)
@@ -397,28 +405,47 @@ public class LoaderActivity extends Activity
     mListView.setAdapter(mAdapter);
     mListView.setVisibility(View.VISIBLE);
     
-    mListView.setOnOverScrollListener(new com.navigine.navigine.ListView.OnOverScrollListener()
+    mListView.setOnScrollListener(new OnScrollListener()
       {
-        private long mScrollTime0 = 0;
-        private long mScrollTime  = 0;
-        private int mTotalScroll  = 0;
-        
-        public void onOverScroll(int scrollY)
+        @Override public void onScrollStateChanged(AbsListView view, int scrollState)
         {
-          long timeNow = DateTimeUtils.currentTimeMillis();
-          if (timeNow - mScrollTime > 100)
+          // TODO Auto-generated method stub
+          //Log.d(TAG, "onScrollState: state=" + scrollState);
+          mScrollState = scrollState;
+          
+          if (mScrollState != OnScrollListener.SCROLL_STATE_TOUCH_SCROLL)
           {
-            mTotalScroll = 0;
-            mScrollTime0 = timeNow;
+            //Log.d(TAG, "onScrollState: dropped overScroll=" + mOverScroll + "; threshold: " + threshold);
+            mOverScroll = 0;
+            mScrollPosition = -100;
           }
           else
-            mTotalScroll += scrollY;
-          
-          mScrollTime = timeNow;
-          
-          //Log.d(TAG, String.format(Locale.ENGLISH, "onOverScroll: %d, total: %d", scrollY, mTotalScroll));
-          if (mTotalScroll < -Math.round(NavigineApp.DisplayHeightPx / 2) && timeNow - mScrollTime0 < 250)
-            refreshMapList();
+            mScrollPosition = -1;
+        }
+        
+        @Override public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount)
+        {
+          if (mScrollPosition == -1)
+            mScrollPosition = firstVisibleItem;
+        }
+      });
+    
+    mListView.setOnOverScrollListener(new com.navigine.navigine.ListView.OnOverScrollListener()
+      {
+        public void onOverScroll(int scrollY)
+        {
+          Log.d(TAG, String.format(Locale.ENGLISH, "onOverScroll: state=%d, position=%d, total=%d", mScrollState, mScrollPosition, mOverScroll));
+          if (mScrollState == OnScrollListener.SCROLL_STATE_TOUCH_SCROLL && (mScrollPosition == -1 || mScrollPosition == 0))
+          {
+            mOverScroll += scrollY;
+            int threshold = Math.round(75 * 3 * NavigineApp.DisplayDensity);
+            if (mOverScroll < -threshold)
+            {
+              mOverScroll = 0;
+              mScrollPosition = -100;
+              refreshMapList();
+            }
+          }
         }
       });
     

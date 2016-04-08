@@ -1047,8 +1047,8 @@ public class MeasuringActivity extends Activity
         if (i == 0)
         {
           PointF R = getScreenCoordinates(x, 0.0f);
-          if (R.y > mViewHeight - 1)
-            R.y = mViewHeight - 1;
+          if (R.y > mViewHeight - 1 - mAddPointButton.getHeight())
+            R.y = mViewHeight - 1 - mAddPointButton.getHeight();
           canvas.drawText(String.format(Locale.ENGLISH, "%.0f", x), R.x + 1, R.y - 1, paint);
         }
         x += step/5;
