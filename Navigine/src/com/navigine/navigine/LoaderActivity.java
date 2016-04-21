@@ -184,10 +184,11 @@ public class LoaderActivity extends Activity
       
       String mapFile = NavigineApp.Settings.getString("map_file", "");
       boolean selected = mapFile.equals(info.archiveFile);
-      selectedMapIcon.setVisibility(selected ? View.VISIBLE : View.GONE);
-      
       boolean mapExists = (new File(info.archiveFile)).exists();
+      
       deleteButton.setVisibility(mapExists ? View.VISIBLE : View.GONE);
+      selectedMapIcon.setVisibility(mapExists ? View.VISIBLE : View.GONE);
+      selectedMapIcon.setImageResource(selected ? R.drawable.elm_selected_map : R.drawable.elm_unselected_map);
       
       if (info.id == mSwipedLocation)
         scrollView.scrollTo(Math.round(75 * NavigineApp.DisplayDensity), 0);

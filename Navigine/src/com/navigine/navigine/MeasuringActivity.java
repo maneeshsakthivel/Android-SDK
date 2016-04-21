@@ -46,6 +46,7 @@ public class MeasuringActivity extends Activity
   private Button        mNextFloorButton      = null;
   private Button        mAddPointButton       = null;
   private Button        mAddBeaconButton      = null;
+  private Button        mAddPolyLineButton    = null;
   private View          mShowLabelsView       = null;
   private Button        mShowLabelsButton     = null;
   private View          mShowPercentageView   = null;
@@ -54,6 +55,8 @@ public class MeasuringActivity extends Activity
   private ProgressBar   mUploadProgressBar    = null;
   private Button        mUploadButton         = null;
   private View          mProgressPanel        = null;
+  private View          mPolyLinePanel        = null;
+  private TextView      mPolyLineLabel        = null;
   private TextView      mProgressLabel        = null;
   private ProgressBar   mProgressBar          = null;
   private Button        mMenuButton           = null;
@@ -92,11 +95,15 @@ public class MeasuringActivity extends Activity
                                                  new PointF(0.0f, 0.0f),
                                                  new PointF(0.0f, 0.0f) };
   
-  private static final int STATE_NONE           = 0;
-  private static final int STATE_POINT_READY    = 1;
-  private static final int STATE_POINT_RUN      = 2;
-  private static final int STATE_BEACON_READY   = 6;
-  private static final int STATE_BEACON_RUN     = 7;
+  private static final int STATE_NONE             = 0;
+  private static final int STATE_POINT_READY      = 100;
+  private static final int STATE_POINT_RUN        = 101;
+  private static final int STATE_BEACON_READY     = 200;
+  private static final int STATE_BEACON_RUN       = 201;
+  private static final int STATE_POLYLINE_PREPARE = 300;
+  private static final int STATE_POLYLINE_READY   = 301;
+  private static final int STATE_POLYLINE_RUN     = 302;
+  private static final int STATE_POLYLINE_FINAL   = 303;
   private int  mState = STATE_NONE;
   private long mScanTime = 0;
   
@@ -120,6 +127,11 @@ public class MeasuringActivity extends Activity
   private Map<String, List<WScanResult>> mScanMap = new TreeMap<String, List<WScanResult>>(); // Scan map for the selected object
   private List<SensorResult> mSensorResults = new ArrayList<SensorResult>(); // Sensor vectors for the selected object
   private long mMeasuringTime = 0;
+  
+  private List<LocationPoint> mPolyLinePoints = new ArrayList<LocationPoint>();
+  private String mPolyLineLog = null;
+  private int mPolyLineCheckPoint = 0;
+  private int mPacketNumber = 0;
   
   private Bitmap mBeaconBitmap = null;
   private Bitmap mPointBitmap  = null;
@@ -163,25 +175,27 @@ public class MeasuringActivity extends Activity
     mProgressBar   = (ProgressBar)findViewById(R.id.measuring_mode__progress_bar);
     mProgressPanel.setVisibility(View.INVISIBLE);
     
+    mPolyLinePanel = (View)findViewById(R.id.measuring_mode__polyline_panel);
+    mPolyLineLabel = (TextView)findViewById(R.id.measuring_mode__polyline_label);
+    mPolyLinePanel.setVisibility(View.INVISIBLE);
+    
     mCurrentFloorLabel = (TextView)findViewById(R.id.measuring_mode__current_floor_label);
     mPrevFloorButton   = (Button)findViewById(R.id.measuring_mode__prev_floor_button);
     mNextFloorButton   = (Button)findViewById(R.id.measuring_mode__next_floor_button);
     mPrevFloorView     = (View)findViewById(R.id.measuring_mode__prev_floor_view);
     mNextFloorView     = (View)findViewById(R.id.measuring_mode__next_floor_view);
-    mCurrentFloorLabel.setVisibility(View.INVISIBLE);
-    mPrevFloorButton.setVisibility(View.INVISIBLE);
-    mNextFloorButton.setVisibility(View.INVISIBLE);
-    mPrevFloorView.setVisibility(View.INVISIBLE);
-    mNextFloorView.setVisibility(View.INVISIBLE);
+    findViewById(R.id.measuring_mode__next_prev_floor_panel).setVisibility(View.INVISIBLE);
     
-    mAddPointButton   = (Button)findViewById(R.id.measuring_mode__add_point_button);
-    mAddBeaconButton  = (Button)findViewById(R.id.measuring_mode__add_beacon_button);
-    mShowLabelsView   = (View)findViewById(R.id.measuring_mode__show_labels_view);
-    mShowLabelsButton = (Button)findViewById(R.id.measuring_mode__show_labels_button);
+    mAddPointButton       = (Button)findViewById(R.id.measuring_mode__add_point_button);
+    mAddBeaconButton      = (Button)findViewById(R.id.measuring_mode__add_beacon_button);
+    mAddPolyLineButton    = (Button)findViewById(R.id.measuring_mode__add_polyline_button);
+    mShowLabelsView       = (View)findViewById(R.id.measuring_mode__show_labels_view);
+    mShowLabelsButton     = (Button)findViewById(R.id.measuring_mode__show_labels_button);
     mShowPercentageView   = (View)findViewById(R.id.measuring_mode__show_percentage_view);
     mShowPercentageButton = (Button)findViewById(R.id.measuring_mode__show_percentage_button);
     mAddPointButton.setVisibility(View.INVISIBLE);
     mAddBeaconButton.setVisibility(View.INVISIBLE);
+    mAddPolyLineButton.setVisibility(View.INVISIBLE);
     mShowLabelsView.setVisibility(View.INVISIBLE);
     mShowLabelsButton.setVisibility(View.INVISIBLE);
     mShowPercentageView.setVisibility(View.INVISIBLE);
@@ -438,6 +452,113 @@ public class MeasuringActivity extends Activity
       setBeacon();
   }
   
+  public void onAddPolyLine(View v)
+  {
+    if (mMenuVisible)
+    {
+      toggleMenuLayout(null);
+      return;
+    }
+    
+    if (NavigineApp.Navigation == null)
+      Toast.makeText(mContext, "Can't add polyline! Navigine SDK is not available!", Toast.LENGTH_LONG).show();
+    else if (mUploader >= 0)
+      Toast.makeText(mContext, "Can't add polyline while uploading map! Wait until upload is finished", Toast.LENGTH_LONG).show();
+    else
+      togglePolyLineMode();
+  }
+  
+  public void onPolyLineButtonClicked(View v)
+  {
+    if (NavigineApp.Navigation == null)
+      return;
+    
+    if (mLocation == null || mCurrentSubLocationIndex < 0)
+      return;
+    
+    SubLocation subLoc = mLocation.subLocations.get(mCurrentSubLocationIndex);
+    
+    if (v == findViewById(R.id.measuring_mode__polyline_panel__add_point_button))
+    {
+      if (mState == STATE_POLYLINE_PREPARE)
+        addPolyLinePoint();
+      return;
+    }
+    
+    if (v == findViewById(R.id.measuring_mode__polyline_panel__finish_points_button))
+    {
+      if (mState == STATE_POLYLINE_PREPARE)
+      {
+        addPolyLinePoint();
+        mState = STATE_POLYLINE_READY;
+        if (mPolyLinePoints.size() > 0)
+        {
+          LocationPoint LP0 = mPolyLinePoints.get(0);
+          PointF P0 = getScreenCoordinates(LP0.x, LP0.y);
+          doCenter(P0.x, P0.y);
+        }
+      }
+      return;
+    }
+    
+    if (v == findViewById(R.id.measuring_mode__polyline_panel__start_button))
+    {
+      if (mState == STATE_POLYLINE_READY)
+      {
+        startMeasuring();
+        mState = STATE_POLYLINE_RUN;
+        mPolyLineCheckPoint = 0;
+        mPolyLineLog = NavigineApp.getLogFile("xml");
+        if (mPolyLinePoints.size() > 0)
+        {
+          LocationPoint LP0 = mPolyLinePoints.get(0);
+          PointF P0 = getScreenCoordinates(LP0.x, LP0.y);
+          doCenter(P0.x, P0.y);
+        }
+      }
+      return;
+    }
+    
+    if (v == findViewById(R.id.measuring_mode__polyline_panel__check_point_button))
+    {
+      if (mState == STATE_POLYLINE_RUN)
+      {
+        mState = STATE_POLYLINE_RUN;
+        if (mPolyLineCheckPoint + 1 < mPolyLinePoints.size())
+        {
+          mMeasuringTime = DateTimeUtils.currentTimeMillis();
+          ++mPolyLineCheckPoint;
+          if (mPolyLinePoints.size() > mPolyLineCheckPoint)
+          {
+            LocationPoint LP = mPolyLinePoints.get(mPolyLineCheckPoint);
+            PointF P = getScreenCoordinates(LP.x, LP.y);
+            doCenter(P.x, P.y);
+          }
+        }
+        if (mPolyLineCheckPoint + 1 == mPolyLinePoints.size())
+        {
+          stopMeasuring();
+          mState = STATE_POLYLINE_FINAL;
+        }
+      }
+      return;
+    }
+    
+    if (v == findViewById(R.id.measuring_mode__polyline_panel__finish_button))
+    {
+      if (mState == STATE_POLYLINE_FINAL)
+      {
+        mState = STATE_NONE;
+        mPolyLinePoints.clear();
+        mPolyLineCheckPoint = 0;
+        
+        PointF P = getScreenCoordinates(mMaxX / 2, mMaxY / 2);
+        doCenter(P.x, P.y);
+      }
+      return;
+    }
+  }
+  
   public void onUploadMap(View v)
   {
     if (mMenuVisible)
@@ -562,14 +683,11 @@ public class MeasuringActivity extends Activity
     NavigineApp.Navigation.loadMeasurements();
     
     if (mLocation.subLocations.size() >= 2)
-    {
-      mPrevFloorView.setVisibility(View.VISIBLE);
-      mNextFloorView.setVisibility(View.VISIBLE);
-      mCurrentFloorLabel.setVisibility(View.VISIBLE);
-    }
+      findViewById(R.id.measuring_mode__next_prev_floor_panel).setVisibility(View.VISIBLE);
     
     mAddPointButton.setVisibility(View.VISIBLE);
     mAddBeaconButton.setVisibility(View.VISIBLE);
+    mAddPolyLineButton.setVisibility(View.VISIBLE);
     mShowLabelsView.setVisibility(View.VISIBLE);
     mShowLabelsButton.setVisibility(View.VISIBLE);
     mShowPercentageView.setVisibility(View.VISIBLE);
@@ -729,6 +847,16 @@ public class MeasuringActivity extends Activity
     mHandler.post(mRunnable);
   }
   
+  public void doCenter(float x, float y)
+  {
+    if (mMatrix == null)
+      return;
+    
+    float deltaX = (float)mViewWidth  / 2 - x;
+    float deltaY = (float)mViewHeight / 2 - y;
+    doScroll(deltaX, deltaY);
+  }
+  
   private void doZoom(float ratio)
   {
     if (mMatrix == null)
@@ -863,33 +991,6 @@ public class MeasuringActivity extends Activity
     }
   }
   
-  private void drawArrow(PointF A, PointF B, Paint paint, Canvas canvas)
-  {
-    float ux = B.x - A.x;
-    float uy = B.y - A.y;
-    float n = (float)Math.sqrt(ux * ux + uy * uy);
-    float m = Math.min(15.0f, n / 3);
-    float k = m / n;
-    
-    PointF C = new PointF(k * A.x + (1 - k) * B.x, k * A.y + (1 - k) * B.y);
-    PointF D = new PointF(2 * k * A.x + (1 - 2 * k) * B.x, 2 * k * A.y + (1 - 2 * k) * B.y);
-    
-    float wx = -uy * m / n;
-    float wy =  ux * m / n;
-    
-    PointF E = new PointF(C.x + wx / 3, C.y + wy / 3);
-    PointF F = new PointF(C.x - wx / 3, C.y - wy / 3);
-    
-    Path path = new Path();
-    path.moveTo(B.x, B.y);
-    path.lineTo(E.x, E.y);
-    path.lineTo(F.x, F.y);
-    path.lineTo(B.x, B.y);
-    
-    canvas.drawLine(A.x, A.y, B.x, B.y, paint);
-    canvas.drawPath(path, paint);
-  }
-  
   private void drawBeacon(PointF P, float size, Paint paint, Canvas canvas)
   {
     int color = paint.getColor();
@@ -997,6 +1098,156 @@ public class MeasuringActivity extends Activity
           break;
         }
       }
+    }
+  }
+  
+  private void drawPolyLine(Canvas canvas)
+  {
+    // Check if polyline mode is enabled
+    if (mState != STATE_POLYLINE_PREPARE &&
+        mState != STATE_POLYLINE_READY &&
+        mState != STATE_POLYLINE_RUN &&
+        mState != STATE_POLYLINE_FINAL)
+      return;
+    
+    // Check if location is loaded
+    if (mLocation == null || mCurrentSubLocationIndex < 0)
+      return;
+    
+    // Get current sublocation displayed
+    SubLocation subLoc = mLocation.subLocations.get(mCurrentSubLocationIndex);
+    
+    if (subLoc == null)
+      return;
+    
+    final float dp = NavigineApp.DisplayDensity;
+    final int blueColor  = Color.argb(255, 64, 163, 205); // Light-blue color
+    final int greenColor = Color.argb(255, 0,  160, 0);   // Green color
+    final float margin   = 2  * dp;
+    final float textSize = 12 * dp;
+    
+    // Preparing paints
+    Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    paint.setStyle(Paint.Style.FILL_AND_STROKE);
+    paint.setStrokeWidth(0);
+    paint.setTextSize(textSize);
+    
+    if (mState == STATE_POLYLINE_PREPARE ||
+        mState == STATE_POLYLINE_READY ||
+        mState == STATE_POLYLINE_RUN ||
+        mState == STATE_POLYLINE_FINAL)
+    {
+      paint.setColor(blueColor);
+      for(int i = 0; i < mPolyLinePoints.size(); ++i)
+      {
+        LocationPoint P = mPolyLinePoints.get(i);
+        PointF P1 = getScreenCoordinates(P.x, P.y);
+        canvas.drawCircle(P1.x, P1.y, 5 * dp, paint);
+      }
+      for(int i = 1; i < mPolyLinePoints.size(); ++i)
+      {
+        LocationPoint P = mPolyLinePoints.get(i-1);
+        LocationPoint Q = mPolyLinePoints.get(i);
+        if (P.subLocation == subLoc.id && Q.subLocation == subLoc.id)
+        {
+          paint.setStrokeWidth(3 * dp);
+          PointF P1 = getScreenCoordinates(P.x, P.y);
+          PointF Q1 = getScreenCoordinates(Q.x, Q.y);
+          canvas.drawLine(P1.x, P1.y, Q1.x, Q1.y, paint);
+        }
+      }
+    }
+    
+    if (mState == STATE_POLYLINE_PREPARE && mPolyLinePoints.size() > 0)
+    {
+      paint.setColor(blueColor);
+      LocationPoint P = mPolyLinePoints.get(mPolyLinePoints.size() - 1);
+      if (P.subLocation == subLoc.id)
+      {
+        paint.setStrokeWidth(3 * dp);
+        PointF P1 = getScreenCoordinates(P.x, P.y);
+        PointF Q1 = new PointF(mViewWidth / 2, mViewHeight / 2);
+        canvas.drawLine(P1.x, P1.y, Q1.x, Q1.y, paint);
+      }
+    }
+    
+    if ((mState == STATE_POLYLINE_RUN || mState == STATE_POLYLINE_FINAL) &&
+        mPolyLinePoints.size() > 0)
+    {
+      paint.setColor(greenColor);
+      for(int i = 0; i <= mPolyLineCheckPoint; ++i)
+      {
+        LocationPoint P = mPolyLinePoints.get(i);
+        PointF P1 = getScreenCoordinates(P.x, P.y);
+        canvas.drawCircle(P1.x, P1.y, 5 * dp, paint);
+      }
+      for(int i = 1; i <= mPolyLineCheckPoint; ++i)
+      {
+        LocationPoint P = mPolyLinePoints.get(i-1);
+        LocationPoint Q = mPolyLinePoints.get(i);
+        if (P.subLocation == subLoc.id && Q.subLocation == subLoc.id)
+        {
+          paint.setStrokeWidth(4 * dp);
+          PointF P1 = getScreenCoordinates(P.x, P.y);
+          PointF Q1 = getScreenCoordinates(Q.x, Q.y);
+          canvas.drawLine(P1.x, P1.y, Q1.x, Q1.y, paint);
+        }
+      }
+    }
+    
+    if (mPolyLinePoints.size() > 0)
+    {
+      LocationPoint LP = mPolyLinePoints.get(0);
+      final PointF P = getScreenCoordinates(LP.x, LP.y);
+      final String text = "START";
+      final float textWidth  = paint.measureText(text);
+      final float textHeight = textSize;
+      final float x0 = P.x;
+      final float y0 = P.y;
+      
+      paint.setStrokeWidth(0);
+      if ((mState == STATE_POLYLINE_RUN || mState == STATE_POLYLINE_FINAL))
+        paint.setColor(greenColor);
+      else
+        paint.setColor(blueColor);
+      
+      canvas.drawRoundRect(new RectF(x0 - textWidth  - 1 * margin - (textHeight + 2*margin),
+                                     y0 - textHeight - 3 * margin,
+                                     x0 - margin, y0 - margin),
+                                     (textHeight/2 + margin),
+                                     (textHeight/2 + margin),
+                                     paint);
+      paint.setARGB(255, 255, 255, 255);
+      canvas.drawText(text, x0 - textWidth - margin - (textHeight/2 + margin), y0 - 2 * margin - textHeight/6, paint);
+    }
+    
+    if ((mState == STATE_POLYLINE_READY ||
+         mState == STATE_POLYLINE_RUN ||
+         mState == STATE_POLYLINE_FINAL) &&
+         mPolyLinePoints.size() > 1)
+    {
+      LocationPoint LP = mPolyLinePoints.get(mPolyLinePoints.size() - 1);
+      final PointF P = getScreenCoordinates(LP.x, LP.y);
+      final String text = "FINISH";
+      final float textWidth  = paint.measureText(text);
+      final float textHeight = textSize;
+      final float x0 = P.x;
+      final float y0 = P.y;
+      
+      paint.setStrokeWidth(0);
+      if (mState == STATE_POLYLINE_FINAL)
+        paint.setColor(greenColor);
+      else
+        paint.setColor(blueColor);
+      
+      canvas.drawRoundRect(new RectF(x0 - textWidth  - 1 * margin - (textHeight + 2*margin),
+                                     y0 - textHeight - 3 * margin,
+                                     x0 - margin, y0 - margin),
+                                     (textHeight/2 + margin),
+                                     (textHeight/2 + margin),
+                                     paint);
+      paint.setARGB(255, 255, 255, 255);
+      canvas.drawText(text, x0 - textWidth - margin - (textHeight/2 + margin), y0 - 2 * margin - textHeight/6, paint);
     }
   }
   
@@ -1119,9 +1370,11 @@ public class MeasuringActivity extends Activity
     if (mState == STATE_NONE)
     {
       mAddPointButton .setEnabled(true);
-      mAddBeaconButton.setEnabled(false);    
+      mAddBeaconButton.setEnabled(false);
+      mAddPolyLineButton.setEnabled(false);
       mAddPointButton .setBackgroundResource(R.drawable.btn_add_point_active);
       mAddBeaconButton.setBackgroundResource(R.drawable.btn_add_beacon);
+      mAddPolyLineButton.setBackgroundResource(R.drawable.btn_add_polyline);
       
       PointF P = getAbsCoordinates(mViewWidth / 2, mViewHeight / 2);
       mSelectedObject               = new MeasureObject();
@@ -1154,9 +1407,11 @@ public class MeasuringActivity extends Activity
     if (mState == STATE_NONE)
     {
       mAddPointButton .setEnabled(false);
-      mAddBeaconButton.setEnabled(true);    
+      mAddBeaconButton.setEnabled(true);
+      mAddPolyLineButton.setEnabled(false);
       mAddPointButton .setBackgroundResource(R.drawable.btn_add_point);
       mAddBeaconButton.setBackgroundResource(R.drawable.btn_add_beacon_active);
+      mAddPolyLineButton.setBackgroundResource(R.drawable.btn_add_polyline);
       
       PointF P = getAbsCoordinates(mViewWidth / 2, mViewHeight / 2);
       mSelectedObject             = new MeasureObject();
@@ -1171,7 +1426,70 @@ public class MeasuringActivity extends Activity
     }
   }
   
-  // Function is called, when menu option "Cancel point/line" is selected
+  private void togglePolyLineMode()
+  {
+    if (NavigineApp.Navigation == null)
+      return;
+    
+    if (mLocation == null || mCurrentSubLocationIndex < 0)
+      return;
+    
+    SubLocation subLoc = mLocation.subLocations.get(mCurrentSubLocationIndex);
+    
+    if (mState == STATE_NONE)
+    {
+      mAddPointButton .setEnabled(false);
+      mAddBeaconButton.setEnabled(false);
+      mAddPolyLineButton.setEnabled(true);
+      mAddPointButton .setBackgroundResource(R.drawable.btn_add_point);
+      mAddBeaconButton.setBackgroundResource(R.drawable.btn_add_beacon);
+      mAddPolyLineButton.setBackgroundResource(R.drawable.btn_add_polyline_active);
+      mState = STATE_POLYLINE_PREPARE;
+      
+      // Adding the starting checkpoint
+      mPolyLinePoints.clear();
+      mPolyLineCheckPoint = 0;
+      addPolyLinePoint();
+    }
+    else if (mState == STATE_POLYLINE_PREPARE ||
+             mState == STATE_POLYLINE_READY ||
+             mState == STATE_POLYLINE_RUN)
+    {
+      mAddPointButton .setEnabled(true);
+      mAddBeaconButton.setEnabled(true);
+      mAddPolyLineButton.setEnabled(true);
+      mAddPointButton .setBackgroundResource(R.drawable.btn_add_point);
+      mAddBeaconButton.setBackgroundResource(R.drawable.btn_add_beacon);
+      mAddPolyLineButton.setBackgroundResource(R.drawable.btn_add_polyline);
+      mPolyLinePoints.clear();
+      mPolyLineCheckPoint = 0;
+      mState = STATE_NONE;
+    }
+  }
+  
+  public void addPolyLinePoint()
+  {
+    if (NavigineApp.Navigation == null)
+      return;
+    
+    if (mLocation == null || mCurrentSubLocationIndex < 0)
+      return;
+    
+    SubLocation subLoc = mLocation.subLocations.get(mCurrentSubLocationIndex);
+    
+    PointF P = getAbsCoordinates(mViewWidth / 2, mViewHeight / 2);
+    if (mPolyLinePoints.size() > 0)
+    {
+      LocationPoint LP = mPolyLinePoints.get(mPolyLinePoints.size() - 1);
+      if (LP.subLocation == subLoc.id &&
+          Math.abs(LP.x - P.x) < 0.01 &&
+          Math.abs(LP.y - P.y) < 0.01)
+        return; // Ignoring the same point
+    }
+    mPolyLinePoints.add(new LocationPoint(subLoc.id, P.x, P.y));
+  }
+  
+  // Function is called, when menu option "Cancel point/beacon" is selected
   private void cancelObject()
   {
     if (NavigineApp.Navigation == null)
@@ -1212,9 +1530,13 @@ public class MeasuringActivity extends Activity
     mState = STATE_NONE;
         
     mAddPointButton .setEnabled(true);
-    mAddBeaconButton.setEnabled(true);    
+    mAddBeaconButton.setEnabled(true);
+    mAddPolyLineButton.setEnabled(true);
     mAddPointButton .setBackgroundResource(R.drawable.btn_add_point);
     mAddBeaconButton.setBackgroundResource(R.drawable.btn_add_beacon);
+    mAddPolyLineButton.setBackgroundResource(R.drawable.btn_add_polyline);
+    mPolyLinePoints.clear();
+    mPolyLineCheckPoint = 0;
   }
   
   private float lineDist(float ax, float ay, float bx, float by, float x, float y)
@@ -1313,7 +1635,6 @@ public class MeasuringActivity extends Activity
       toggleMenuLayout(null);
       return;
     }
-    
   }
   
   private EditText _xEdit             = null;
@@ -1490,9 +1811,11 @@ public class MeasuringActivity extends Activity
             _alertDialog.cancel();
           
           mAddPointButton .setEnabled(true);
-          mAddBeaconButton.setEnabled(true);    
+          mAddBeaconButton.setEnabled(true);
+          mAddPolyLineButton.setEnabled(true);
           mAddPointButton .setBackgroundResource(R.drawable.btn_add_point);
           mAddBeaconButton.setBackgroundResource(R.drawable.btn_add_beacon);
+          mAddPolyLineButton.setBackgroundResource(R.drawable.btn_add_polyline);
         }
       });
     
@@ -1558,43 +1881,51 @@ public class MeasuringActivity extends Activity
   
   private void addScanResult(WScanResult result)
   {
-    if (mSelectedObject == null)
-      return;
-    
     // Adding result to the scan map
     if (!mScanMap.containsKey(result.BSSID))
       mScanMap.put(new String(result.BSSID), new ArrayList<WScanResult>());
     mScanMap.get(result.BSSID).add(result);
     
-    String entryType = "";
     switch (result.type)
     {
-      case WScanResult.TYPE_WIFI:   entryType = "WIFI";   break;
-      case WScanResult.TYPE_BLE:    entryType = "BLE";    break;
-      case WScanResult.TYPE_BEACON: entryType = "BEACON"; break;
+      case WScanResult.TYPE_WIFI:
+        Log.d(TAG, String.format(Locale.ENGLISH, "WIFI:   SSID=\"%s\"; BSSID=\"%s\", RSSI=\"%.2f\"",
+              result.SSID, result.BSSID, (float)result.level));
+        break;
+      
+      case WScanResult.TYPE_BLE:
+        Log.d(TAG, String.format(Locale.ENGLISH, "BLE:    SSID=\"%s\"; BSSID=\"%s\", RSSI=\"%.2f\"",
+              result.SSID, result.BSSID, (float)result.level));
+        break;
+      
+      case WScanResult.TYPE_BEACON:
+        Log.d(TAG, String.format(Locale.ENGLISH, "BEACON: SSID=\"%s\"; BSSID=\"%s\", RSSI=\"%.2f\"",
+              result.SSID, result.BSSID, (float)result.level));
+        break;
     }
-    
-    Log.d(TAG, String.format(Locale.ENGLISH, "MeasureObject %s: %s; SSID=\"%s\"; BSSID=\"%s\", RSSI=\"%.2f\"",
-          mSelectedObject.name, entryType, result.SSID, result.BSSID, (float)result.level));
   }
   
   private void addSensorResult(SensorResult result)
   {
-    if (mSelectedObject == null)
-      return;
-    
     mSensorResults.add(result);
     
-    String entryType = "";
     switch (result.type)
     {
-      case SensorResult.TYPE_ACCELEROMETER: entryType = "ACCEL";  break;
-      case SensorResult.TYPE_MAGNETOMETER:  entryType = "MAGNET"; break;
-      case SensorResult.TYPE_GYROSCOPE:     entryType = "GYRO";   break;
+      case SensorResult.TYPE_ACCELEROMETER:
+        Log.d(TAG, String.format(Locale.ENGLISH, "ACCELEROMETER: (%.4f, %.4f, %.4f)",
+                                 result.values[0], result.values[1], result.values[2]));
+        break;
+      
+      case SensorResult.TYPE_MAGNETOMETER:
+        Log.d(TAG, String.format(Locale.ENGLISH, "MAGNETOMETER:  (%.4f, %.4f, %.4f)",
+                                 result.values[0], result.values[1], result.values[2]));
+        break;
+      
+      case SensorResult.TYPE_GYROSCOPE:
+        Log.d(TAG, String.format(Locale.ENGLISH, "GYROSCOPE:     (%.4f, %.4f, %.4f)",
+                                 result.values[0], result.values[1], result.values[2]));
+        break;
     }
-    
-    Log.d(TAG, String.format(Locale.ENGLISH, "MeasureObject %s: %s; VALUES=\"(%.4f, %.4f, %.4f)\"",
-          mSelectedObject.name, entryType, result.values[0], result.values[1], result.values[2]));
   }
   
   private MeasureObject findBeacon(String uuid, int major, int minor)
@@ -1734,21 +2065,27 @@ public class MeasuringActivity extends Activity
   
   private void startMeasuring()
   {
-    if (mSelectedObject == null)
-      return;
-    
-    Log.d(TAG, String.format(Locale.ENGLISH, "Start measuring for selected object '%s'",
-                             mSelectedObject.name));
-    
-    String text = "";
     switch (mState)
     {
       case STATE_POINT_READY:
-        mState = STATE_POINT_RUN;
+        if (mSelectedObject != null)
+        {
+          Log.d(TAG, String.format(Locale.ENGLISH, "Start measuring POINT '%s'", mSelectedObject.name));
+          mState = STATE_POINT_RUN;
+        }
         break;
       
       case STATE_BEACON_READY:
-        mState = STATE_BEACON_RUN;
+        if (mSelectedObject != null)
+        {
+          Log.d(TAG, String.format(Locale.ENGLISH, "Start measuring BEACON '%s'", mSelectedObject.name));
+          mState = STATE_BEACON_RUN;
+        }
+        break;
+      
+      case STATE_POLYLINE_READY:
+        Log.d(TAG, String.format(Locale.ENGLISH, "Start measuring POLYLINE: %s", mPolyLineLog));
+        mState = STATE_POLYLINE_RUN;
         break;
       
       default:
@@ -1756,44 +2093,47 @@ public class MeasuringActivity extends Activity
     }
     
     long timeNow = DateTimeUtils.currentTimeMillis();
-    mSelectedObject.entries = new ArrayList<String>();
-    mSelectedObject.timeLabel = DateTimeUtils.currentDate(timeNow);
+    if (mSelectedObject != null)
+    {
+      mSelectedObject.entries = new ArrayList<String>();
+      mSelectedObject.timeLabel = DateTimeUtils.currentDate(timeNow);
+    }
     mMeasuringTime = mScanTime = timeNow;
+    mPolyLineCheckPoint = 0;
+    mPacketNumber = 0;
     mSensorResults.clear();
     mScanMap.clear();
   }
   
   private void stopMeasuring()
   {
-    if (mSelectedObject == null)
-      return;
-    
-    if (mSelectedObject.status == MeasureObject.STATUS_DEL)
-      return;
-    
     long timeNow = DateTimeUtils.currentTimeMillis();
-    String message = "";
-    Log.d(TAG, String.format(Locale.ENGLISH, "Stop measuring for selected object '%s'",
-                             mSelectedObject.name));
-    
-    long duration = timeNow - mMeasuringTime;
-    int  quality  = getMeasuringQuality();
-    
-    if (duration < MIN_MEASURING_TIME)
-    {
-      cancelObject();
-      return;
-    }
     
     switch (mState)
     {
       case STATE_POINT_RUN:
       {
+        if (mSelectedObject == null || mSelectedObject.status == MeasureObject.STATUS_DEL)
+          break;
+        
+        Log.d(TAG, String.format(Locale.ENGLISH, "Stop measuring POINT '%s'", mSelectedObject.name));
+        
+        String message = "";
+        long duration  = timeNow - mMeasuringTime;
+        int  quality   = getMeasuringQuality();
+        
+        if (duration < MIN_MEASURING_TIME)
+        {
+          cancelObject();
+          break;
+        }
+        
         if (quality == 0)
         {
           cancelObject();
-          return;
+          break;
         }
+        
         for(Map.Entry<String, List<WScanResult>> entry : mScanMap.entrySet())
         {
           List<WScanResult> scanResults = entry.getValue();
@@ -1845,7 +2185,6 @@ public class MeasuringActivity extends Activity
                                       bssid, power, battery, value);
               break;
           }
-          
           mSelectedObject.entries.add(message);
         }
         
@@ -1873,12 +2212,33 @@ public class MeasuringActivity extends Activity
       
       case STATE_BEACON_RUN:
       {
+        if (mSelectedObject == null || mSelectedObject.status == MeasureObject.STATUS_DEL)
+          break;
+        
+        Log.d(TAG, String.format(Locale.ENGLISH, "Stop measuring BEACON '%s'", mSelectedObject.name));
+        
+        String message = "";
+        long duration  = timeNow - mMeasuringTime;
+        int  quality   = getMeasuringQuality();
+        
+        if (duration < MIN_MEASURING_TIME)
+        {
+          cancelObject();
+          break;
+        }
+        
+        if (quality == 0)
+        {
+          cancelObject();
+          break;
+        }
+        
         String beaconId = getCloseBeacon();
         if (beaconId == null)
         {
           Log.d(TAG, "Unable to detect close beacon! Cancel beacon!");
           cancelObject();
-          return;
+          break;
         }
         
         Pattern beaconPattern = Pattern.compile("\\(([0-9]+),([0-9]+),([0-9A-F\\-]+)\\),(\\-[0-9]+)");
@@ -1913,11 +2273,25 @@ public class MeasuringActivity extends Activity
           {
             Log.d(TAG, "Unable to detect close beacon! Cancel beacon!");
             cancelObject();
-            return;
+            break;
           }
         }
         Log.d(TAG, String.format(Locale.ENGLISH, "Object %s: assigned beacon %s", mSelectedObject.name, beaconId));
         Parser.saveBeaconsXml(mLocation);
+        break;
+      }
+      
+      case STATE_POLYLINE_RUN:
+      {
+        Log.d(TAG, String.format(Locale.ENGLISH, "Stop measuring POLYLINE"));
+        
+        LocationPoint P = mPolyLinePoints.get(mPolyLineCheckPoint);
+        String checkPointStr = String.format(Locale.ENGLISH, "%d:%d:%.2f:%.2f",
+                                             mPolyLineCheckPoint, P.subLocation, P.x, P.y);
+        
+        String message = NavigineApp.Navigation.buildMessage(timeNow, mPacketNumber++, null, null, checkPointStr);
+        if (mPolyLineLog != null)
+          NavigineApp.Navigation.logMessage(mPolyLineLog, message, "\n\n");
         break;
       }
         
@@ -1948,23 +2322,29 @@ public class MeasuringActivity extends Activity
     switch (mState)
     {
       case STATE_NONE:
+        mTargetView.setVisibility(View.VISIBLE);
         mMeasuringPanel.setVisibility(View.GONE);
         mProgressPanel.setVisibility(View.GONE);
-        mPrevFloorButton.setVisibility(mCurrentSubLocationIndex == 0 ? View.INVISIBLE : View.VISIBLE);
-        mNextFloorButton.setVisibility(mCurrentSubLocationIndex == mLocation.subLocations.size() - 1 ? View.INVISIBLE : View.VISIBLE);
+        mPolyLinePanel.setVisibility(View.INVISIBLE);
         mAddPointButton .setEnabled(true);
         mAddBeaconButton.setEnabled(true);
+        mAddPolyLineButton.setEnabled(true);
         mAddPointButton .setBackgroundResource(R.drawable.btn_add_point);
         mAddBeaconButton.setBackgroundResource(R.drawable.btn_add_beacon);
+        mAddPolyLineButton.setBackgroundResource(R.drawable.btn_add_polyline);
+        findViewById(R.id.measuring_mode__next_prev_floor_panel).setVisibility(mLocation.subLocations.size() > 1 ? View.VISIBLE : View.INVISIBLE);
         break;
       
       case STATE_POINT_READY:
-        mPrevFloorButton.setVisibility(View.INVISIBLE);
-        mNextFloorButton.setVisibility(View.INVISIBLE);
+        mTargetView.setVisibility(View.VISIBLE);
+        mPolyLinePanel.setVisibility(View.INVISIBLE);
         mAddPointButton .setEnabled(true);
         mAddBeaconButton.setEnabled(false);
+        mAddPolyLineButton.setEnabled(false);
         mAddPointButton .setBackgroundResource(R.drawable.btn_add_point_active);
         mAddBeaconButton.setBackgroundResource(R.drawable.btn_add_beacon);
+        mAddPolyLineButton.setBackgroundResource(R.drawable.btn_add_polyline);
+        findViewById(R.id.measuring_mode__next_prev_floor_panel).setVisibility(View.INVISIBLE);
         if (mSelectedObject != null)
         {
           mProgressPanel.setVisibility(View.VISIBLE);
@@ -1977,12 +2357,15 @@ public class MeasuringActivity extends Activity
         break;
       
       case STATE_POINT_RUN:
-        mPrevFloorButton.setVisibility(View.INVISIBLE);
-        mNextFloorButton.setVisibility(View.INVISIBLE);
+        mTargetView.setVisibility(View.INVISIBLE);
+        mPolyLinePanel.setVisibility(View.INVISIBLE);
         mAddPointButton .setEnabled(true);
         mAddBeaconButton.setEnabled(false);
+        mAddPolyLineButton.setEnabled(false);
         mAddPointButton .setBackgroundResource(R.drawable.btn_add_point_active);
         mAddBeaconButton.setBackgroundResource(R.drawable.btn_add_beacon);
+        mAddPolyLineButton.setBackgroundResource(R.drawable.btn_add_polyline);
+        findViewById(R.id.measuring_mode__next_prev_floor_panel).setVisibility(View.INVISIBLE);
         if (mSelectedObject != null)
         {
           List<WScanResult> scanResults = NavigineApp.Navigation.getScanResults(mScanTime);
@@ -2027,13 +2410,16 @@ public class MeasuringActivity extends Activity
         break;
       
       case STATE_BEACON_READY:
+        mTargetView.setVisibility(View.VISIBLE);
         mProgressPanel.setVisibility(View.INVISIBLE);
-        mPrevFloorButton.setVisibility(View.INVISIBLE);
-        mNextFloorButton.setVisibility(View.INVISIBLE);
+        mPolyLinePanel.setVisibility(View.INVISIBLE);
         mAddPointButton .setEnabled(false);
         mAddBeaconButton.setEnabled(true);
+        mAddPolyLineButton.setEnabled(false);
         mAddPointButton .setBackgroundResource(R.drawable.btn_add_point);
         mAddBeaconButton.setBackgroundResource(R.drawable.btn_add_beacon_active);
+        mAddPolyLineButton.setBackgroundResource(R.drawable.btn_add_polyline);
+        findViewById(R.id.measuring_mode__next_prev_floor_panel).setVisibility(View.INVISIBLE);
         if (mSelectedObject != null)
         {
           mMeasuringPanel.setVisibility(View.VISIBLE);
@@ -2045,12 +2431,15 @@ public class MeasuringActivity extends Activity
         break;
       
       case STATE_BEACON_RUN:
-        mPrevFloorButton.setVisibility(View.INVISIBLE);
-        mNextFloorButton.setVisibility(View.INVISIBLE);
+        mTargetView.setVisibility(View.INVISIBLE);
+        mPolyLinePanel.setVisibility(View.INVISIBLE);
         mAddPointButton .setEnabled(false);
         mAddBeaconButton.setEnabled(true);
+        mAddPolyLineButton.setEnabled(false);
         mAddPointButton .setBackgroundResource(R.drawable.btn_add_point);
         mAddBeaconButton.setBackgroundResource(R.drawable.btn_add_beacon_active);
+        mAddPolyLineButton.setBackgroundResource(R.drawable.btn_add_polyline);
+        findViewById(R.id.measuring_mode__next_prev_floor_panel).setVisibility(View.INVISIBLE);
         if (mSelectedObject != null)
         {
           List<WScanResult> scanResults = NavigineApp.Navigation.getScanResults(mScanTime);
@@ -2080,6 +2469,97 @@ public class MeasuringActivity extends Activity
         }
         break;
       
+      case STATE_POLYLINE_PREPARE:
+        mTargetView.setVisibility(View.VISIBLE);
+        mProgressPanel.setVisibility(View.INVISIBLE);
+        mPolyLinePanel.setVisibility(View.VISIBLE);
+        mAddPointButton .setEnabled(false);
+        mAddBeaconButton.setEnabled(false);
+        mAddPolyLineButton.setEnabled(true);
+        mAddPointButton .setBackgroundResource(R.drawable.btn_add_point);
+        mAddBeaconButton.setBackgroundResource(R.drawable.btn_add_beacon);
+        mAddPolyLineButton.setBackgroundResource(R.drawable.btn_add_polyline_active);
+        findViewById(R.id.measuring_mode__polyline_panel__prepare_buttons_view).setVisibility(View.VISIBLE);
+        findViewById(R.id.measuring_mode__polyline_panel__start_button).setVisibility(View.INVISIBLE);
+        findViewById(R.id.measuring_mode__polyline_panel__check_point_button).setVisibility(View.INVISIBLE);
+        findViewById(R.id.measuring_mode__polyline_panel__finish_button).setVisibility(View.INVISIBLE);
+        findViewById(R.id.measuring_mode__next_prev_floor_panel).setVisibility(View.INVISIBLE);
+        mPolyLineLabel.setText(String.format(Locale.ENGLISH, "Add check points and tap FINISH",
+                               mPolyLinePoints.size() + 1));
+        break;
+      
+      case STATE_POLYLINE_READY:
+        mTargetView.setVisibility(View.INVISIBLE);
+        mProgressPanel.setVisibility(View.INVISIBLE);
+        mPolyLinePanel.setVisibility(View.VISIBLE);
+        mAddPointButton .setEnabled(false);
+        mAddBeaconButton.setEnabled(false);
+        mAddPolyLineButton.setEnabled(true);
+        mAddPointButton .setBackgroundResource(R.drawable.btn_add_point);
+        mAddBeaconButton.setBackgroundResource(R.drawable.btn_add_beacon);
+        mAddPolyLineButton.setBackgroundResource(R.drawable.btn_add_polyline_active);
+        findViewById(R.id.measuring_mode__polyline_panel__prepare_buttons_view).setVisibility(View.INVISIBLE);
+        findViewById(R.id.measuring_mode__polyline_panel__start_button).setVisibility(View.VISIBLE);
+        findViewById(R.id.measuring_mode__polyline_panel__check_point_button).setVisibility(View.INVISIBLE);
+        findViewById(R.id.measuring_mode__polyline_panel__finish_button).setVisibility(View.INVISIBLE);
+        findViewById(R.id.measuring_mode__next_prev_floor_panel).setVisibility(View.INVISIBLE);
+        mPolyLineLabel.setText(String.format(Locale.ENGLISH, "Go to the first checkpoint and tap START"));
+        break;
+      
+      case STATE_POLYLINE_RUN:
+        mTargetView.setVisibility(View.INVISIBLE);
+        mProgressPanel.setVisibility(View.INVISIBLE);
+        mPolyLinePanel.setVisibility(View.VISIBLE);
+        mAddPointButton .setEnabled(false);
+        mAddBeaconButton.setEnabled(false);
+        mAddPolyLineButton.setEnabled(true);
+        mAddPointButton .setBackgroundResource(R.drawable.btn_add_point);
+        mAddBeaconButton.setBackgroundResource(R.drawable.btn_add_beacon);
+        mAddPolyLineButton.setBackgroundResource(R.drawable.btn_add_polyline_active);
+        findViewById(R.id.measuring_mode__polyline_panel__prepare_buttons_view).setVisibility(View.INVISIBLE);
+        findViewById(R.id.measuring_mode__polyline_panel__start_button).setVisibility(View.INVISIBLE);
+        findViewById(R.id.measuring_mode__polyline_panel__check_point_button).setVisibility(View.VISIBLE);
+        findViewById(R.id.measuring_mode__polyline_panel__finish_button).setVisibility(View.INVISIBLE);
+        findViewById(R.id.measuring_mode__next_prev_floor_panel).setVisibility(View.INVISIBLE);
+        
+        List<WScanResult> scanResults = NavigineApp.Navigation.getScanResults(mScanTime);
+        List<SensorResult> sensorResults = NavigineApp.Navigation.getSensorResults(mScanTime);
+        mScanTime = timeNow + 1;
+        
+        LocationPoint P = mPolyLinePoints.get(mPolyLineCheckPoint);
+        String checkPointStr = String.format(Locale.ENGLISH, "%d:%d:%.2f:%.2f",
+                                             mPolyLineCheckPoint, P.subLocation, P.x, P.y);
+        
+        String message = NavigineApp.Navigation.buildMessage(timeNow, mPacketNumber++, scanResults, sensorResults, checkPointStr);
+        
+        if (mPolyLineLog != null)
+          NavigineApp.Navigation.logMessage(mPolyLineLog, message, "\n\n");
+        
+        nsecs = (int)((timeNow - mMeasuringTime) / 1000);
+        mPolyLineLabel.setText(String.format(Locale.ENGLISH, "Measuring checkpoint %d: %d secs",
+                               mPolyLineCheckPoint + 1, nsecs));
+        break;
+      
+      case STATE_POLYLINE_FINAL:
+        mTargetView.setVisibility(View.INVISIBLE);
+        mProgressPanel.setVisibility(View.INVISIBLE);
+        mPolyLinePanel.setVisibility(View.VISIBLE);
+        mAddPointButton .setEnabled(false);
+        mAddBeaconButton.setEnabled(false);
+        mAddPolyLineButton.setEnabled(true);
+        mAddPointButton .setBackgroundResource(R.drawable.btn_add_point);
+        mAddBeaconButton.setBackgroundResource(R.drawable.btn_add_beacon);
+        mAddPolyLineButton.setBackgroundResource(R.drawable.btn_add_polyline_active);
+        findViewById(R.id.measuring_mode__polyline_panel__prepare_buttons_view).setVisibility(View.INVISIBLE);
+        findViewById(R.id.measuring_mode__polyline_panel__start_button).setVisibility(View.INVISIBLE);
+        findViewById(R.id.measuring_mode__polyline_panel__check_point_button).setVisibility(View.INVISIBLE);
+        findViewById(R.id.measuring_mode__polyline_panel__finish_button).setVisibility(View.VISIBLE);
+        findViewById(R.id.measuring_mode__next_prev_floor_panel).setVisibility(View.INVISIBLE);
+        
+        File file = new File(mPolyLineLog);
+        String fileName = file.getName();
+        mPolyLineLabel.setText(String.format(Locale.ENGLISH, "File saved: %s", fileName));
+        break;
     }
   }
   
@@ -2105,12 +2585,13 @@ public class MeasuringActivity extends Activity
     
     // Upload has been started
     // Replacing upload button with a progress bar
-    // Disabling point/beacon buttons
+    // Disabling point/beacon/polyline buttons
     mUploadButton.setVisibility(View.GONE);
     mUploadProgressBar.setVisibility(View.VISIBLE);
     mProgressPanel.setVisibility(View.VISIBLE);
     mAddPointButton.setEnabled(false);
     mAddBeaconButton.setEnabled(false);
+    mAddPolyLineButton.setEnabled(false);
     
     int state = LocationLoader.checkLocationUploader(mUploader);
     
@@ -2128,12 +2609,13 @@ public class MeasuringActivity extends Activity
     
     // Upload has been finished
     // Replacing upload progress bar with upload button
-    // Enabling point/beacon buttons
+    // Enabling point/beacon/polyline buttons
     mUploadProgressBar.setVisibility(View.GONE);
     mProgressPanel.setVisibility(View.GONE);
     mUploadButton.setVisibility(View.VISIBLE);
     mAddPointButton.setEnabled(true);
     mAddBeaconButton.setEnabled(true);
+    mAddPolyLineButton.setEnabled(true);
     
     if (state == 100)
     {
@@ -2196,6 +2678,7 @@ public class MeasuringActivity extends Activity
         Canvas canvas = pic.beginRecording(mViewWidth, mViewHeight);
         drawGrid(canvas);
         drawMeasureObjects(canvas);
+        drawPolyLine(canvas);
         pic.endRecording();
         
         mPicImageView.invalidate();

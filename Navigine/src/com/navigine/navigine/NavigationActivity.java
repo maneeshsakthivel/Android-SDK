@@ -41,6 +41,7 @@ public class NavigationActivity extends Activity
   // GUI parameters
   private ImageView  mMapImageView        = null;
   private ImageView  mPicImageView        = null;
+  private ImageView  mTargetImage         = null;
   private Button     mMenuButton          = null;
   private Button     mPrevFloorButton     = null;
   private Button     mNextFloorButton     = null;
@@ -89,8 +90,6 @@ public class NavigationActivity extends Activity
   private PointF[] mTouchPoints = new PointF[] { new PointF(0.0f, 0.0f),
                                                  new PointF(0.0f, 0.0f),
                                                  new PointF(0.0f, 0.0f)};
-  
-  
   // Geometry parameters
   private Matrix  mMatrix        = null;
   private float   mRatio         = 1.0f;
@@ -970,9 +969,9 @@ public class NavigationActivity extends Activity
     mHandler.post(mRunnable);
   }
   
-  private void drawDevice(DeviceInfo info, Canvas canvas)
+  private void drawDevice(Canvas canvas)
   {
-    if (info == null)
+    if (mDeviceInfo == null)
       return;
     
     // Check if location is loaded
@@ -980,7 +979,7 @@ public class NavigationActivity extends Activity
       return;
     
     // Check if device belongs to the location loaded
-    if (info.location != mLocation.id)
+    if (mDeviceInfo.location != mLocation.id)
       return;
     
     // Get current sublocation displayed
@@ -999,9 +998,9 @@ public class NavigationActivity extends Activity
     paint.setStyle(Paint.Style.FILL_AND_STROKE);
     
     /// Drawing device path (if it exists)
-    if (info.paths != null && info.paths.size() > 0)
+    if (mDeviceInfo.paths != null && mDeviceInfo.paths.size() > 0)
     {
-      DevicePath p = info.paths.get(0);
+      DevicePath p = mDeviceInfo.paths.get(0);
       if (p.path.length >= 2)
       {
         paint.setColor(solidColor);
@@ -1069,13 +1068,13 @@ public class NavigationActivity extends Activity
       mCancelRouteButton.setVisibility(View.GONE);
     
     // Check if device belongs to the current sublocation
-    if (info.subLocation != subLoc.id)
+    if (mDeviceInfo.subLocation != subLoc.id)
       return;
     
-    final float x  = info.x;
-    final float y  = info.y;
-    final float r  = info.r;
-    final float angle = info.azimuth;
+    final float x  = mDeviceInfo.x;
+    final float y  = mDeviceInfo.y;
+    final float r  = mDeviceInfo.r;
+    final float angle = mDeviceInfo.azimuth;
     final float sinA = (float)Math.sin(angle);
     final float cosA = (float)Math.cos(angle);
     final float radius  = getScreenLength(r);   // External radius: navigation-determined, transparent
@@ -1110,14 +1109,14 @@ public class NavigationActivity extends Activity
     }
   }
   
-  private void adjustDevice(DeviceInfo info)
+  private void adjustDevice()
   {
     // Check if location is loaded
     if (mLocation == null || mCurrentSubLocationIndex < 0)
       return;
     
     // Check if device belongs to the location loaded
-    if (info.location != mLocation.id)
+    if (mDeviceInfo.location != mLocation.id)
       return;
     
     long timeNow = DateTimeUtils.currentTimeMillis();
@@ -1127,21 +1126,21 @@ public class NavigationActivity extends Activity
     {
       // Firstly, set the correct sublocation
       SubLocation subLoc = mLocation.subLocations.get(mCurrentSubLocationIndex);
-      if (info.subLocation != subLoc.id)
+      if (mDeviceInfo.subLocation != subLoc.id)
       {
         for(int i = 0; i < mLocation.subLocations.size(); ++i)
-          if (mLocation.subLocations.get(i).id == info.subLocation)
+          if (mLocation.subLocations.get(i).id == mDeviceInfo.subLocation)
             loadSubLocation(i);
       }
       
       // Secondly, adjust device to the center of the screen
-      PointF center = getScreenCoordinates(info.x, info.y);
+      PointF center = getScreenCoordinates(mDeviceInfo.x, mDeviceInfo.y);
       float deltaX  = mViewWidth  / 2 - center.x;
       float deltaY  = mViewHeight / 2 - center.y;
       doScroll(deltaX, deltaY);
       
       // Thirdly, adjust device direction to the top of screen
-      //float angle = info.azimuth;
+      //float angle = mDeviceInfo.azimuth;
       //float deltaA = mAdjustAngle - angle;
       //doRotate(deltaA, center.x, center.y);
       //mAdjustAngle -= deltaA;
@@ -1150,32 +1149,6 @@ public class NavigationActivity extends Activity
       //      deltaX, deltaY, deltaA, angle));
       mAdjustTime = timeNow;
     }
-  }
-  
-  private void drawArrow(PointF A, PointF B, Paint paint, Canvas canvas)
-  {
-    float ux = B.x - A.x;
-    float uy = B.y - A.y;
-    float n = (float)Math.sqrt(ux * ux + uy * uy);
-    float m = Math.min(15.0f, n / 3);
-    float k = m / n;
-    
-    PointF C = new PointF(k * A.x + (1 - k) * B.x, k * A.y + (1 - k) * B.y);
-    
-    float wx = -uy * m / n;
-    float wy =  ux * m / n;
-    
-    PointF E = new PointF(C.x + wx / 3, C.y + wy / 3);
-    PointF F = new PointF(C.x - wx / 3, C.y - wy / 3);
-    
-    Path path = new Path();
-    path.moveTo(B.x, B.y);
-    path.lineTo(E.x, E.y);
-    path.lineTo(F.x, F.y);
-    path.lineTo(B.x, B.y);
-    
-    canvas.drawLine(A.x, A.y, B.x, B.y, paint);
-    //canvas.drawPath(path, paint);
   }
   
   private void connectToIMU(int subLocId, float x0, float y0)
@@ -1335,7 +1308,7 @@ public class NavigationActivity extends Activity
         if (mDeviceInfo != null)
         {
           if (mAdjustMode)
-            adjustDevice(mDeviceInfo);
+            adjustDevice();
           
           if (mErrorMessageAction == 2)
           {
@@ -1352,8 +1325,10 @@ public class NavigationActivity extends Activity
           }
           else if (errorCode != 0)
           {
-            setErrorMessage(String.format(Locale.ENGLISH, "Something is wrong with location '%s'! Please, contact technical support!",
-                            mLocation.name), 2);
+            setErrorMessage(String.format(Locale.ENGLISH,
+                            "Something is wrong with location '%s' (error code %d)! " +
+                            "Please, contact technical support!",
+                            mLocation.name, errorCode), 2);
           }
           mMakeRouteButton.setVisibility(View.GONE);
           mCancelRouteButton.setVisibility(View.GONE);
@@ -1363,7 +1338,7 @@ public class NavigationActivity extends Activity
         Picture pic = mPicDrawable.getPicture();
         Canvas canvas = pic.beginRecording(mViewWidth, mViewHeight);
         if (mDeviceInfo != null)
-          drawDevice(mDeviceInfo, canvas);
+          drawDevice(canvas);
         pic.endRecording();
         
         mPicImageView.invalidate();

@@ -34,7 +34,7 @@
             android:layout_height="50dp"
             android:layout_marginRight="5dp"
             android:onClick="onUploadMap"
-            android:background="@drawable/btn_upload_map"/>
+            android:background="@drawable/btn_upload_map_small"/>
         
         <ProgressBar android:id="@+id/measuring_mode__upload_progress_bar"
             android:indeterminate="true"
@@ -61,13 +61,13 @@
             android:layout_height="fill_parent"/>
         
         <ImageView android:id="@+id/measuring_mode__center_target_image"
-            android:src="@drawable/target"
+            android:src="@drawable/elm_target"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"/>
         
         <!-- Next/prev floor panel -->
-        <LinearLayout
+        <LinearLayout android:id="@+id/measuring_mode__next_prev_floor_panel"
             android:orientation="vertical"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -165,6 +165,95 @@
                 android:textColor="#000000"/>
         </FrameLayout>
         
+        <!-- Polyline panel -->
+        <FrameLayout android:id="@+id/measuring_mode__polyline_panel"
+            android:layout_width="fill_parent"
+            android:layout_height="75dp"
+            android:layout_gravity="top|left"
+            android:background="#A6A6A6">
+            
+            <TextView android:id="@+id/measuring_mode__polyline_label"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="top|left"
+                android:paddingLeft="10dp"
+                android:paddingRight="10dp"
+                android:gravity="top|left"
+                android:textSize="16sp"
+                android:textColor="#14273D"/>
+            
+            <LinearLayout android:id="@+id/measuring_mode__polyline_panel__prepare_buttons_view"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom|left"
+                android:layout_marginBottom="5dp">
+                
+                <Button android:id="@+id/measuring_mode__polyline_panel__add_point_button"
+                    android:layout_width="0dp"
+                    android:layout_height="45dp"
+                    android:layout_weight="1"
+                    android:layout_marginLeft="5dp"
+                    android:layout_marginRight="5dp"
+                    android:onClick="onPolyLineButtonClicked"
+                    android:background="#90dddddd"
+                    android:textColor="#40A3CD"
+                    android:textSize="16sp"
+                    android:text="ADD POINT"/>
+                
+                <Button android:id="@+id/measuring_mode__polyline_panel__finish_points_button"
+                    android:layout_width="0dp"
+                    android:layout_height="45dp"
+                    android:layout_weight="1"
+                    android:layout_marginLeft="5dp"
+                    android:layout_marginRight="5dp"
+                    android:onClick="onPolyLineButtonClicked"
+                    android:background="#90dddddd"
+                    android:textColor="#40A3CD"
+                    android:textSize="16sp"
+                    android:text="FINISH"/>
+                
+            </LinearLayout>
+            
+            <Button android:id="@+id/measuring_mode__polyline_panel__start_button"
+                android:layout_width="wrap_content"
+                android:layout_height="45dp"
+                android:layout_gravity="center|bottom"
+                android:layout_marginBottom="5dp"
+                android:paddingLeft="10dp"
+                android:paddingRight="10dp"
+                android:onClick="onPolyLineButtonClicked"
+                android:background="#90dddddd"
+                android:textColor="#40A3CD"
+                android:textSize="16sp"
+                android:text="START MEASURING"/>
+                
+            <Button android:id="@+id/measuring_mode__polyline_panel__check_point_button"
+                android:layout_width="wrap_content"
+                android:layout_height="45dp"
+                android:layout_gravity="center|bottom"
+                android:layout_marginBottom="5dp"
+                android:paddingLeft="10dp"
+                android:paddingRight="10dp"
+                android:onClick="onPolyLineButtonClicked"
+                android:background="#90dddddd"
+                android:textColor="#40A3CD"
+                android:textSize="16sp"
+                android:text="CHECK POINT"/>
+                
+            <Button android:id="@+id/measuring_mode__polyline_panel__finish_button"
+                android:layout_width="wrap_content"
+                android:layout_height="45dp"
+                android:layout_gravity="center|bottom"
+                android:layout_marginBottom="5dp"
+                android:paddingLeft="10dp"
+                android:paddingRight="10dp"
+                android:onClick="onPolyLineButtonClicked"
+                android:background="#90dddddd"
+                android:textColor="#40A3CD"
+                android:textSize="16sp"
+                android:text="FINISH"/>    
+        </FrameLayout>
+        
         <!-- Measuring panel -->
         <FrameLayout android:id="@+id/measuring_mode__measuring_panel"
             android:layout_width="fill_parent"
@@ -215,6 +304,17 @@
                 android:layout_height="50dp"
                 android:onClick="onAddBeacon"
                 android:background="@drawable/btn_add_beacon"/>
+            
+            <View
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1"/>
+            
+            <Button android:id="@+id/measuring_mode__add_polyline_button"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:onClick="onAddPolyLine"
+                android:background="@drawable/btn_add_polyline"/>
             
             <View
                 android:layout_width="0dp"

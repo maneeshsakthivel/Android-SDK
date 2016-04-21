@@ -83,7 +83,11 @@ public class LocationInfoActivity extends Activity
     mImageView.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
     mImageView.setBackgroundColor(Color.argb(0xFF, 0xE6, 0xE6, 0xE6));
     
-    mTitleLabel.setText(mLocationInfo.title);
+    String titleText = mLocationInfo.title;
+    if (titleText.length() > 25)
+      titleText = titleText.substring(0, 24) + "…";
+    
+    mTitleLabel.setText(titleText);
     mVersionLabel.setText(String.format(Locale.ENGLISH,
                                         mLocationInfo.localModified ? "%d+" : "%d",
                                         mLocationInfo.localVersion));
@@ -251,11 +255,23 @@ public class LocationInfoActivity extends Activity
     subLoc.getPicture();
     subLoc.getBitmap();
     
+    if (subLoc.picture == null && subLoc.bitmap == null)
+    {
+      String text = "Load sublocation failed: invalid image";
+      Toast.makeText(mContext, text, Toast.LENGTH_LONG).show();
+      Log.e(TAG, text);
+      return;
+    }
+    
     Log.d(TAG, String.format(Locale.ENGLISH, "Loading sublocation %d: '%s'",
                              index, subLoc.name));
     
     // Setting up sublocation name and size
-    mSublocationLabel.setText(subLoc.name);
+    String name = subLoc.name;
+    if (name.length() > 15)
+      name = name.substring(0, 14) + "…";
+    
+    mSublocationLabel.setText(name);
     mSizeLabel.setText(String.format(Locale.ENGLISH, "%.1fm x %.1fm", subLoc.width, subLoc.height));
     
     int viewWidth  = mImageView.getWidth();
