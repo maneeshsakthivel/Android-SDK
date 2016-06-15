@@ -89,6 +89,17 @@
             android:text="Cancel route"
             android:textColor="#ffffff"/>
         
+        <Button android:id="@+id/navigation__pdr_button"
+            android:layout_width="120dp"
+            android:layout_height="50dp"
+            android:layout_gravity="top|left"
+            android:background="@drawable/pdr_button"
+            android:onClick="onStartPdr"
+            android:textAllCaps="false"
+            android:textSize="16dp"
+            android:text="Start PDR"
+            android:textColor="#ffffff"/>
+        
         <LinearLayout
             android:orientation="vertical"
             android:layout_width="wrap_content"
