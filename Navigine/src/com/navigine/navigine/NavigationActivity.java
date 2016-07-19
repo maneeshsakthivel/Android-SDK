@@ -45,6 +45,7 @@ public class NavigationActivity extends Activity
   private Button     mMenuButton          = null;
   private Button     mPrevFloorButton     = null;
   private Button     mNextFloorButton     = null;
+  private Button     mImuButton           = null;
   private View       mPrevFloorView       = null;
   private View       mNextFloorView       = null;
   private View       mZoomInView          = null;
@@ -54,6 +55,7 @@ public class NavigationActivity extends Activity
   private TextView   mNavigationInfoLabel = null;
   private TextView   mErrorMessageLabel   = null;
   private Button     mMakeRouteButton     = null;
+  private Button     mPdrButton           = null;
   private Button     mCancelRouteButton   = null;
   private TimerTask  mTimerTask           = null;
   private Timer      mTimer               = new Timer();
@@ -117,6 +119,9 @@ public class NavigationActivity extends Activity
   private int     mImuState     = 0;
   private long    mImuStateTime = 0;
   
+  private int mPdrState = 0;              // PDR states: 0 - disabled, 1 - prepare, 2 - enabled
+  private LocationPoint mPdrPoint = null; // PDR starting point
+  
   /** Called when the activity is first created */
   @Override public void onCreate(Bundle savedInstanceState)
   {
@@ -141,6 +146,7 @@ public class NavigationActivity extends Activity
     mMapImageView = (ImageView)findViewById(R.id.navigation__map_image);
     mPicImageView = (ImageView)findViewById(R.id.navigation__ext_image);
     mMenuButton = (Button)findViewById(R.id.navigation__menu_button);
+    mImuButton  = (Button)findViewById(R.id.navigation__imu_button);
     mPrevFloorButton = (Button)findViewById(R.id.navigation__prev_floor_button);
     mNextFloorButton = (Button)findViewById(R.id.navigation__next_floor_button);
     mPrevFloorView = (View)findViewById(R.id.navigation__prev_floor_view);
@@ -152,6 +158,7 @@ public class NavigationActivity extends Activity
     mNavigationInfoLabel = (TextView)findViewById(R.id.navigation__info_label);
     mMakeRouteButton = (Button)findViewById(R.id.navigation__make_route_button);
     mCancelRouteButton = (Button)findViewById(R.id.navigation__cancel_route_button);
+    mPdrButton = (Button)findViewById(R.id.navigation__pdr_button);
     mErrorMessageLabel = (TextView)findViewById(R.id.navigation__error_message_label);
     
     mMapImageView.setBackgroundColor(Color.argb(255, 235, 235, 235));
@@ -160,6 +167,7 @@ public class NavigationActivity extends Activity
     
     mMakeRouteButton.setVisibility(View.GONE);
     mCancelRouteButton.setVisibility(View.GONE);
+    mPdrButton.setVisibility(View.GONE);
     mErrorMessageLabel.setVisibility(View.GONE);
     
     mPrevFloorView.setVisibility(View.INVISIBLE);
@@ -441,6 +449,36 @@ public class NavigationActivity extends Activity
     mHandler.post(mRunnable);
   }
   
+  public void onStartPdr(View v)
+  {
+    if (mMenuVisible)
+    {
+      toggleMenuLayout(null);
+      return;
+    }
+    
+    if (NavigineApp.Navigation == null)
+      return;
+    
+    if (mPdrState == 0 || mPdrPoint == null)
+      return;
+    
+    // Enabling PDR mode
+    mPdrState = 2;
+    NavigineApp.Navigation.setPdrEnabled(mPdrPoint.subLocation, mPdrPoint.x, mPdrPoint.y);
+    mImuButton.setBackgroundResource(R.drawable.btn_boot_green);
+    
+    NavigineApp.Navigation.cancelTargets();
+    mMakeRouteButton.setVisibility(View.GONE);
+    mCancelRouteButton.setVisibility(View.GONE);
+    mPdrButton.setVisibility(View.GONE);
+    mPdrPoint = null;
+    mPinPoint = null;
+    mTargetPoint = null;
+    
+    mHandler.post(mRunnable);
+  }
+  
   public void onCloseMessage(View v)
   {
     if (mMenuVisible)
@@ -474,8 +512,24 @@ public class NavigationActivity extends Activity
     if (mMenuVisible)
       toggleMenuLayout(null);
     
-    Log.d(TAG, "TODO: switching to the imu mode");
+    switch (mPdrState)
+    {
+      case 0: // PDR Disabled => switching to prepare state
+        mPdrState = 1;
+        mPdrPoint = null;
+        mImuButton.setBackgroundResource(R.drawable.btn_boot_blue);
+        break;
+        
+      case 1: // PDR prepare => disabling PDR mode
+      case 2: // PDR enabled => disabling PDR mode
+        mPdrState = 0;
+        mPdrPoint = null;
+        NavigineApp.Navigation.setPdrDisabled();
+        mImuButton.setBackgroundResource(R.drawable.btn_boot_white);
+        break;
+    }
     
+    //Log.d(TAG, "TODO: switching to the imu mode");
     //mImuMode = true;
   }
   
@@ -885,6 +939,12 @@ public class NavigationActivity extends Activity
       return;
     }
     
+    if (mPdrPoint != null)
+    {
+      cancelPdr();
+      return;
+    }
+    
     if (mPinPoint != null)
     {
       cancelPin();
@@ -916,7 +976,11 @@ public class NavigationActivity extends Activity
     }
     
     Log.d(TAG, String.format(Locale.ENGLISH, "Long click at (%.2f, %.2f)", x, y));
-    makePin(getAbsCoordinates(x, y));
+    
+    if (mPdrState == 0)
+      makePin(getAbsCoordinates(x, y));
+    else
+      makePdr(getAbsCoordinates(x, y));
   }
   
   private void makePin(PointF P)
@@ -932,6 +996,13 @@ public class NavigationActivity extends Activity
         P.y < 0.0f || P.y > mMaxY)
     {
       // Missing the map
+      return;
+    }
+    
+    if (mPdrState == 1)
+    {
+      mPdrPoint = new LocationPoint(subLoc.id, P.x, P.y);
+      mHandler.post(mRunnable);
       return;
     }
     
@@ -966,6 +1037,33 @@ public class NavigationActivity extends Activity
     
     mPinPoint = null;
     mMakeRouteButton.setVisibility(View.GONE);
+    mHandler.post(mRunnable);
+  }
+  
+  private void makePdr(PointF P)
+  {
+    if (mLocation == null || mCurrentSubLocationIndex < 0)
+      return;
+    
+    SubLocation subLoc = mLocation.subLocations.get(mCurrentSubLocationIndex);
+    if (subLoc == null)
+      return;
+    
+    if (P.x < 0.0f || P.x > mMaxX ||
+        P.y < 0.0f || P.y > mMaxY)
+    {
+      // Missing the map
+      return;
+    }
+    
+    mPdrPoint = new LocationPoint(subLoc.id, P.x, P.y);
+    mHandler.post(mRunnable);
+  }
+  
+  private void cancelPdr()
+  {
+    mPdrPoint = null;
+    mPdrButton.setVisibility(View.GONE);
     mHandler.post(mRunnable);
   }
   
@@ -1066,6 +1164,30 @@ public class NavigationActivity extends Activity
     }
     else
       mCancelRouteButton.setVisibility(View.GONE);
+    
+    // Drawing PDR point (if it exists and belongs to the current sublocation)
+    if (mPdrPoint != null && mPdrPoint.subLocation == subLoc.id)
+    {
+      final PointF T = getScreenCoordinates(mPdrPoint.x, mPdrPoint.y);
+      final float tRadius = 10 * dp;
+      
+      paint.setARGB(255, 0, 0, 0);
+      paint.setStrokeWidth(4 * dp);
+      canvas.drawLine(T.x, T.y, T.x, T.y - 3 * tRadius, paint);
+      
+      paint.setColor(solidColor);
+      canvas.drawCircle(T.x, T.y - 3 * tRadius, tRadius, paint);
+      
+      ViewGroup.MarginLayoutParams layoutParams = (ViewGroup.MarginLayoutParams)mPdrButton.getLayoutParams();
+      layoutParams.leftMargin   = (int)(T.x - (float)mPdrButton.getWidth() / 2.0f);
+      layoutParams.topMargin    = (int)(T.y - (float)mPdrButton.getHeight() - tRadius * 5);
+      layoutParams.rightMargin  = (int)(layoutParams.leftMargin + (float)mPdrButton.getWidth());
+      layoutParams.bottomMargin = (int)(layoutParams.topMargin  + (float)mPdrButton.getHeight());
+      mPdrButton.setLayoutParams(layoutParams);
+      mPdrButton.setVisibility(View.VISIBLE);
+    }
+    else
+      mPdrButton.setVisibility(View.GONE);
     
     // Check if device belongs to the current sublocation
     if (mDeviceInfo.subLocation != subLoc.id)
@@ -1322,6 +1444,10 @@ public class NavigationActivity extends Activity
           if (errorCode == 4)
           {
             setErrorMessage("You are out of navigation zone! Please, check that your bluetooth is enabled!", 2);
+          }
+          else if (errorCode == 30)
+          {
+            setErrorMessage("Not enough beacons on the location! Please, switch to the MEASURING MODE and add more beacons!", 2);
           }
           else if (errorCode != 0)
           {

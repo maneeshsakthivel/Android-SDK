@@ -31,12 +31,12 @@ public class SplashActivity extends Activity
   private static final String TAG = "NAVIGINE.SplashActivity";
   
   // This context
-  private final Context mContext = this;
+  private final Context mContext  = this;
   
-  private TextView  mErrorLabel  = null;
-  private TimerTask mTimerTask   = null;
-  private Handler   mHandler     = new Handler();
-  private Timer     mTimer       = new Timer();
+  private TextView  mErrorLabel   = null;
+  private TimerTask mTimerTask    = null;
+  private Handler   mHandler      = new Handler();
+  private Timer     mTimer        = new Timer();
   
   boolean mInitialized = false;
   

@@ -165,6 +165,18 @@
                 android:textColor="#000000"/>
         </FrameLayout>
         
+        <TextView android:id="@+id/measuring_mode__error_message_label"
+            android:layout_width="fill_parent"
+            android:layout_height="70dp"
+            android:layout_gravity="top|left"
+            android:paddingLeft="5dp"
+            android:paddingRight="5dp"
+            android:gravity="center"
+            android:onClick="onCloseMessage"
+            android:background="#E8CC5A5A"
+            android:textSize="15dp"
+            android:textColor="#ffffff"/>
+        
         <!-- Polyline panel -->
         <FrameLayout android:id="@+id/measuring_mode__polyline_panel"
             android:layout_width="fill_parent"

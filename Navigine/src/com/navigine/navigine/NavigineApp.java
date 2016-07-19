@@ -37,6 +37,8 @@ public class NavigineApp extends Application
   public static float             DisplayWidthDp    = 0.0f;
   public static float             DisplayHeightDp   = 0.0f;
   public static float             DisplayDensity    = 0.0f;
+  public static int               VersionCode       = 0;
+  public static String            VersionName       = null;
   
   public static boolean           BackgroundMode    = false;
   
@@ -87,8 +89,14 @@ public class NavigineApp extends Application
       DisplayWidthPx  = displayMetrics.widthPixels;
       DisplayHeightPx = displayMetrics.heightPixels;
       DisplayDensity  = displayMetrics.density;
-      DisplayWidthDp  = DisplayWidthPx / DisplayDensity;
+      DisplayWidthDp  = DisplayWidthPx  / DisplayDensity;
       DisplayHeightDp = DisplayHeightPx / DisplayDensity;
+      
+      VersionCode = AppContext.getPackageManager().getPackageInfo(AppContext.getPackageName(), 0).versionCode;
+      VersionName = AppContext.getPackageManager().getPackageInfo(AppContext.getPackageName(), 0).versionName;
+      Log.d(TAG, "Version code: " + VersionCode);
+      Log.d(TAG, "Version name: " + VersionName);
+      
       Log.d(TAG, String.format(Locale.ENGLISH, "Display size: %.1fpx x %.1fpx (%.1fdp x %.1fdp, density=%.2f)",
                                DisplayWidthPx, DisplayHeightPx,
                                DisplayWidthDp, DisplayHeightDp,

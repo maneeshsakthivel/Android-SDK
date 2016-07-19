@@ -84,10 +84,14 @@ public class NavigineExceptionHandler implements UncaughtExceptionHandler
     builder.append(String.format(Locale.ENGLISH, "  \"culprit\": \"com.navigine.navigine\",\n"));
     builder.append(String.format(Locale.ENGLISH, "  \"timestamp\": \"%d\",\n", timestamp/1000));
     builder.append(String.format(Locale.ENGLISH, "  \"message\": \"%s\",\n", message));
-    builder.append(String.format(Locale.ENGLISH, "  \"tags\":[[\"app_version\", \"%s\"],\n" +
+    builder.append(String.format(Locale.ENGLISH, "  \"tags\":[[\"app_version\", \"%s (%d)\"],\n" +
+                                                 "            [\"build_version\", \"%s\"],\n" +
                                                  "            [\"device_api\", \"%d\"],\n" +
                                                  "            [\"device_name\",\"%s\"]],\n",
-                                                 A.BUILD_VERSION_BRIEF, Build.VERSION.SDK_INT,
+                                                 NavigineApp.VersionName,
+                                                 NavigineApp.VersionCode,
+                                                 A.BUILD_VERSION_BRIEF,
+                                                 Build.VERSION.SDK_INT,
                                                  deviceName));
     
     builder.append(String.format(Locale.ENGLISH, "  \"extra\": {\n    \"Stack trace\": [\n"));

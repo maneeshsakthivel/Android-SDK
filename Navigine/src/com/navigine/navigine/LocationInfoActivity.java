@@ -169,6 +169,9 @@ public class LocationInfoActivity extends Activity
     if (pointerCount != 1)
       return;
     
+    if (mMatrix == null)
+      return;
+    
     PointF P = new PointF(event.getX(0), event.getY(0));
     
     //Log.d(TAG, String.format(Locale.ENGLISH, "MOTION EVENT: %d", actionMask));
@@ -316,8 +319,11 @@ public class LocationInfoActivity extends Activity
         if (mSublocationIndex < 0)
           loadSublocation(0);
         
-        mImageView.invalidate();
-        mImageView.setImageMatrix(mMatrix);
+        if (mMatrix != null)
+        {
+          mImageView.invalidate();
+          mImageView.setImageMatrix(mMatrix);
+        }
       }
     };
 

@@ -562,6 +562,22 @@ public class DebugActivity extends Activity
           }
           messageBuilder.append("\n");
           
+          //WScanResult result1 = null;
+          //WScanResult result2 = null;
+          //for(int i = 0; i < beaconEntries.size(); ++i)
+          //{
+          //  WScanResult result = beaconEntries.get(i);
+          //  if (result.BSSID.equals("(00001,00001,01122334-4556-6778-899A-ABBCCDDEEF06)"))
+          //    result1 = result;
+          //  if (result.BSSID.equals("(00001,00001,01122334-4556-6778-899A-ABBCCDDEEF07)"))
+          //    result2 = result;
+          //}
+          //
+          //if (result1 != null && result2 != null)
+          //{
+          //  Log.d(TAG, "Difference: " + (result1.level - result2.level));
+          //}
+          
           // Writing accelerometer values
           float[] accelVector = NavigineApp.Navigation.getAccelVector();
           if (accelVector != null)

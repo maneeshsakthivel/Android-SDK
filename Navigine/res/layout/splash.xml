@@ -6,11 +6,10 @@
     android:background="#14273D">
     
     <ImageView android:id="@+id/splash_mode__logo_image"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="25dp"
-        android:src="@drawable/elm_splashlogo"
-        android:layout_gravity="center|top"/>
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:scaleType="fitXY"
+        android:src="@drawable/elm_splash"/>
     
     <TextView android:id="@+id/splash__error_label"
         android:layout_width="wrap_content"
@@ -25,13 +24,4 @@
         android:textColor="#80CC5A5A"
         android:text="Error loading NavigineSDK! It seems that your device is not supported yet! Please, contact technical support"/>
         
-    <TextView android:id="@+id/splash_mode__demo_app"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="30dp"
-        android:layout_gravity="center|bottom"
-        android:textSize="14dp"
-        android:text="DEMO APP"
-        android:textColor="#ffffff"/>
-    
 </FrameLayout>

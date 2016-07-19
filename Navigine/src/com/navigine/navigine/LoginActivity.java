@@ -38,7 +38,6 @@ public class LoginActivity extends Activity
   private EditText      mLoginEdit      = null;
   private EditText      mPasswordEdit   = null;
   private Button        mLoginButton    = null;
-  private Button        mCancelButton   = null;
   private TextView      mStatusLabel    = null;
   private Button        mMenuButton     = null;
   private ProgressBar   mProgressBar    = null;
@@ -75,7 +74,6 @@ public class LoginActivity extends Activity
     mLoginEdit    = (EditText)findViewById(R.id.login__login_edit);
     mPasswordEdit = (EditText)findViewById(R.id.login__password_edit);
     mLoginButton  = (Button)findViewById(R.id.login__done_button);
-    mCancelButton = (Button)findViewById(R.id.login__cancel_button);
     mStatusLabel  = (TextView)findViewById(R.id.login__status_label);
     mProgressBar  = (ProgressBar)findViewById(R.id.login__progress_bar);
     mMenuButton   = (Button)findViewById(R.id.login__menu_button);
@@ -92,19 +90,6 @@ public class LoginActivity extends Activity
             return;
           }
           startLogin();
-        }
-      });
-    
-    mCancelButton.setOnClickListener(new OnClickListener()
-      {
-        public void onClick(View view)
-        {
-          if (mMenuVisible)
-          {
-            toggleMenuLayout(null);
-            return;
-          }
-          stopLogin();
         }
       });
     

@@ -926,6 +926,9 @@ public class LoaderActivity extends Activity
     if (NavigineApp.Navigation == null)
       return;
     
+    if (index < 0 || index >= mInfoList.size())
+      return;
+    
     LocationInfo info = mInfoList.get(index);
     String location = new String(info.title);
     Log.d(TAG, String.format(Locale.ENGLISH, "Start download: %s", location));
@@ -946,6 +949,9 @@ public class LoaderActivity extends Activity
     if (NavigineApp.Navigation == null)
       return;
     
+    if (index < 0 || index >= mInfoList.size())
+      return;
+    
     LocationInfo info = mInfoList.get(index);
     String location = new String(info.title);
     Log.d(TAG, String.format(Locale.ENGLISH, "Start upload: %s", location));
@@ -964,6 +970,9 @@ public class LoaderActivity extends Activity
   private void stopDownload(int index)
   {
     if (NavigineApp.Navigation == null)
+      return;
+    
+    if (index < 0 || index >= mInfoList.size())
       return;
     
     LocationInfo info = mInfoList.get(index);
