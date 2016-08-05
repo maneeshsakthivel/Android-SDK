@@ -108,6 +108,7 @@
             android:layout_height="40dp"
             android:layout_gravity="center|top"
             android:background="@drawable/login_done_button"
+            android:onClick="startLogin"
             android:textSize="14dp"
             android:textColor="#ffffff"
             android:text="Sign in"/>
@@ -115,6 +116,15 @@
         <View
             android:layout_width="1dp"
             android:layout_height="20dp"/>
+        
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:layout_gravity="center|top"
+            android:onClick="publicLogin"
+            android:textSize="16dp"
+            android:textColor="#176AC2"
+            android:text="Use as public user"/>
         
     </LinearLayout>
     

@@ -975,7 +975,7 @@ public class NavigationActivity extends Activity
       return;
     }
     
-    Log.d(TAG, String.format(Locale.ENGLISH, "Long click at (%.2f, %.2f)", x, y));
+    Log.d(TAG, String.format(Locale.ENGLISH, "Long click at (%.2f, %.2f), pdr:%d", x, y, mPdrState));
     
     if (mPdrState == 0)
       makePin(getAbsCoordinates(x, y));
@@ -1056,6 +1056,7 @@ public class NavigationActivity extends Activity
       return;
     }
     
+    Log.d(TAG, String.format(Locale.ENGLISH, "Make PDR: (%.2f, %.2f)", P.x, P.y));
     mPdrPoint = new LocationPoint(subLoc.id, P.x, P.y);
     mHandler.post(mRunnable);
   }
@@ -1067,17 +1068,10 @@ public class NavigationActivity extends Activity
     mHandler.post(mRunnable);
   }
   
-  private void drawDevice(Canvas canvas)
+  private void drawPoints(Canvas canvas)
   {
-    if (mDeviceInfo == null)
-      return;
-    
     // Check if location is loaded
     if (mLocation == null || mCurrentSubLocationIndex < 0)
-      return;
-    
-    // Check if device belongs to the location loaded
-    if (mDeviceInfo.location != mLocation.id)
       return;
     
     // Get current sublocation displayed
@@ -1094,29 +1088,6 @@ public class NavigationActivity extends Activity
     // Preparing paints
     Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
     paint.setStyle(Paint.Style.FILL_AND_STROKE);
-    
-    /// Drawing device path (if it exists)
-    if (mDeviceInfo.paths != null && mDeviceInfo.paths.size() > 0)
-    {
-      DevicePath p = mDeviceInfo.paths.get(0);
-      if (p.path.length >= 2)
-      {
-        paint.setColor(solidColor);
-        
-        for(int j = 1; j < p.path.length; ++j)
-        {
-          LocationPoint P = p.path[j-1];
-          LocationPoint Q = p.path[j];
-          if (P.subLocation == subLoc.id && Q.subLocation == subLoc.id)
-          {
-            paint.setStrokeWidth(3 * dp);
-            PointF P1 = getScreenCoordinates(P.x, P.y);
-            PointF Q1 = getScreenCoordinates(Q.x, Q.y);
-            canvas.drawLine(P1.x, P1.y, Q1.x, Q1.y, paint);
-          }
-        }
-      }
-    }
     
     // Drawing pin point (if it exists and belongs to the current sublocation)
     if (mPinPoint != null && mPinPoint.subLocation == subLoc.id)
@@ -1188,6 +1159,59 @@ public class NavigationActivity extends Activity
     }
     else
       mPdrButton.setVisibility(View.GONE);
+    
+  }
+  
+  private void drawDevice(Canvas canvas)
+  {
+    if (mDeviceInfo == null)
+      return;
+    
+    // Check if location is loaded
+    if (mLocation == null || mCurrentSubLocationIndex < 0)
+      return;
+    
+    // Check if device belongs to the location loaded
+    if (mDeviceInfo.location != mLocation.id)
+      return;
+    
+    // Get current sublocation displayed
+    SubLocation subLoc = mLocation.subLocations.get(mCurrentSubLocationIndex);
+    
+    if (subLoc == null)
+      return;
+    
+    final int solidColor  = Color.argb(255, 64,  163, 205); // Light-blue color
+    final int circleColor = Color.argb(127, 64,  163, 205); // Semi-transparent light-blue color
+    final int arrowColor  = Color.argb(255, 255, 255, 255); // White color
+    final float dp = NavigineApp.DisplayDensity;
+    
+    // Preparing paints
+    Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    paint.setStyle(Paint.Style.FILL_AND_STROKE);
+    
+    /// Drawing device path (if it exists)
+    if (mDeviceInfo.paths != null && mDeviceInfo.paths.size() > 0)
+    {
+      DevicePath p = mDeviceInfo.paths.get(0);
+      if (p.path.length >= 2)
+      {
+        paint.setColor(solidColor);
+        
+        for(int j = 1; j < p.path.length; ++j)
+        {
+          LocationPoint P = p.path[j-1];
+          LocationPoint Q = p.path[j];
+          if (P.subLocation == subLoc.id && Q.subLocation == subLoc.id)
+          {
+            paint.setStrokeWidth(3 * dp);
+            PointF P1 = getScreenCoordinates(P.x, P.y);
+            PointF Q1 = getScreenCoordinates(Q.x, Q.y);
+            canvas.drawLine(P1.x, P1.y, Q1.x, Q1.y, paint);
+          }
+        }
+      }
+    }
     
     // Check if device belongs to the current sublocation
     if (mDeviceInfo.subLocation != subLoc.id)
@@ -1463,6 +1487,7 @@ public class NavigationActivity extends Activity
         // Drawing the device
         Picture pic = mPicDrawable.getPicture();
         Canvas canvas = pic.beginRecording(mViewWidth, mViewHeight);
+        drawPoints(canvas);
         if (mDeviceInfo != null)
           drawDevice(canvas);
         pic.endRecording();

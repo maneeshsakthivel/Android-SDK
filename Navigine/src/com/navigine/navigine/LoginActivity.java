@@ -80,19 +80,6 @@ public class LoginActivity extends Activity
     
     mProgressBar.setVisibility(View.INVISIBLE);
     
-    mLoginButton.setOnClickListener(new OnClickListener()
-      {
-        public void onClick(View view)
-        {
-          if (mMenuVisible)
-          {
-            toggleMenuLayout(null);
-            return;
-          }
-          startLogin();
-        }
-      });
-    
     NavigineApp.logout();
     NavigineApp.Navigation.stopAuthentication();
     mLoginEdit.setText(NavigineApp.Settings.getString("login", ""));
@@ -260,8 +247,36 @@ public class LoginActivity extends Activity
       toggleMenuLayout(null);
   }
   
-  private void startLogin()
+  public void publicLogin(View v)
   {
+    if (mMenuVisible)
+    {
+      toggleMenuLayout(null);
+      return;
+    }
+    
+    if (NavigineApp.Navigation == null)
+      return;
+    
+    UserInfo ui = new UserInfo();
+    ui.hash = "0000-0000-0000-0000";
+    
+    mProgressBar.setVisibility(View.INVISIBLE);
+    NavigineApp.login(ui);
+    
+    cleanup();
+    Intent intent = new Intent(mContext, LoaderActivity.class);
+    startActivity(intent);
+  }
+  
+  public void startLogin(View v)
+  {
+    if (mMenuVisible)
+    {
+      toggleMenuLayout(null);
+      return;
+    }
+    
     if (NavigineApp.Navigation == null)
       return;
     

@@ -2361,7 +2361,7 @@ public class MeasuringActivity extends Activity
           
           String message = NavigineApp.Navigation.buildMessage(timeNow, mPacketNumber++, null, null, checkPointStr);
           if (mPolyLineLog != null)
-            Parser.logMessage(mPolyLineLog, message, "\n\n");
+            Parser.logMessage(mPolyLineLog, message + "\n\n", true);
         }
         break;
       }
@@ -2602,7 +2602,7 @@ public class MeasuringActivity extends Activity
           String message = NavigineApp.Navigation.buildMessage(timeNow, mPacketNumber++, scanResults, sensorResults, checkPointStr);
           
           if (mPolyLineLog != null)
-            Parser.logMessage(mPolyLineLog, message, "\n\n");
+            Parser.logMessage(mPolyLineLog, message + "\n\n", true);
         }
         
         nsecs = (int)((timeNow - mMeasuringTime) / 1000);
