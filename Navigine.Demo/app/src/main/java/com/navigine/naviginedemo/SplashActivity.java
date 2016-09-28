@@ -58,11 +58,9 @@ public class SplashActivity extends Activity
     if (DemoApp.Navigation == null)
       return;
 
-    String archiveFile = NavigineSDK.getLocationFile(DemoApp.LOCATION_NAME);
-
     if (mLoader == 0)
     {
-      mLoader = NavigineSDK.startLocationLoader(DemoApp.LOCATION_NAME, archiveFile, false);
+      mLoader = NavigineSDK.startLocationLoader(DemoApp.LOCATION_NAME, false);
     }
     else
     {

@@ -56,7 +56,7 @@ public class DemoApp extends Application
     if (AppContext == null || Navigation == null)
       return;
     
-    NavigineSDK.finish(1000);
+    NavigineSDK.finish();
     Navigation = null;
     AppContext = null;
   }
