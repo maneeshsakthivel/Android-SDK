@@ -891,8 +891,8 @@ public class MainActivity extends Activity
 
         // Handling long touch gesture
         if (mTouchTime > 0 &&
-          mTouchTime + TOUCH_LONG_TIMEOUT < timeNow &&
-          mTouchLength < TOUCH_SENSITIVITY * DemoApp.DisplayDensity)
+            mTouchTime + TOUCH_LONG_TIMEOUT < timeNow &&
+            mTouchLength < TOUCH_SENSITIVITY * DemoApp.DisplayDensity)
         {
           doLongTouch(mTouchPoints[0].x, mTouchPoints[0].y);
           mTouchTime = 0;
@@ -922,6 +922,9 @@ public class MainActivity extends Activity
 
         if (mDeviceInfo != null)
         {
+          mErrorMessageTime = 0;
+          mErrorMessageLabel.setVisibility(View.GONE);
+          
           if (mAdjustMode)
             adjustDevice(mDeviceInfo);
 
