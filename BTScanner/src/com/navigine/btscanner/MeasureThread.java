@@ -21,7 +21,7 @@ public class MeasureThread extends Thread
   //  1 - error messages
   //  2 - api functions
   //  3 - wifi, bluetooth, beacon updates
-  public static int DEBUG_LEVEL = 3;
+  public static int DEBUG_LEVEL = 2;
   
   private Context mContext  = null;
   private boolean mStopFlag = false;
@@ -120,6 +120,53 @@ public class MeasureThread extends Thread
   {
     mContext = context;
     super.start();
+
+    synchronized (this)
+    {
+      // Setting up bluetooth adapter
+      mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+      if (mBluetoothAdapter != null)
+      {
+        try
+        {
+          mLeScanCallBack = new BluetoothAdapter.LeScanCallback()
+          {
+            @Override public void onLeScan(final BluetoothDevice device, int rssi, byte[] scanRecord)
+            {
+              try
+              {
+                if (scanRecord != null && scanRecord.length > 0 && rssi < 0 && rssi >= -120)
+                {
+                  int index = parseIBeaconData(scanRecord);
+                  if (index >= 0)
+                  {
+                    String uuid = getUuid(scanRecord, index + 4);
+                    int major   = (int)(scanRecord[index + 20] & 0xff) * 256 + (int)(scanRecord[index + 21] & 0xff);
+                    int minor   = (int)(scanRecord[index + 22] & 0xff) * 256 + (int)(scanRecord[index + 23] & 0xff);
+                    int power   = (int)(scanRecord[index + 24] & 0xff) - 256;
+                    int battery = getBattery(scanRecord, index + 25);
+                    float dist  = getDistance(rssi, power);
+                    addBeacon(device.getAddress(), uuid, major, minor, rssi, power, battery, dist);
+                  }
+                }
+              }
+              catch (Throwable e)
+              {
+                if (DEBUG_LEVEL >= 1)
+                  Log.e(TAG, Log.getStackTraceString(e));
+              }
+            }
+          };
+        }
+        catch (Throwable e)
+        {
+          mLeScanCallBack = null;
+          if (DEBUG_LEVEL >= 1)
+            Log.e(TAG, Log.getStackTraceString(e));
+        }
+      }
+    }
+
   }
   
   // Send request for thread to terminate
@@ -136,6 +183,9 @@ public class MeasureThread extends Thread
   
   public synchronized void setBluetoothEnabled(boolean enabled)
   {
+    if (DEBUG_LEVEL >= 2)
+      Log.d(TAG, String.format(Locale.ENGLISH, "Set bluetooth enabled: %s",
+            (enabled ? "true" : "false")));
     try
     {
       if (mBluetoothAdapter == null)
@@ -246,52 +296,6 @@ public class MeasureThread extends Thread
   @Override public void run()
   {
     Looper.prepare();
-    
-    synchronized (this)
-    {
-      // Setting up bluetooth adapter
-      mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-      if (mBluetoothAdapter != null)
-      {
-        try
-        {
-          mLeScanCallBack = new BluetoothAdapter.LeScanCallback()
-          {
-            @Override public void onLeScan(final BluetoothDevice device, int rssi, byte[] scanRecord)
-            {
-              try
-              {
-                if (scanRecord != null && scanRecord.length > 0 && rssi < 0 && rssi >= -120)
-                {
-                  int index = parseIBeaconData(scanRecord);
-                  if (index >= 0)
-                  {
-                    String uuid = getUuid(scanRecord, index + 4);
-                    int major   = (int)(scanRecord[index + 20] & 0xff) * 256 + (int)(scanRecord[index + 21] & 0xff);
-                    int minor   = (int)(scanRecord[index + 22] & 0xff) * 256 + (int)(scanRecord[index + 23] & 0xff);
-                    int power   = (int)(scanRecord[index + 24] & 0xff) - 256;
-                    int battery = getBattery(scanRecord, index + 25);
-                    float dist  = getDistance(rssi, power);
-                    addBeacon(device.getAddress(), uuid, major, minor, rssi, power, battery, dist);
-                  }
-                }
-              }
-              catch (Throwable e)
-              {
-                if (DEBUG_LEVEL >= 1)
-                  Log.e(TAG, Log.getStackTraceString(e));
-              }
-            }
-          };
-        }
-        catch (Throwable e)
-        {
-          mLeScanCallBack = null;
-          if (DEBUG_LEVEL >= 1)
-            Log.e(TAG, Log.getStackTraceString(e));
-        }
-      }
-    }
     
     while (!mStopFlag)
     {

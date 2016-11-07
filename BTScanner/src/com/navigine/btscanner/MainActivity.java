@@ -32,7 +32,6 @@ public class MainActivity extends Activity
   
   @Override public void onCreate(Bundle savedInstanceState)
   {
-    Log.d(TAG, "onCreate");
     super.onCreate(savedInstanceState);
     setContentView(R.layout.main);
       
@@ -55,15 +54,16 @@ public class MainActivity extends Activity
   
   @Override public void onDestroy()
   {
+    mMeasureThread.terminate();
     try
     {
+      Log.d(TAG, "Joining MeasureThread");
       mMeasureThread.join();
     }
     catch (Throwable e)
     {
       Log.e(TAG, Log.getStackTraceString(e));
     }
-    Log.d(TAG, "onDestroy");
     super.onDestroy();
   }
   
