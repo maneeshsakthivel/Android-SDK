@@ -25,3 +25,11 @@ dependencies {
     compile 'com.android.support:appcompat-v7:24.0.0'
     compile files('libs/Navigine_SDK.jar')
 }
+
+task copyTask(type: Copy) {
+  println "Copying Navigine_SDK.jar"
+  from '../../Navigine_SDK/Navigine_SDK.jar'
+  into 'libs/'
+}
+
+preBuild.dependsOn copyTask

@@ -25,66 +25,72 @@ public class MainActivity extends Activity
   private static final boolean  ORIENTATION_ENABLED     = true; // Show device orientation?
 
   // UI Parameters
-  private ImageView   mMapImageView             = null;
-  private ImageView   mPicImageView             = null;
-  private Button      mPrevFloorButton          = null;
-  private Button      mNextFloorButton          = null;
-  private View        mPrevFloorView            = null;
-  private View        mNextFloorView            = null;
-  private View        mZoomInView               = null;
-  private View        mZoomOutView              = null;
-  private View        mAdjustModeView           = null;
-  private TextView    mCurrentFloorLabel        = null;
-  private TextView    mErrorMessageLabel        = null;
-  private Button      mMakeRouteButton          = null;
-  private Button      mCancelRouteButton        = null;
-  private TimerTask   mTimerTask                = null;
-  private Timer       mTimer                    = new Timer();
-  private Handler     mHandler                  = new Handler();
+  private ImageView     mMapImageView             = null;
+  private ImageView     mPicImageView             = null;
+  private Button        mPrevFloorButton          = null;
+  private Button        mNextFloorButton          = null;
+  private View          mBackView                 = null;
+  private View          mPrevFloorView            = null;
+  private View          mNextFloorView            = null;
+  private View          mZoomInView               = null;
+  private View          mZoomOutView              = null;
+  private View          mAdjustModeView           = null;
+  private TextView      mCurrentFloorLabel        = null;
+  private TextView      mErrorMessageLabel        = null;
+  private Button        mMakeRouteButton          = null;
+  private Button        mVenueButton              = null;
+  private TimerTask     mTimerTask                = null;
+  private Timer         mTimer                    = new Timer();
+  private Handler       mHandler                  = new Handler();
 
-  private boolean     mAdjustMode               = false;
-  private long        mErrorMessageTime         = 0;
+  private boolean       mAdjustMode               = false;
+  private long          mErrorMessageTime         = 0;
 
   // Map parameters
-  private int         mMapWidth                 = 0;
-  private int         mMapHeight                = 0;
-  private int         mViewWidth                = 0;
-  private int         mViewHeight               = 0;
-  private long        mAdjustTime               = 0;
-  private float       mMaxX                     = 0.0f;
-  private float       mMaxY                     = 0.0f;
-  private float       mRatio                    = 1.0f;
-  private float       mMinRatio                 = 0.1f;
-  private float       mMaxRatio                 = 10.0f;
-  private RectF       mMapRect                  = null;
-  private Matrix      mMatrix                   = null;
-  private Drawable    mMapDrawable              = null;
-  private PictureDrawable mPicDrawable          = null;
+  private int           mMapWidth                 = 0;
+  private int           mMapHeight                = 0;
+  private int           mViewWidth                = 0;
+  private int           mViewHeight               = 0;
+  private long          mAdjustTime               = 0;
+  private float         mMaxX                     = 0.0f;
+  private float         mMaxY                     = 0.0f;
+  private float         mRatio                    = 1.0f;
+  private float         mMinRatio                 = 0.1f;
+  private float         mMaxRatio                 = 10.0f;
+  private RectF         mMapRect                  = null;
+  private Matrix        mMatrix                   = null;
+  private Drawable      mMapDrawable              = null;
+  private PictureDrawable mPicDrawable            = null;
 
   // Location parameters
-  private Location    mLocation                 = null;
-  private int         mCurrentSubLocationIndex  = -1;
+  private Location      mLocation                 = null;
+  private int           mCurrentSubLocationIndex  = -1;
 
   // Device parameters
-  private int           mErrorCode              = 0;    // Current error code
-  private DeviceInfo    mDeviceInfo             = null; // Current device
-  private LocationPoint mPinPoint               = null; // Potential device target
-  private LocationPoint mTargetPoint            = null; // Current device target
+  private int           mErrorCode                = 0;    // Current error code
+  private DeviceInfo    mDeviceInfo               = null; // Current device
+  private LocationPoint mPinPoint                 = null; // Potential device target
+  private LocationPoint mTargetPoint              = null; // Current device target
 
   // Touch parameters
-  private static final int TOUCH_MODE_SCROLL    = 1;
-  private static final int TOUCH_MODE_ZOOM      = 2;
-  private static final int TOUCH_MODE_ROTATE    = 3;
-  private static final int TOUCH_SENSITIVITY    = 20;
-  private static final int TOUCH_SHORT_TIMEOUT  = 200;
-  private static final int TOUCH_LONG_TIMEOUT   = 600;
+  private static final int TOUCH_MODE_SCROLL      = 1;
+  private static final int TOUCH_MODE_ZOOM        = 2;
+  private static final int TOUCH_MODE_ROTATE      = 3;
+  private static final int TOUCH_SENSITIVITY      = 20;
+  private static final int TOUCH_SHORT_TIMEOUT    = 200;
+  private static final int TOUCH_LONG_TIMEOUT     = 600;
   private long mTouchTime   = 0;
   private int  mTouchMode   = 0;
   private int  mTouchLength = 0;
   private PointF[] mTouchPoints = new PointF[] { new PointF(0.0f, 0.0f),
     new PointF(0.0f, 0.0f),
     new PointF(0.0f, 0.0f) };
-
+  
+  private List<Venue>           mVenues           = null;
+  private Bitmap                mVenueBitmap      = null;
+  private Venue                 mTargetVenue      = null;
+  private int                   mSelectedVenue    = -1;
+  
   @Override protected void onCreate(Bundle savedInstanceState)
   {
     super.onCreate(savedInstanceState);
@@ -97,6 +103,7 @@ public class MainActivity extends Activity
     // Setting up GUI parameters
     mMapImageView = (ImageView)findViewById(R.id.navigation__map_image);
     mPicImageView = (ImageView)findViewById(R.id.navigation__ext_image);
+    mBackView = (View)findViewById(R.id.navigation__back_view);
     mPrevFloorButton = (Button)findViewById(R.id.navigation__prev_floor_button);
     mNextFloorButton = (Button)findViewById(R.id.navigation__next_floor_button);
     mPrevFloorView = (View)findViewById(R.id.navigation__prev_floor_view);
@@ -105,24 +112,27 @@ public class MainActivity extends Activity
     mZoomInView  = (View)findViewById(R.id.navigation__zoom_in_view);
     mZoomOutView = (View)findViewById(R.id.navigation__zoom_out_view);
     mAdjustModeView = (View)findViewById(R.id.navigation__adjust_mode_view);
+    mVenueButton = (Button)findViewById(R.id.navigation__venue_button);
     mMakeRouteButton = (Button)findViewById(R.id.navigation__make_route_button);
-    mCancelRouteButton = (Button)findViewById(R.id.navigation__cancel_route_button);
     mErrorMessageLabel = (TextView)findViewById(R.id.navigation__error_message_label);
 
     mMapImageView.setBackgroundColor(Color.argb(255, 235, 235, 235));
     mPicImageView.setBackgroundColor(Color.argb(0, 0, 0, 0));
     mPicImageView.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
 
+    mVenueButton.setVisibility(View.GONE);
     mMakeRouteButton.setVisibility(View.GONE);
-    mCancelRouteButton.setVisibility(View.GONE);
     mErrorMessageLabel.setVisibility(View.GONE);
 
+    mBackView.setVisibility(View.INVISIBLE);
     mPrevFloorView.setVisibility(View.INVISIBLE);
     mNextFloorView.setVisibility(View.INVISIBLE);
     mCurrentFloorLabel.setVisibility(View.INVISIBLE);
     mZoomInView.setVisibility(View.INVISIBLE);
     mZoomOutView.setVisibility(View.INVISIBLE);
     mAdjustModeView.setVisibility(View.INVISIBLE);
+    
+    mVenueBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.elm_venue);
 
     // Setting up touch listener
     mMapImageView.setOnTouchListener(
@@ -200,10 +210,12 @@ public class MainActivity extends Activity
       return;
 
     mTargetPoint = mPinPoint;
+    mTargetVenue = null;
     mPinPoint = null;
 
     DemoApp.Navigation.setTarget(mTargetPoint);
     mMakeRouteButton.setVisibility(View.GONE);
+    mBackView.setVisibility(View.VISIBLE);
     mHandler.post(mRunnable);
   }
 
@@ -213,11 +225,12 @@ public class MainActivity extends Activity
       return;
 
     mTargetPoint = null;
+    mTargetVenue = null;
     mPinPoint = null;
 
     DemoApp.Navigation.cancelTargets();
     mMakeRouteButton.setVisibility(View.GONE);
-    mCancelRouteButton.setVisibility(View.GONE);
+    mBackView.setVisibility(View.GONE);
     mHandler.post(mRunnable);
   }
 
@@ -226,6 +239,30 @@ public class MainActivity extends Activity
     mErrorMessageLabel.setVisibility(View.GONE);
     mErrorMessageTime = 0;
   }
+  
+  public void onVenueClick(View v)
+  {
+    if (DemoApp.Navigation == null)
+      return;
+    
+    if (mVenues == null || mSelectedVenue < 0 || mSelectedVenue >= mVenues.size())
+      return;
+    
+    if (mLocation == null || mCurrentSubLocationIndex < 0)
+      return;
+
+    SubLocation subLoc = mLocation.subLocations.get(mCurrentSubLocationIndex);
+    if (subLoc == null)
+      return;
+
+    mTargetVenue = mVenues.get(mSelectedVenue);
+    mTargetPoint = null;
+    
+    DemoApp.Navigation.setTarget(new LocationPoint(subLoc.id, mTargetVenue.kx * subLoc.width, mTargetVenue.ky * subLoc.height));
+    mMakeRouteButton.setVisibility(View.GONE);
+    mBackView.setVisibility(View.VISIBLE);
+    cancelVenue();
+  }
 
   private void setErrorMessage(String message)
   {
@@ -233,7 +270,30 @@ public class MainActivity extends Activity
     mErrorMessageLabel.setVisibility(View.VISIBLE);
     mErrorMessageTime = NavigineSDK.currentTimeMillis();
   }
-
+  
+  private boolean mVenuesLoaded = false;
+  private boolean loadVenues(String fileName)
+  {
+    if (mVenuesLoaded)
+      return false;
+    
+    mVenuesLoaded = true;
+    File f = new File(fileName);
+    
+    if (!f.exists())
+      return false;
+    
+    List<Venue> venues = new ArrayList<Venue>();
+    List<Venue.Category> venueCategories = new ArrayList<Venue.Category>();
+    
+    if (!Parser.parseVenuesXml(fileName, venues, venueCategories))
+      return false;
+    
+    mVenues = venues;
+    cancelVenue();
+    return true;
+  }
+  
   private boolean mMapLoaded = false;
   private boolean loadMap(String fileName)
   {
@@ -295,7 +355,7 @@ public class MainActivity extends Activity
     mZoomInView.setVisibility(View.VISIBLE);
     mZoomOutView.setVisibility(View.VISIBLE);
     mAdjustModeView.setVisibility(View.VISIBLE);
-
+    
     mHandler.post(mRunnable);
     DemoApp.Navigation.setMode(NavigationThread.MODE_NORMAL);
     return true;
@@ -310,7 +370,7 @@ public class MainActivity extends Activity
       return false;
 
     SubLocation subLoc = mLocation.subLocations.get(index);
-    Log.d(TAG, String.format(Locale.ENGLISH, "Loading sublocation %s", subLoc.name));
+    Log.d(TAG, String.format(Locale.ENGLISH, "Loading sublocation %s (%.2f x %.2f)", subLoc.name, subLoc.width, subLoc.height));
 
     subLoc.getPicture();
     subLoc.getBitmap();
@@ -323,15 +383,13 @@ public class MainActivity extends Activity
 
     if (subLoc.width == 0.0f || subLoc.height == 0.0f)
     {
-      Log.e(TAG, String.format(Locale.ENGLISH, "Loading sublocation failed: invalid size %.2f x %.2f", subLoc.width, subLoc.height));
+      Log.e(TAG, String.format(Locale.ENGLISH, "Loading sublocation failed: invalid size: %.2f x %.2f", subLoc.width, subLoc.height));
       return false;
     }
 
-    Log.d(TAG, String.format(Locale.ENGLISH, "Loading sublocation: %.2f x %.2f\n", subLoc.width, subLoc.height));
-
     mViewWidth  = mMapImageView.getWidth();
     mViewHeight = mMapImageView.getHeight();
-    Log.d(TAG, String.format(Locale.ENGLISH, "View size: %dx%d", mViewWidth, mViewHeight));
+    //Log.d(TAG, String.format(Locale.ENGLISH, "View size: %dx%d", mViewWidth, mViewHeight));
 
     // Updating image view size parameters
     float pixLength = 0.0f;
@@ -347,7 +405,7 @@ public class MainActivity extends Activity
     mMapHeight  = subLoc.picture == null ? subLoc.bitmap.getHeight() : subLoc.picture.getHeight();
     mMapRect    = new RectF(0, 0, mMapWidth, mMapHeight);
 
-    Log.d(TAG, String.format(Locale.ENGLISH, "Map size: %dx%d", mMapWidth, mMapHeight));
+    //Log.d(TAG, String.format(Locale.ENGLISH, "Map size: %dx%d", mMapWidth, mMapHeight));
 
     Picture pic = new Picture();
     pic.beginRecording(mViewWidth, mViewHeight);
@@ -411,7 +469,8 @@ public class MainActivity extends Activity
       mNextFloorButton.setEnabled(false);
       mNextFloorView.setBackgroundColor(Color.parseColor("#90dddddd"));
     }
-
+    
+    cancelVenue();
     mHandler.post(mRunnable);
     return true;
   }
@@ -568,7 +627,6 @@ public class MainActivity extends Activity
       case MotionEvent.ACTION_UP:
       {
         // Gesture stopped. Check if it was a single tap
-        //Log.d(TAG, String.format(Locale.ENGLISH, "ACTION UP: %d %d\n", (int)(timeNow - mTouchTime), mTouchLength));
         if (mTouchTime > 0 &&
           mTouchTime + TOUCH_SHORT_TIMEOUT > timeNow &&
           mTouchLength < TOUCH_SENSITIVITY * DemoApp.DisplayDensity)
@@ -593,34 +651,36 @@ public class MainActivity extends Activity
 
   private void doShortTouch(float x, float y)
   {
-    Log.d(TAG, String.format(Locale.ENGLISH, "Short click at (%.2f, %.2f)", x, y));
+    //Log.d(TAG, String.format(Locale.ENGLISH, "Short click at (%.2f, %.2f)", x, y));
 
     if (mPinPoint != null)
     {
       cancelPin();
       return;
     }
-
-    if (mTargetPoint == null)
-      return;
-
-    if (mCancelRouteButton.getVisibility() == View.VISIBLE)
+    
+    if (mSelectedVenue >= 0)
     {
-      mCancelRouteButton.setVisibility(View.GONE);
+      cancelVenue();
       return;
     }
-
-    // Check if we touched pin point => highlight cancel button
-    PointF P = getScreenCoordinates(mTargetPoint.x, mTargetPoint.y);
-    float dist = Math.abs(x - P.x) + Math.abs(y - P.y);
-    if (dist < 30.0f * DemoApp.DisplayDensity)
-      mCancelRouteButton.setVisibility(View.VISIBLE);
+    
+    // Check if we touched venue => highlight venue
+    int index = getVenueAt(x, y);
+    if (index >= 0)
+    {
+      mSelectedVenue = index;
+      mVenueButton.setVisibility(View.VISIBLE);
+    }
+    
+    mHandler.post(mRunnable);
   }
 
   private void doLongTouch(float x, float y)
   {
-    Log.d(TAG, String.format(Locale.ENGLISH, "Long click at (%.2f, %.2f)", x, y));
+    //Log.d(TAG, String.format(Locale.ENGLISH, "Long click at (%.2f, %.2f)", x, y));
     makePin(getAbsCoordinates(x, y));
+    cancelVenue();
   }
 
   private void makePin(PointF P)
@@ -639,7 +699,7 @@ public class MainActivity extends Activity
       return;
     }
 
-    if (mTargetPoint != null)
+    if (mTargetPoint != null || mTargetVenue != null)
     {
       setErrorMessage("Unable to make route: you must cancel the previous route first!");
       return;
@@ -664,12 +724,48 @@ public class MainActivity extends Activity
     if (subLoc == null)
       return;
 
-    if (mTargetPoint != null || mPinPoint == null)
+    if (mTargetPoint != null || mTargetVenue != null || mPinPoint == null)
       return;
 
     mPinPoint = null;
     mMakeRouteButton.setVisibility(View.GONE);
     mHandler.post(mRunnable);
+  }
+  
+  private void cancelVenue()
+  {
+    mSelectedVenue = -1;
+    mVenueButton.setVisibility(View.GONE);
+    mHandler.post(mRunnable);
+  }
+  
+  private int getVenueAt(float x, float y)
+  {
+    if (mLocation == null || mCurrentSubLocationIndex < 0)
+      return -1;
+
+    SubLocation subLoc = mLocation.subLocations.get(mCurrentSubLocationIndex);
+    if (subLoc == null)
+      return -1;
+
+    int   index = -1;
+    float dist0 = 1000.0f;
+    
+    for(int i = 0; i < mVenues.size(); ++i)
+    {
+      Venue v = mVenues.get(i);
+      if (v.subLocation != subLoc.id)
+        continue;
+      PointF P = getScreenCoordinates(v.kx * subLoc.width, v.ky * subLoc.height);
+      float dist = Math.abs(x - P.x) + Math.abs(y - P.y);
+      if (dist < 30.0f * DemoApp.DisplayDensity && dist < dist0)
+      {
+        index = i;
+        dist0 = dist;
+      }
+    }
+    
+    return index;
   }
 
   private void drawPoints(Canvas canvas)
@@ -707,10 +803,10 @@ public class MainActivity extends Activity
       canvas.drawCircle(T.x, T.y - 3 * tRadius, tRadius, paint);
 
       ViewGroup.MarginLayoutParams layoutParams = (ViewGroup.MarginLayoutParams) mMakeRouteButton.getLayoutParams();
-      layoutParams.leftMargin = (int) (T.x - (float) mMakeRouteButton.getWidth() / 2.0f);
-      layoutParams.topMargin = (int) (T.y - (float) mMakeRouteButton.getHeight() - tRadius * 5);
-      layoutParams.rightMargin = (int) (layoutParams.leftMargin + (float) mMakeRouteButton.getWidth());
-      layoutParams.bottomMargin = (int) (layoutParams.topMargin + (float) mMakeRouteButton.getHeight());
+      layoutParams.leftMargin   = (int)(T.x - (float) mMakeRouteButton.getWidth() / 2.0f);
+      layoutParams.topMargin    = (int)(T.y - (float) mMakeRouteButton.getHeight() - tRadius * 5);
+      layoutParams.rightMargin  = (int)(layoutParams.leftMargin + (float) mMakeRouteButton.getWidth());
+      layoutParams.bottomMargin = (int)(layoutParams.topMargin  + (float) mMakeRouteButton.getHeight());
       mMakeRouteButton.setLayoutParams(layoutParams);
       mMakeRouteButton.setVisibility(View.VISIBLE);
     }
@@ -729,18 +825,54 @@ public class MainActivity extends Activity
 
       paint.setColor(solidColor);
       canvas.drawCircle(T.x, T.y - 3 * tRadius, tRadius, paint);
-
-      ViewGroup.MarginLayoutParams layoutParams = (ViewGroup.MarginLayoutParams) mCancelRouteButton.getLayoutParams();
-      layoutParams.leftMargin = (int) (T.x - (float) mCancelRouteButton.getWidth() / 2.0f);
-      layoutParams.topMargin = (int) (T.y - (float) mCancelRouteButton.getHeight() - 100.0f);
-      layoutParams.rightMargin = (int) (layoutParams.leftMargin + (float) mCancelRouteButton.getWidth());
-      layoutParams.bottomMargin = (int) (layoutParams.topMargin + (float) mCancelRouteButton.getHeight());
-      mCancelRouteButton.setLayoutParams(layoutParams);
     }
-    else
-      mCancelRouteButton.setVisibility(View.GONE);
   }
 
+  private void drawVenues(Canvas canvas)
+  {
+    if (mVenues == null)
+      return;
+    
+    if (mLocation == null || mCurrentSubLocationIndex < 0)
+      return;
+    
+    SubLocation subLoc = mLocation.subLocations.get(mCurrentSubLocationIndex);
+    
+    Paint paint = new Paint();
+    paint.setStyle(Paint.Style.FILL_AND_STROKE);
+    paint.setStrokeWidth(0);
+    
+    final float venueSize = 30 * DemoApp.DisplayDensity;
+    
+    for(int i = 0; i < mVenues.size(); ++i)
+    {
+      Venue v = mVenues.get(i);
+      if (v.subLocation != subLoc.id)
+        continue;
+      
+      final PointF P = getScreenCoordinates(v.kx * subLoc.width, v.ky * subLoc.height);
+      final float x0 = P.x - venueSize/2;
+      final float y0 = P.y - venueSize/2;
+      final float x1 = P.x + venueSize/2;
+      final float y1 = P.y + venueSize/2;
+      canvas.drawBitmap(mVenueBitmap, null, new RectF(x0, y0, x1, y1), paint);
+    }
+    
+    if (mSelectedVenue >= 0)
+    {
+      final Venue  v = mVenues.get(mSelectedVenue);
+      final PointF T = getScreenCoordinates(v.kx * subLoc.width, v.ky * subLoc.height);
+      ViewGroup.MarginLayoutParams layoutParams = (ViewGroup.MarginLayoutParams)mVenueButton.getLayoutParams();
+      layoutParams.leftMargin   = (int)(T.x - (float) mVenueButton.getWidth() / 2.0f);
+      layoutParams.topMargin    = (int)(T.y - (float) mVenueButton.getHeight() - 60.0f);
+      layoutParams.rightMargin  = (int)(layoutParams.leftMargin + (float)mVenueButton.getWidth());
+      layoutParams.bottomMargin = (int)(layoutParams.topMargin  + (float)mVenueButton.getHeight());
+      mVenueButton.setLayoutParams(layoutParams);
+      mVenueButton.setVisibility(View.VISIBLE);
+      mVenueButton.setText(v.name);
+    }
+  }
+  
   private void drawDevice(DeviceInfo info, Canvas canvas)
   {
     if (info == null)
@@ -768,6 +900,7 @@ public class MainActivity extends Activity
     // Preparing paints
     Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
     paint.setStyle(Paint.Style.FILL_AND_STROKE);
+    paint.setStrokeCap(Paint.Cap.ROUND);
 
     /// Drawing device path (if it exists)
     if (info.paths != null && info.paths.size() > 0)
@@ -791,6 +924,8 @@ public class MainActivity extends Activity
         }
       }
     }
+    
+    paint.setStrokeCap(Paint.Cap.BUTT);
 
     // Check if device belongs to the current sublocation
     if (info.subLocation != subLoc.id)
@@ -883,7 +1018,9 @@ public class MainActivity extends Activity
         if (mMatrix == null)
         {
           String archiveFile = NavigineSDK.getLocationFile(DemoApp.LOCATION_NAME);
+          String venuesFile  = NavigineSDK.getLocationDir(DemoApp.LOCATION_NAME) + "/venues.xml";
           loadMap(archiveFile);
+          loadVenues(venuesFile);
           return;
         }
 
@@ -915,10 +1052,14 @@ public class MainActivity extends Activity
         // Start navigation if necessary
         if (DemoApp.Navigation.getMode() == NavigationThread.MODE_IDLE)
           DemoApp.Navigation.setMode(NavigationThread.MODE_NORMAL);
-
+        
         // Get device info from NavigationThread
         mDeviceInfo = DemoApp.Navigation.getDeviceInfo();
         mErrorCode  = DemoApp.Navigation.getErrorCode();
+
+        // Drawing venues, device, route, etc.
+        Picture pic = mPicDrawable.getPicture();
+        Canvas canvas = pic.beginRecording(mViewWidth, mViewHeight);
 
         if (mDeviceInfo != null)
         {
@@ -929,11 +1070,8 @@ public class MainActivity extends Activity
             adjustDevice(mDeviceInfo);
 
           // Drawing the device
-          Picture pic = mPicDrawable.getPicture();
-          Canvas canvas = pic.beginRecording(mViewWidth, mViewHeight);
           drawPoints(canvas);
           drawDevice(mDeviceInfo, canvas);
-          pic.endRecording();
         }
         else
         {
@@ -956,8 +1094,10 @@ public class MainActivity extends Activity
               break;
           }
           mMakeRouteButton.setVisibility(View.GONE);
-          mCancelRouteButton.setVisibility(View.GONE);
+          mBackView.setVisibility(View.GONE);
         }
+        drawVenues(canvas);
+        pic.endRecording();
         
         mPicImageView.invalidate();
         mMapImageView.setImageMatrix(mMatrix);

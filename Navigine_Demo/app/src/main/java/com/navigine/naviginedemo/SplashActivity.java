@@ -69,6 +69,7 @@ public class SplashActivity extends Activity
       mLoader      = NavigineSDK.startLocationLoader(DemoApp.LOCATION_NAME, false);
       mLoaderTime  = timeNow;
       mLoaderState = 0;
+      Log.d(TAG, "Location loader: STARTED");
     }
     else
     {
@@ -104,6 +105,50 @@ public class SplashActivity extends Activity
     }
   }
   
+  private int  mVenueLoader     = 0;
+  private long mVenueLoaderTime = 0;
+  
+  private void updateVenueLoader()
+  {
+    if (DemoApp.Navigation == null)
+      return;
+    
+    final long timeNow      = NavigineSDK.currentTimeMillis() / 1000;
+    final String venuesFile = NavigineSDK.getLocationDir(DemoApp.LOCATION_NAME) + "/venues.xml";
+    final String venuesUrl  = String.format(Locale.ENGLISH, "https://api.navigine.com/venues?locationId=%d&format=xml&userHash=%s",
+                                            DemoApp.LOCATION_ID, DemoApp.USER_HASH);
+    
+    if (mVenueLoader == 0)
+    {
+      mVenueLoader      = NavigineSDK.startUrlLoader(venuesUrl, venuesFile);
+      mVenueLoaderTime  = timeNow;
+      Log.d(TAG, "Venue loader: STARTED");
+    }
+    else
+    {
+      int state = NavigineSDK.checkLoader(mVenueLoader);
+      if (state >= 0 && state <= 99)
+      {
+        if (Math.abs(timeNow - mVenueLoaderTime) > LOADER_TIMEOUT)
+        {
+          NavigineSDK.stopLoader(mVenueLoader);
+          mVenueLoader      = 0;
+          mVenueLoaderTime  = 0;
+          Log.d(TAG, "Venue loader: TIMEOUT");
+        }
+        return;
+      }
+      NavigineSDK.stopLoader(mVenueLoader);
+      mVenueLoader      = 0;
+      mVenueLoaderTime  = 0;
+      
+      if (state == 100)
+        Log.d(TAG, "Venue loader: FINISHED");
+      else
+        Log.d(TAG, "Venue loader: FAILED with error=" + state);
+    }
+  }
+  
   boolean mInitialized = false;
   boolean mFinished    = false;
   
@@ -119,7 +164,10 @@ public class SplashActivity extends Activity
         {
           mInitialized = true;
           if (DemoApp.initialize(getApplicationContext()))
+          {
             updateLoader();
+            updateVenueLoader();
+          }
           else
             mErrorLabel.setVisibility(View.VISIBLE);
           return;
@@ -129,11 +177,12 @@ public class SplashActivity extends Activity
           return;
 
         if (mLoader > 0)
-        {
           updateLoader();
-          return;
-        }
-        else
+        
+        if (mVenueLoader > 0)
+          updateVenueLoader();
+        
+        if (mLoader == 0 && mVenueLoader == 0)
         {
           final String archiveFile = NavigineSDK.getLocationFile(DemoApp.LOCATION_NAME);
           if ((new File(archiveFile)).exists())

@@ -38,16 +38,48 @@
                 android:text="Make route"
                 android:textColor="#ffffff"/>
 
-        <Button android:id="@+id/navigation__cancel_route_button"
+        <Button android:id="@+id/navigation__venue_button"
                 android:layout_width="120dp"
                 android:layout_height="50dp"
                 android:layout_gravity="top|left"
-                android:background="@drawable/cancel_route_button"
-                android:onClick="onCancelRoute"
+                android:background="@drawable/venue_button"
+                android:onClick="onVenueClick"
                 android:textAllCaps="false"
                 android:textSize="16dp"
-                android:text="Cancel route"
                 android:textColor="#ffffff"/>
+
+        <!-- Previous floor button -->
+        <LinearLayout android:id="@+id/navigation__back_view"
+                     android:orientation="horizontal"
+                     android:layout_width="fill_parent"
+                     android:layout_height="wrap_content"
+                     android:layout_gravity="top|left"
+                     android:layout_marginTop="0dp"
+                     android:layout_marginLeft="0dp"
+                     android:paddingTop="35dp"
+                     android:paddingLeft="10dp"
+                     android:paddingRight="10dp"
+                     android:paddingBottom="10dp"
+                     android:background="#90aaaaaa"
+                     android:onClick="onCancelRoute">
+
+            <Button android:id="@+id/navigation__back_button"
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:layout_gravity="center"
+                    android:onClick="onCancelRoute"
+                    android:background="@drawable/btn_back"/>
+            
+            <TextView
+                  android:layout_width="0dp"
+                  android:layout_height="wrap_content"
+                  android:layout_weight="1"
+                  android:layout_gravity="center"
+                  android:gravity="center"
+                  android:textSize="20dp"
+                  android:textColor="#556475"
+                  android:text="Tap here to cancel route"/>
+        </LinearLayout>
 
         <LinearLayout
             android:orientation="vertical"

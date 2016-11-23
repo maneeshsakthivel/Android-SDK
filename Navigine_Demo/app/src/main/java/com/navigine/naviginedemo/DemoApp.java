@@ -12,6 +12,7 @@ public class DemoApp extends Application
   public static final String      TAG           = "Navigine.Demo";
   public static final String      USER_HASH     = "0000-0000-0000-0000";
   public static final String      LOCATION_NAME = "Navigine Office";
+  public static final int         LOCATION_ID   = 1603;
   
   public static Context           AppContext    = null;
   public static NavigationThread  Navigation    = null;
