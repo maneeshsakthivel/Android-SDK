@@ -1072,6 +1072,11 @@ public class MainActivity extends Activity
           // Drawing the device
           drawPoints(canvas);
           drawDevice(mDeviceInfo, canvas);
+          
+          if (mTargetPoint != null || mTargetVenue != null)
+            mBackView.setVisibility(View.VISIBLE);
+          else
+            mBackView.setVisibility(View.GONE);
         }
         else
         {
