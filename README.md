@@ -29,7 +29,7 @@ For complete guidelines on using the Demo, refer to the [corresponding sections 
 ## Navigation SDK
 
 Navigine SDK for Android applications enables you to develop your own indoor navigation apps using the well-developed methods, classes, and functions created by the Navigine team.
-The SDK file resides in the Navigine_SDK folder.
+The SDK file resides in the NavigineSDK folder.
 
-Refer to the [Navigine_SDK](https://github.com/Navigine/Android-SDK/tree/master/Navigine_SDK) for the SDK used for indoor navigation.
+Refer to the [NavigineSDK](https://github.com/Navigine/Android-SDK/tree/master/NavigineSDK) for the SDK used for indoor navigation.
 Find formal description of Navigine-SDK API including the list of classes and their public fields and methods at [Navigine SDK wiki](https://github.com/Navigine/Android-SDK/wiki).
