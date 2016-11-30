@@ -21,8 +21,8 @@ Source files as well as compiled application reside in the Navigine folder and n
 
 To get the Navigine demo application for Android,
 
-- Either [download the precompiled APK file](https://github.com/Navigine/Android-SDK/blob/master/Navigine_Demo/NavigineDemo-debug.apk).
-- Or compile the application yourself [using sources, available at GitHub](https://github.com/Navigine/Android-SDK/tree/master/Navigine_Demo>).
+- Either [download the precompiled APK file](https://github.com/Navigine/Android-SDK/blob/master/NavigineDemo/NavigineDemo-debug.apk).
+- Or compile the application yourself [using sources, available at GitHub](https://github.com/Navigine/Android-SDK/tree/master/NavigineDemo>).
 
 For complete guidelines on using the Demo, refer to the [corresponding sections in the Navigine User Manual](http://docs.navigine.com/ud_android_demo.html), or refer to the Help file incorporated into the application.
 
