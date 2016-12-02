@@ -106,9 +106,9 @@ public class MainActivity extends Activity
             break;
           }
           MeasureThread.ScanResult result = beaconEntries.get(i);
-          String uuid = result.uuid.substring(0, 9) + "...";
-          messageBuilder.append(String.format(Locale.ENGLISH, "%05d: %05d: %s \t%.1f \t%.1fm \t(%.1f sec)   BAT=%d%%\n",
-                                              result.major, result.minor, uuid, (float)result.rssi, result.distance,
+          String uuid = result.uuid.substring(0, 6) + "…";
+          messageBuilder.append(String.format(Locale.ENGLISH, "%s: \t%05d: \t%05d: \t%s  %d / %.1fm \t(%.1f sec) \t BAT=%d%%\n",
+                                              result.name, result.major, result.minor, uuid, result.rssi, result.distance,
                                               (float)(timeNow - result.timeLabel) / 1000,
                                               result.battery));
         }

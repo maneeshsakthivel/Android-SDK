@@ -38,6 +38,7 @@ public class MeasureThread extends Thread
   public class ScanResult
   {
     public String   address   = "";
+    public String   name      = "";
     public String   uuid      = "";
     public int      major     = 0;
     public int      minor     = 0;
@@ -53,6 +54,7 @@ public class MeasureThread extends Thread
     ScanResult(ScanResult result)
     {
       address   = new String(result.address);
+      name      = new String(result.name);
       uuid      = new String(result.uuid);
       major     = result.major;
       minor     = result.minor;
@@ -74,44 +76,15 @@ public class MeasureThread extends Thread
     return sb.toString();
   }
   
-  private static int parseIBeaconData(byte[] data)
+  private static String byteArrayToHex(byte[] a, int pos, int len)
   {
-    if (data != null)
-    {
-      for(int i = 0; i + 25 < data.length; ++i)
-        if (((data[i] & 0xff) == 0x4c || (data[i] & 0xff) == 0x59) &&
-            (data[i+1] & 0xff) == 0x00 &&
-            (data[i+2] & 0xff) == 0x02 &&
-            (data[i+3] & 0xff) == 0x15)
-          return i;
-    }
-    return -1;
+    StringBuilder sb = new StringBuilder(len * 2);
+    for(int i = pos; i < pos + len && i < a.length; ++i)
+      sb.append(String.format("%02X", (a[i] & 0xFF)));
+    return sb.toString();
   }
   
-  private static String getUuid(byte[] data, int index)
-  {
-    String uuid = "";
-    uuid += byteArrayToHex(Arrays.copyOfRange(data, index, index + 4));
-    uuid += "-";
-    uuid += byteArrayToHex(Arrays.copyOfRange(data, index + 4, index + 6));
-    uuid += "-";
-    uuid += byteArrayToHex(Arrays.copyOfRange(data, index + 6, index + 8));
-    uuid += "-";
-    uuid += byteArrayToHex(Arrays.copyOfRange(data, index + 8, index + 10));
-    uuid += "-";
-    uuid += byteArrayToHex(Arrays.copyOfRange(data, index + 10, index + 16));
-    return uuid;
-  }
-  
-  private static int getBattery(byte[] data, int index)
-  {
-    for(int i = data.length - 1; i >= index; --i)
-      if (data[i] != 0)
-        return Math.min(Math.max(data[i], 0), 100);
-    return 0;
-  }
-  
-  private static float getDistance(int rssi, int power)
+  private static float calculateBeaconDistance(int rssi, int power)
   {
     return (float)Math.pow(10.0, (double)(power - rssi) / 20.0);
   }
@@ -135,20 +108,7 @@ public class MeasureThread extends Thread
             {
               try
               {
-                if (scanRecord != null && scanRecord.length > 0 && rssi < 0 && rssi >= -120)
-                {
-                  int index = parseIBeaconData(scanRecord);
-                  if (index >= 0)
-                  {
-                    String uuid = getUuid(scanRecord, index + 4);
-                    int major   = (int)(scanRecord[index + 20] & 0xff) * 256 + (int)(scanRecord[index + 21] & 0xff);
-                    int minor   = (int)(scanRecord[index + 22] & 0xff) * 256 + (int)(scanRecord[index + 23] & 0xff);
-                    int power   = (int)(scanRecord[index + 24] & 0xff) - 256;
-                    int battery = getBattery(scanRecord, index + 25);
-                    float dist  = getDistance(rssi, power);
-                    addBeacon(device.getAddress(), uuid, major, minor, rssi, power, battery, dist);
-                  }
-                }
+                addBeacon(device.getAddress(), rssi, scanRecord);
               }
               catch (Throwable e)
               {
@@ -269,33 +229,128 @@ public class MeasureThread extends Thread
     }
     return L;
   }
-  
-  private synchronized void addBeacon(String address, String uuid, int major, int minor, int rssi, int power, int battery, float distance)
+
+  private void addBeacon(String address, int rssi, byte[] data)
   {
-    // Filtering out results with invalid RSSI
-    if (rssi >= 0 || rssi < -120)
-      return;
-    
-    if (DEBUG_LEVEL >= 3)
-      Log.d(TAG, String.format(Locale.ENGLISH, "BEACON: address=%s, uuid=%s, major=%05d, minor=%05d, rssi=%d, distance=%.2f",
-            address, uuid, major, minor, rssi, distance));
-    
-    ScanResult result = new ScanResult();
-    result.address    = address;
-    result.uuid       = uuid;
-    result.major      = major;
-    result.minor      = minor;
-    result.rssi       = rssi;
-    result.power      = power;
-    result.battery    = battery;
-    result.distance   = distance;
-    result.timeLabel  = System.currentTimeMillis();    
-    mScanResults.add(result);
+    try
+    {
+      if (data == null || data.length == 0)
+        return;
+      
+      String uuid = "";
+      String name = "";
+      int major   = 0;
+      int minor   = 0;
+      int power   = 0;
+      int battery = 0;
+      boolean ok  = false;
+      
+      for(int n = 0; n < data.length; )
+      {
+        int len = (data[n] & 0xFF);
+        if (len == 0)
+          break; // Packet has finished
+        
+        if (n + len >= data.length)
+        {
+          ok = false;
+          break; // Incomplete packet
+        }
+        
+        // Packet type
+        int type = (data[n + 1] & 0xFF);
+        switch (type)
+        {
+          case 0xFF: // Advertising packet
+          {
+            if (len != 26)
+              break;
+            
+            int vendor = (data[n+2] & 0xFF) + (data[n+3] & 0xFF) * 256;
+            if (vendor == 0x004C || vendor == 0x0059)
+            {
+              uuid += byteArrayToHex(data, n + 6, 4);
+              uuid += "-";
+              uuid += byteArrayToHex(data, n + 10, 2);
+              uuid += "-";
+              uuid += byteArrayToHex(data, n + 12, 2);
+              uuid += "-";
+              uuid += byteArrayToHex(data, n + 14, 2);
+              uuid += "-";
+              uuid += byteArrayToHex(data, n + 16, 6);
+              major = (data[n + 22] & 0xFF) * 256 + (data[n + 23] & 0xFF);
+              minor = (data[n + 24] & 0xFF) * 256 + (data[n + 25] & 0xFF);
+              power = (data[n + 26] & 0xFF) - 256;
+              ok = true;
+            }
+            break;
+          }
+          
+          case 0x16: // Service packet
+          {
+            if (len < 10)
+              break;
+            
+            int serviceUuid = (data[n+2] & 0xFF) * 256 + (data[n+3] & 0xFF);
+            if (len == 10 && serviceUuid == 0x0DD0)
+            {
+              // Kontakt beacon service UUID
+              name    = new String(data, n + 4, 4);
+              battery = (data[n+10] & 0xFF);
+              battery = Math.max(Math.min(battery, 100), 0);
+            }
+            else if (len == 12 && serviceUuid == 0xD0D0)
+            {
+              // iBecom service UUID
+              battery = (data[n+11] & 0xFF) + (data[n+12] & 0xFF) * 256;
+              battery = (battery - 319) * 100 / 140;
+              battery = Math.max(Math.min(battery, 100), 0);
+            }
+            break;
+          }
+          
+          default:
+            break;
+        }
+        n += len + 1;
+      }
+      
+      if (!ok)
+        return;
+      
+      ScanResult result = new ScanResult();
+      result.address    = address;
+      result.name       = name;
+      result.uuid       = uuid;
+      result.major      = major;
+      result.minor      = minor;
+      result.rssi       = rssi;
+      result.power      = power <= 0 && power >= -127 ? power : 0;
+      result.battery    = battery;
+      result.distance   = calculateBeaconDistance(rssi, power);
+      result.timeLabel  = System.currentTimeMillis();
+      
+      if (DEBUG_LEVEL >= 3)
+        Log.d(TAG, String.format(Locale.ENGLISH, "BEACON %s: uuid=%s; major=%05d; minor=%05d; rssi=%d; dist=%.2f",
+              result.name, result.uuid, result.major, result.minor, result.rssi, result.distance));
+      
+      synchronized (this)
+      {
+        mScanResults.add(result);
+      }
+    }
+    catch (Throwable e)
+    {
+      if (DEBUG_LEVEL >= 1)
+        Log.e(TAG, Log.getStackTraceString(e));
+    }
   }
   
   @Override public void run()
   {
     Looper.prepare();
+    if (DEBUG_LEVEL >= 2)
+      Log.d(TAG, "MeasureThread: started");
     
     while (!mStopFlag)
     {
@@ -368,6 +423,6 @@ public class MeasureThread extends Thread
     
     Looper.myLooper().quit();
     if (DEBUG_LEVEL >= 2)
-      Log.d(TAG, "Stopped");
+      Log.d(TAG, "MeasureThread: stopped");
   } // end of run()
 }
