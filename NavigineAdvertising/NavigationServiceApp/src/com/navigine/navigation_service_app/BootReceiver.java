@@ -17,24 +17,21 @@ public class BootReceiver extends BroadcastReceiver
   {
     final String action = intent.getAction();
     
-    if (action.equals("android.intent.action.BOOT_COMPLETED"))
-    {
-      Log.d(TAG, "Received BOOT_COMPLETED");
-      Log.d(TAG, "NavigationService will be started in 60 secs!");
-      
-      //
-      // NB: set service params here (user hash and debug level)
-      //
-      Y.setDebugLevel(context, 3);
-      
-      Intent serviceIntent = new Intent(context, NavigationService.class);
-      serviceIntent.setPackage(context.getPackageName());
-      
-      PendingIntent pendingIntent = PendingIntent.getService(context, 1, serviceIntent, PendingIntent.FLAG_ONE_SHOT);
-      AlarmManager alarmService = (AlarmManager)context.getSystemService(Context.ALARM_SERVICE);
-      alarmService.set(AlarmManager.ELAPSED_REALTIME,
-                       SystemClock.elapsedRealtime() + 60000,
-                       pendingIntent);
-    }
+    Log.d(TAG, "Received " + action);
+    Log.d(TAG, "NavigationService will be started in 60 secs!");
+    
+    //
+    // NB: set service params here (user hash and debug level)
+    //
+    Y.setDebugLevel(context, 3);
+    
+    Intent serviceIntent = new Intent(context, NavigationService.class);
+    serviceIntent.setPackage(context.getPackageName());
+    
+    PendingIntent pendingIntent = PendingIntent.getService(context, 1, serviceIntent, PendingIntent.FLAG_ONE_SHOT);
+    AlarmManager alarmService = (AlarmManager)context.getSystemService(Context.ALARM_SERVICE);
+    alarmService.set(AlarmManager.ELAPSED_REALTIME,
+                     SystemClock.elapsedRealtime() + 60000,
+                     pendingIntent);
   }
 }
