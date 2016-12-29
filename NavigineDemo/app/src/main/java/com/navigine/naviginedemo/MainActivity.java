@@ -416,7 +416,7 @@ public class MainActivity extends Activity
       new PictureDrawable(subLoc.picture);
     mPicDrawable = new PictureDrawable(pic);
 
-    mMapImageView.setImageDrawable(mMapDrawable);
+    mMapImageView.setImageDrawable(new LayerDrawable(new Drawable[]{mMapDrawable}));
     mMapImageView.setScaleType(ScaleType.MATRIX);
     mPicImageView.setImageDrawable(mPicDrawable);
 
@@ -1104,9 +1104,9 @@ public class MainActivity extends Activity
         drawVenues(canvas);
         pic.endRecording();
         
-        mPicImageView.invalidate();
         mMapImageView.setImageMatrix(mMatrix);
         mMapImageView.invalidate();
+        mPicImageView.invalidate();
       }
     };
 }
