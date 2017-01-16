@@ -16,8 +16,7 @@ import java.util.*;
 
 public class GeoService extends IntentService
 {
-  private static final String TAG     = "GeoService";
-  private static final double RADIAN  = 180.0f / (float)Math.PI;
+  private static final String TAG = "GeoService";
   
   // Debug levels:
   //  0 - no debug
@@ -168,22 +167,59 @@ public class GeoService extends IntentService
   
   private void updateLocation(Location location)
   {
+    SharedPreferences settings = getSharedPreferences("GeoService", 0);
     long   time       = location.getTime();
     double latitude   = location.getLatitude();
     double longitude  = location.getLongitude();
     double accuracy   = location.getAccuracy();
     String provider   = location.getProvider();
     
-    SharedPreferences settings = getSharedPreferences("GeoService", 0);
-    SharedPreferences.Editor editor = settings.edit();
-    editor.putLong("location_time", time);
-    editor.putLong("location_latitude",  Double.doubleToRawLongBits(latitude));
-    editor.putLong("location_longitude", Double.doubleToRawLongBits(longitude));
-    editor.putLong("location_accuracy",  Double.doubleToRawLongBits(accuracy));
-    editor.putString("location_provider", provider);
-    editor.commit();
+    long timeOld = settings.getLong("location_time", 0L);
+    if (time != timeOld)
+    {
+      SharedPreferences.Editor editor = settings.edit();
+      editor.putLong("location_time", time);
+      editor.putLong("location_latitude",  Double.doubleToRawLongBits(latitude));
+      editor.putLong("location_longitude", Double.doubleToRawLongBits(longitude));
+      editor.putLong("location_accuracy",  Double.doubleToRawLongBits(accuracy));
+      editor.putString("location_provider", provider);
+      editor.commit();
+      
+      Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+      calendar.setTimeInMillis(System.currentTimeMillis());
+      logMessage(String.format(Locale.ENGLISH, "%04d-%02d-%02d %02d:%02d:%02d: latitude=%.8f; longitude=%.8f; accuracy=%.2f; provider=%s",
+                 calendar.get(Calendar.YEAR),
+                 calendar.get(Calendar.MONTH) + 1,
+                 calendar.get(Calendar.DAY_OF_MONTH),
+                 calendar.get(Calendar.HOUR_OF_DAY),
+                 calendar.get(Calendar.MINUTE),
+                 calendar.get(Calendar.SECOND),
+                 latitude, longitude, accuracy,
+                 provider));
+    }
+  }
+  
+  private void logMessage(String message)
+  {
+    final String filename = getExternalFilesDir(null).getAbsolutePath() + "/GeoService.log";
     
-    Log.d(TAG, String.format(Locale.ENGLISH, "Provider: %s, Latitude: %.8f, Longitude: %.8f, Accuracy: %.2f, TimeAgo: %d sec",
-          provider, latitude, longitude, accuracy, (System.currentTimeMillis() - time) / 1000));
+    try
+    {
+      if (DEBUG_LEVEL >= 2)
+        Log.d(TAG, message);
+      
+      FileWriter fw = new FileWriter(filename, true);
+      fw.write(message);
+      fw.write("\n");
+      fw.close();
+    }
+    catch (Throwable e)
+    {
+      if (DEBUG_LEVEL >= 1)
+      {
+        Log.e(TAG, Log.getStackTraceString(e));
+        Log.e(TAG, "Unable to open/write output log file " + filename);
+      }
+    }
   }
 }
