@@ -2,20 +2,12 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
       package="com.navigine.geo_service"
       android:versionCode="1"
-      android:versionName="1.0"
-      android:installLocation="preferExternal">
+      android:versionName="1.0">
     
     <uses-sdk android:minSdkVersion="18"/>
     
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
-    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
-    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE"/>
-    <uses-permission android:name="android.permission.BLUETOOTH"/>
-    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"/>
-    <uses-permission android:name="android.permission.INTERNET"/>
-    <uses-permission android:name="android.permission.PROCESS_OUTGOING_CALLS"/>
-    <uses-permission android:name="android.permission.READ_PHONE_STATE"/>
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
@@ -34,12 +26,10 @@
             </intent-filter>
         </activity>
         
-        <service android:name="com.navigine.geo_service.GeoService"
-                 android:exported="true"/>
+        <service android:name="GeoService" android:exported="true"/>
         
         <!-- Declaring broadcast receiver for BOOT_COMPLETED event -->
-        <receiver android:name="com.navigine.emergency_call.BootReceiver"
-                  android:exported="true">
+        <receiver android:name="BootReceiver" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED"/>
                 <action android:name="android.intent.action.PACKAGE_REPLACED"/>
