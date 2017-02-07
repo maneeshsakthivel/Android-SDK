@@ -1017,8 +1017,8 @@ public class MainActivity extends Activity
 
         if (mMatrix == null)
         {
-          String archiveFile = NavigineSDK.getLocationFile(DemoApp.LOCATION_NAME);
-          String venuesFile  = NavigineSDK.getLocationDir(DemoApp.LOCATION_NAME) + "/venues.xml";
+          String archiveFile = NavigineSDK.getLocationFile(DemoApp.LOCATION_ID);
+          String venuesFile  = NavigineSDK.getLocationDir(DemoApp.LOCATION_ID) + "/venues.xml";
           loadMap(archiveFile);
           loadVenues(venuesFile);
           return;

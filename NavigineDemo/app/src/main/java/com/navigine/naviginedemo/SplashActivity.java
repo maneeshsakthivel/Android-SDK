@@ -66,7 +66,7 @@ public class SplashActivity extends Activity
     
     if (mLoader == 0)
     {
-      mLoader      = NavigineSDK.startLocationLoader(DemoApp.LOCATION_NAME, false);
+      mLoader      = NavigineSDK.startLocationLoader(DemoApp.LOCATION_ID, false);
       mLoaderTime  = timeNow;
       mLoaderState = 0;
       Log.d(TAG, "Location loader: STARTED");
@@ -114,7 +114,7 @@ public class SplashActivity extends Activity
       return;
     
     final long timeNow      = NavigineSDK.currentTimeMillis() / 1000;
-    final String venuesFile = NavigineSDK.getLocationDir(DemoApp.LOCATION_NAME) + "/venues.xml";
+    final String venuesFile = NavigineSDK.getLocationDir(DemoApp.LOCATION_ID) + "/venues.xml";
     final String venuesUrl  = String.format(Locale.ENGLISH, "https://api.navigine.com/venues?locationId=%d&format=xml&userHash=%s",
                                             DemoApp.LOCATION_ID, DemoApp.USER_HASH);
     
@@ -184,7 +184,7 @@ public class SplashActivity extends Activity
         
         if (mLoader == 0 && mVenueLoader == 0)
         {
-          final String archiveFile = NavigineSDK.getLocationFile(DemoApp.LOCATION_NAME);
+          final String archiveFile = NavigineSDK.getLocationFile(DemoApp.LOCATION_ID);
           if ((new File(archiveFile)).exists())
           {
             // Starting main activity
