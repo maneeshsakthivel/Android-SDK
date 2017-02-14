@@ -115,8 +115,8 @@ public class SplashActivity extends Activity
     
     final long timeNow      = NavigineSDK.currentTimeMillis() / 1000;
     final String venuesFile = NavigineSDK.getLocationDir(DemoApp.LOCATION_ID) + "/venues.xml";
-    final String venuesUrl  = String.format(Locale.ENGLISH, "https://api.navigine.com/venues?locationId=%d&format=xml&userHash=%s",
-                                            DemoApp.LOCATION_ID, DemoApp.USER_HASH);
+    final String venuesUrl  = String.format(Locale.ENGLISH, "%s/venues?locationId=%d&format=xml&userHash=%s",
+                                            DemoApp.SERVER_URL, DemoApp.LOCATION_ID, DemoApp.USER_HASH);
     
     if (mVenueLoader == 0)
     {

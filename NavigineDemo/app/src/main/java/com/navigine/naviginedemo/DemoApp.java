@@ -10,10 +10,10 @@ import java.util.*;
 public class DemoApp extends Application
 {
   public static final String      TAG           = "Navigine.Demo";
+  public static final String      SERVER_URL    = "https://api.navigine.com";
   public static final String      USER_HASH     = "0000-0000-0000-0000";
   public static final int         LOCATION_ID   = 1603;
   
-  public static Context           AppContext    = null;
   public static NavigationThread  Navigation    = null;
   
   // Screen parameters
@@ -28,15 +28,16 @@ public class DemoApp extends Application
     super.onCreate();
   }
   
-  public static boolean initialize(Context appContext)
+  public static boolean initialize(Context context)
   {
     NavigineSDK.setDebugLevel(2);
-    if (!NavigineSDK.initialize(appContext, USER_HASH, null))
+    NavigineSDK.setParameter(context, "post_messages_timeout", 1);
+    NavigineSDK.setParameter(context, "post_beacons_timeout",  300);
+    if (!NavigineSDK.initialize(context, USER_HASH, SERVER_URL))
       return false;
     
-    AppContext = appContext;
     Navigation = NavigineSDK.getNavigation();
-    DisplayMetrics displayMetrics = AppContext.getResources().getDisplayMetrics();
+    DisplayMetrics displayMetrics = context.getResources().getDisplayMetrics();
     DisplayWidthPx  = displayMetrics.widthPixels;
     DisplayHeightPx = displayMetrics.heightPixels;
     DisplayDensity  = displayMetrics.density;
@@ -53,11 +54,10 @@ public class DemoApp extends Application
   
   public static void finish()
   {
-    if (AppContext == null || Navigation == null)
+    if (Navigation == null)
       return;
     
     NavigineSDK.finish();
     Navigation = null;
-    AppContext = null;
   }
 }
