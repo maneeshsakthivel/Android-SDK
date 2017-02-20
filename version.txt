@@ -1,0 +1,7 @@
+Date 2017.02.20
+Release version: 1.1
+
+Release notes:
+1. Major updates in internal SDK storage - to support locations with local symbols in name.
+2. Navigation accuracy improved.
+3. Fixed bug with iBeacon battery level transmition to Navigine CMS.
