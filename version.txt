@@ -1,3 +1,9 @@
+Date 2017.03.14
+Release version: 1.2
+1. Background service stability and battery usage improved.
+2. Navigation accuracy improved.
+
+
 Date 2017.02.20
 Release version: 1.1
 
