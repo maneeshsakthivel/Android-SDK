@@ -14,6 +14,8 @@ import java.util.*;
 
 public class MainActivity extends Activity
 {
+  public static final int DEBUG_LEVEL = 2;
+  
   private Button    mRestartButton  = null;
   private TimerTask mTimerTask      = null;
   private Handler   mHandler        = new Handler();
@@ -24,12 +26,11 @@ public class MainActivity extends Activity
     super.onCreate(savedInstanceState);
     setContentView(R.layout.main);
     
-    Y.setDebugLevel(this, 3);
+    Y.setDebugLevel(this, DEBUG_LEVEL);
     Y.initialize(getApplication(), null, null);
     
     setTextValue(R.id.settings__user_hash_edit,     Y.getUserHash(this));
     setTextValue(R.id.settings__server_url_edit,    Y.getServerUrl(this));
-    setTextValue(R.id.settings__location_name_edit, Y.getLocationName(this));
     
     mRestartButton = (Button)findViewById(R.id.settings__restart_service_button);
     mRestartButton.setEnabled(false);
@@ -65,9 +66,8 @@ public class MainActivity extends Activity
   
   public void saveSettings(View v)
   {
-    Y.setUserHash  (this, getTextValue(R.id.settings__user_hash_edit));
-    Y.setServerUrl (this, getTextValue(R.id.settings__server_url_edit));
-    Y.setLocationName (this, getTextValue(R.id.settings__location_name_edit));
+    Y.setUserHash (this, getTextValue(R.id.settings__user_hash_edit));
+    Y.setServerUrl(this, getTextValue(R.id.settings__server_url_edit));
   }
   
   public void toggleService(View v)

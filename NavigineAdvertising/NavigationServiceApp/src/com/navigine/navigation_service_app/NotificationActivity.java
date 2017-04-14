@@ -28,7 +28,7 @@ public class NotificationActivity extends Activity
     super.onCreate(savedInstanceState);
     
     // Initializing SDK
-    Y.setDebugLevel(this, 3);
+    Y.setDebugLevel(this, MainActivity.DEBUG_LEVEL);
     Y.initialize(getApplication(), null, null);
     
     requestWindowFeature(Window.FEATURE_NO_TITLE);

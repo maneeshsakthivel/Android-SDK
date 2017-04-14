@@ -37,21 +37,6 @@
         android:scrollHorizontally="true"
         android:singleLine="true"/>
     
-    <!-- Location name -->
-    <TextView android:id="@+id/settings__location_name_label"
-        android:layout_width="fill_parent"
-        android:layout_height="45dp"
-        android:gravity="left"
-        android:textSize="14sp"
-        android:text="Location name:"/>
-    
-    <EditText android:id="@+id/settings__location_name_edit"
-        android:layout_width="fill_parent"
-        android:layout_height="45dp"
-        android:layout_marginTop="-20dp"
-        android:scrollHorizontally="true"
-        android:singleLine="true"/>
-    
     <!-- Vertical stretch -->
     <View android:layout_width="1dp"
           android:layout_height="0dp"

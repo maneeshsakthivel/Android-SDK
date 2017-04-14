@@ -23,7 +23,7 @@ public class BootReceiver extends BroadcastReceiver
     //
     // NB: set service params here (user hash and debug level)
     //
-    Y.setDebugLevel(context, 3);
+    Y.setDebugLevel(context, MainActivity.DEBUG_LEVEL);
     
     Intent serviceIntent = new Intent(context, NavigationService.class);
     serviceIntent.setPackage(context.getPackageName());

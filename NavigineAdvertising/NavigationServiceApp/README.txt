@@ -32,6 +32,7 @@ dependencies {
     
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
     <uses-permission android:name="android.permission.CHANGE_WIFI_STATE"/>
     <uses-permission android:name="android.permission.BLUETOOTH"/>
@@ -103,9 +104,15 @@ SERVER_URL - адрес сервера "https://api.navigine.com"
 
 Y.startService(getApplicationContext());
 
+Сервис уведомлений должен запускаться автоматически при старте главной Activity.
+В случае, если сервис должен работать в background (при выключенном приложении),
+сервис приложений нужно также запускать из BootReceiver.
+
 6. Остановка сервиса уведомлений:
 
 Y.stopService();
+
+Сервис уведомлений не должен останавливаться никогда!
 
 7. Проверка, запущен ли сервис уведомлений:
 
