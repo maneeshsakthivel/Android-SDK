@@ -1,3 +1,9 @@
+Date 2017.04.27
+Release version: 1.3
+1. Fixed crush in location downloading.
+2. Navigation accuracy improved.
+
+
 Date 2017.03.14
 Release version: 1.2
 1. Background service stability and battery usage improved.
