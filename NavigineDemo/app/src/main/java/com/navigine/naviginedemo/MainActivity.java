@@ -86,10 +86,9 @@ public class MainActivity extends Activity
     new PointF(0.0f, 0.0f),
     new PointF(0.0f, 0.0f) };
   
-  private List<Venue>           mVenues           = null;
-  private Bitmap                mVenueBitmap      = null;
-  private Venue                 mTargetVenue      = null;
-  private int                   mSelectedVenue    = -1;
+  private Bitmap  mVenueBitmap    = null;
+  private Venue   mTargetVenue    = null;
+  private Venue   mSelectedVenue  = null;
   
   @Override protected void onCreate(Bundle savedInstanceState)
   {
@@ -211,7 +210,7 @@ public class MainActivity extends Activity
 
     mTargetPoint = mPinPoint;
     mTargetVenue = null;
-    mPinPoint = null;
+    mPinPoint    = null;
 
     DemoApp.Navigation.setTarget(mTargetPoint);
     mMakeRouteButton.setVisibility(View.GONE);
@@ -226,7 +225,7 @@ public class MainActivity extends Activity
 
     mTargetPoint = null;
     mTargetVenue = null;
-    mPinPoint = null;
+    mPinPoint    = null;
 
     DemoApp.Navigation.cancelTargets();
     mMakeRouteButton.setVisibility(View.GONE);
@@ -245,7 +244,7 @@ public class MainActivity extends Activity
     if (DemoApp.Navigation == null)
       return;
     
-    if (mVenues == null || mSelectedVenue < 0 || mSelectedVenue >= mVenues.size())
+    if (mSelectedVenue == null)
       return;
     
     if (mLocation == null || mCurrentSubLocationIndex < 0)
@@ -255,7 +254,7 @@ public class MainActivity extends Activity
     if (subLoc == null)
       return;
 
-    mTargetVenue = mVenues.get(mSelectedVenue);
+    mTargetVenue = mSelectedVenue;
     mTargetPoint = null;
     
     DemoApp.Navigation.setTarget(new LocationPoint(subLoc.id, mTargetVenue.kx * subLoc.width, mTargetVenue.ky * subLoc.height));
@@ -269,29 +268,6 @@ public class MainActivity extends Activity
     mErrorMessageLabel.setText(message);
     mErrorMessageLabel.setVisibility(View.VISIBLE);
     mErrorMessageTime = NavigineSDK.currentTimeMillis();
-  }
-  
-  private boolean mVenuesLoaded = false;
-  private boolean loadVenues(String fileName)
-  {
-    if (mVenuesLoaded)
-      return false;
-    
-    mVenuesLoaded = true;
-    File f = new File(fileName);
-    
-    if (!f.exists())
-      return false;
-    
-    List<Venue> venues = new ArrayList<Venue>();
-    List<Venue.Category> venueCategories = new ArrayList<Venue.Category>();
-    
-    if (!Parser.parseVenuesXml(fileName, venues, venueCategories))
-      return false;
-    
-    mVenues = venues;
-    cancelVenue();
-    return true;
   }
   
   private boolean mMapLoaded = false;
@@ -659,19 +635,15 @@ public class MainActivity extends Activity
       return;
     }
     
-    if (mSelectedVenue >= 0)
+    if (mSelectedVenue != null)
     {
       cancelVenue();
       return;
     }
     
     // Check if we touched venue => highlight venue
-    int index = getVenueAt(x, y);
-    if (index >= 0)
-    {
-      mSelectedVenue = index;
+    if ((mSelectedVenue = getVenueAt(x, y)) != null)
       mVenueButton.setVisibility(View.VISIBLE);
-    }
     
     mHandler.post(mRunnable);
   }
@@ -734,40 +706,40 @@ public class MainActivity extends Activity
   
   private void cancelVenue()
   {
-    mSelectedVenue = -1;
+    mSelectedVenue = null;
     mVenueButton.setVisibility(View.GONE);
     mHandler.post(mRunnable);
   }
   
-  private int getVenueAt(float x, float y)
+  private Venue getVenueAt(float x, float y)
   {
     if (mLocation == null || mCurrentSubLocationIndex < 0)
-      return -1;
+      return null;
 
     SubLocation subLoc = mLocation.subLocations.get(mCurrentSubLocationIndex);
     if (subLoc == null)
-      return -1;
+      return null;
 
-    int   index = -1;
-    float dist0 = 1000.0f;
+    Venue v0 = null;
+    float d0 = 1000.0f;
     
-    for(int i = 0; i < mVenues.size(); ++i)
+    for(int i = 0; i < subLoc.venues.size(); ++i)
     {
-      Venue v = mVenues.get(i);
+      Venue v = subLoc.venues.get(i);
       if (v.subLocation != subLoc.id)
         continue;
       PointF P = getScreenCoordinates(v.kx * subLoc.width, v.ky * subLoc.height);
-      float dist = Math.abs(x - P.x) + Math.abs(y - P.y);
-      if (dist < 30.0f * DemoApp.DisplayDensity && dist < dist0)
+      float d = Math.abs(x - P.x) + Math.abs(y - P.y);
+      if (d < 30.0f * DemoApp.DisplayDensity && d < d0)
       {
-        index = i;
-        dist0 = dist;
+        v0 = new Venue(v);
+        d0 = d;
       }
     }
     
-    return index;
+    return v0;
   }
-
+  
   private void drawPoints(Canvas canvas)
   {
     // Check if location is loaded
@@ -830,9 +802,6 @@ public class MainActivity extends Activity
 
   private void drawVenues(Canvas canvas)
   {
-    if (mVenues == null)
-      return;
-    
     if (mLocation == null || mCurrentSubLocationIndex < 0)
       return;
     
@@ -844,9 +813,9 @@ public class MainActivity extends Activity
     
     final float venueSize = 30 * DemoApp.DisplayDensity;
     
-    for(int i = 0; i < mVenues.size(); ++i)
+    for(int i = 0; i < subLoc.venues.size(); ++i)
     {
-      Venue v = mVenues.get(i);
+      Venue v = subLoc.venues.get(i);
       if (v.subLocation != subLoc.id)
         continue;
       
@@ -858,10 +827,9 @@ public class MainActivity extends Activity
       canvas.drawBitmap(mVenueBitmap, null, new RectF(x0, y0, x1, y1), paint);
     }
     
-    if (mSelectedVenue >= 0)
+    if (mSelectedVenue != null)
     {
-      final Venue  v = mVenues.get(mSelectedVenue);
-      final PointF T = getScreenCoordinates(v.kx * subLoc.width, v.ky * subLoc.height);
+      final PointF T = getScreenCoordinates(mSelectedVenue.kx * subLoc.width, mSelectedVenue.ky * subLoc.height);
       ViewGroup.MarginLayoutParams layoutParams = (ViewGroup.MarginLayoutParams)mVenueButton.getLayoutParams();
       layoutParams.leftMargin   = (int)(T.x - (float) mVenueButton.getWidth() / 2.0f);
       layoutParams.topMargin    = (int)(T.y - (float) mVenueButton.getHeight() - 60.0f);
@@ -869,7 +837,7 @@ public class MainActivity extends Activity
       layoutParams.bottomMargin = (int)(layoutParams.topMargin  + (float)mVenueButton.getHeight());
       mVenueButton.setLayoutParams(layoutParams);
       mVenueButton.setVisibility(View.VISIBLE);
-      mVenueButton.setText(v.name);
+      mVenueButton.setText(mSelectedVenue.name);
     }
   }
   
@@ -1020,7 +988,6 @@ public class MainActivity extends Activity
           String archiveFile = NavigineSDK.getLocationFile(DemoApp.LOCATION_ID);
           String venuesFile  = NavigineSDK.getLocationDir(DemoApp.LOCATION_ID) + "/venues.xml";
           loadMap(archiveFile);
-          loadVenues(venuesFile);
           return;
         }
 

@@ -21,7 +21,6 @@
         android:gravity="center"
         android:textSize="16dp"
         android:maxLines="5"
-        android:textColor="#80CC5A5A"
-        android:text="Error loading NavigineSDK! It seems that your device is not supported yet! Please, contact technical support"/>
+        android:textColor="#80CC5A5A"/>
         
 </FrameLayout>

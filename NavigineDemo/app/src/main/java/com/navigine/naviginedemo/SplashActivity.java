@@ -14,17 +14,40 @@ import com.navigine.naviginesdk.*;
 
 public class SplashActivity extends Activity
 {
-  private static final String TAG = "Navigine.Demo";
-  private static final int LOADER_TIMEOUT = 30; // seconds
+  private TextView mErrorLabel = null;
   
-  private TextView  mErrorLabel   = null;
-  private TimerTask mTimerTask    = null;
-  private Handler   mHandler      = new Handler();
-  private Timer     mTimer        = new Timer();
+  class InitTask extends AsyncTask<Void, Void, Boolean>
+  {
+    @Override protected Boolean doInBackground(Void... params)
+    {
+      if (!DemoApp.initialize(getApplicationContext()))
+      {
+        mErrorLabel.setText("Error loading NavigineSDK! It seems that your device is not supported yet! Please, contact technical support");
+        mErrorLabel.setVisibility(View.VISIBLE);
+        return Boolean.FALSE;
+      }
+      if (!NavigineSDK.loadLocation(DemoApp.LOCATION_ID, 30))
+      {
+        mErrorLabel.setText("Error downloading location 'Navigine Demo'! Please, try again later or contact technical support");
+        mErrorLabel.setVisibility(View.VISIBLE);
+        return Boolean.FALSE;
+      }
+      return Boolean.TRUE;
+    }
+    
+    @Override protected void onPostExecute(Boolean result)
+    {
+      if (result.booleanValue())
+      {
+        // Starting main activity
+        Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+        startActivity(intent);
+      }
+    }
+  }
   
   @Override public void onCreate(Bundle savedInstanceState)
   {
-    Log.d(TAG, "SplashActivity created");
     super.onCreate(savedInstanceState);
 
     requestWindowFeature(Window.FEATURE_NO_TITLE);
@@ -36,165 +59,11 @@ public class SplashActivity extends Activity
     mErrorLabel = (TextView)findViewById(R.id.splash__error_label);
     mErrorLabel.setVisibility(View.GONE);
     
-    // Starting interface updates
-    mTimerTask =
-      new TimerTask()
-      {
-        @Override public void run()
-        {
-          mHandler.post(mRunnable);
-        }
-      };
-    mTimer.schedule(mTimerTask, 500, 500);
+    (new InitTask()).execute();
   }
 
   @Override public void onBackPressed()
   {
     moveTaskToBack(true);
   }
-  
-  private int  mLoader       = 0;
-  private int  mLoaderState  = 0;
-  private long mLoaderTime   = 0;
-  
-  private void updateLoader()
-  {
-    if (DemoApp.Navigation == null)
-      return;
-    
-    long timeNow = NavigineSDK.currentTimeMillis() / 1000;
-    
-    if (mLoader == 0)
-    {
-      mLoader      = NavigineSDK.startLocationLoader(DemoApp.LOCATION_ID, false);
-      mLoaderTime  = timeNow;
-      mLoaderState = 0;
-      Log.d(TAG, "Location loader: STARTED");
-    }
-    else
-    {
-      int state = NavigineSDK.checkLoader(mLoader);
-      if (state >= 0 && state <= 99)
-      {
-        if (Math.abs(timeNow - mLoaderTime) > LOADER_TIMEOUT)
-        {
-          NavigineSDK.stopLoader(mLoader);
-          mLoader      = 0;
-          mLoaderTime  = 0;
-          mLoaderState = 0;
-          Log.d(TAG, "Location loader: TIMEOUT");
-          return;
-        }
-        if (mLoaderState != state)
-        {
-          mLoaderTime  = timeNow;
-          mLoaderState = state;
-        }
-        Log.d(TAG, "Location loader: progress " + state + "%");
-        return;
-      }
-      NavigineSDK.stopLoader(mLoader);
-      mLoader      = 0;
-      mLoaderTime  = 0;
-      mLoaderState = 0;
-      
-      if (state == 100)
-        Log.d(TAG, "Location loader: FINISHED");
-      else
-        Log.d(TAG, "Location loader: FAILED with error=" + state);
-    }
-  }
-  
-  private int  mVenueLoader     = 0;
-  private long mVenueLoaderTime = 0;
-  
-  private void updateVenueLoader()
-  {
-    if (DemoApp.Navigation == null)
-      return;
-    
-    final long timeNow      = NavigineSDK.currentTimeMillis() / 1000;
-    final String venuesFile = NavigineSDK.getLocationDir(DemoApp.LOCATION_ID) + "/venues.xml";
-    final String venuesUrl  = String.format(Locale.ENGLISH, "%s/venues?locationId=%d&format=xml&userHash=%s",
-                                            DemoApp.SERVER_URL, DemoApp.LOCATION_ID, DemoApp.USER_HASH);
-    
-    if (mVenueLoader == 0)
-    {
-      mVenueLoader      = NavigineSDK.startUrlLoader(venuesUrl, venuesFile);
-      mVenueLoaderTime  = timeNow;
-      Log.d(TAG, "Venue loader: STARTED");
-    }
-    else
-    {
-      int state = NavigineSDK.checkLoader(mVenueLoader);
-      if (state >= 0 && state <= 99)
-      {
-        if (Math.abs(timeNow - mVenueLoaderTime) > LOADER_TIMEOUT)
-        {
-          NavigineSDK.stopLoader(mVenueLoader);
-          mVenueLoader      = 0;
-          mVenueLoaderTime  = 0;
-          Log.d(TAG, "Venue loader: TIMEOUT");
-        }
-        return;
-      }
-      NavigineSDK.stopLoader(mVenueLoader);
-      mVenueLoader      = 0;
-      mVenueLoaderTime  = 0;
-      
-      if (state == 100)
-        Log.d(TAG, "Venue loader: FINISHED");
-      else
-        Log.d(TAG, "Venue loader: FAILED with error=" + state);
-    }
-  }
-  
-  boolean mInitialized = false;
-  boolean mFinished    = false;
-  
-  final Runnable mRunnable =
-    new Runnable()
-    {
-      public void run()
-      {
-        if (mFinished)
-          return;
-
-        if (!mInitialized)
-        {
-          mInitialized = true;
-          if (DemoApp.initialize(getApplicationContext()))
-          {
-            updateLoader();
-            updateVenueLoader();
-          }
-          else
-            mErrorLabel.setVisibility(View.VISIBLE);
-          return;
-        }
-
-        if (DemoApp.Navigation == null)
-          return;
-
-        if (mLoader > 0)
-          updateLoader();
-        
-        if (mVenueLoader > 0)
-          updateVenueLoader();
-        
-        if (mLoader == 0 && mVenueLoader == 0)
-        {
-          final String archiveFile = NavigineSDK.getLocationFile(DemoApp.LOCATION_ID);
-          if ((new File(archiveFile)).exists())
-          {
-            // Starting main activity
-            Intent intent = new Intent(getApplicationContext(), MainActivity.class);
-            startActivity(intent);
-            mTimerTask.cancel();
-            mTimerTask = null;
-            mFinished = true;
-          }
-        }
-      }
-    };
 }
