@@ -31,10 +31,11 @@ public class DemoApp extends Application
   public static boolean initialize(Context context)
   {
     NavigineSDK.setParameter(context, "debug_level", 2);
-    NavigineSDK.setParameter(context, "apply_server_config_enabled", false);
-    NavigineSDK.setParameter(context, "actions_update_timeout", 0);
-    NavigineSDK.setParameter(context, "post_beacons_enabled",  true);
-    NavigineSDK.setParameter(context, "post_messages_enabled", true);
+    NavigineSDK.setParameter(context, "apply_server_config_enabled",  false);
+    NavigineSDK.setParameter(context, "actions_updates_enabled",      false);
+    NavigineSDK.setParameter(context, "location_updates_enabled",     true);
+    NavigineSDK.setParameter(context, "post_beacons_enabled",         true);
+    NavigineSDK.setParameter(context, "post_messages_enabled",        true);
     if (!NavigineSDK.initialize(context, USER_HASH, SERVER_URL))
       return false;
     
