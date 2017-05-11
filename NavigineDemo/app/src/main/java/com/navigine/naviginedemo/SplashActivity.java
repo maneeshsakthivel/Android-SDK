@@ -14,22 +14,31 @@ import com.navigine.naviginesdk.*;
 
 public class SplashActivity extends Activity
 {
+  private static final String TAG = "NAVIGINE.Demo";
+  
   private TextView mErrorLabel = null;
   
   class InitTask extends AsyncTask<Void, Void, Boolean>
   {
+    private Context mContext  = null;
+    private String  mErrorMsg = null;
+    
+    public InitTask(Context context)
+    {
+      mContext = context.getApplicationContext();
+    }
+    
     @Override protected Boolean doInBackground(Void... params)
     {
+      try { Thread.sleep(1000); } catch ( Throwable e) { }
       if (!DemoApp.initialize(getApplicationContext()))
       {
-        mErrorLabel.setText("Error loading NavigineSDK! It seems that your device is not supported yet! Please, contact technical support");
-        mErrorLabel.setVisibility(View.VISIBLE);
+        mErrorMsg = "Error downloading location 'Navigine Demo'! Please, try again later or contact technical support";
         return Boolean.FALSE;
       }
       if (!NavigineSDK.loadLocation(DemoApp.LOCATION_ID, 30))
       {
-        mErrorLabel.setText("Error downloading location 'Navigine Demo'! Please, try again later or contact technical support");
-        mErrorLabel.setVisibility(View.VISIBLE);
+        mErrorMsg = "Error downloading location 'Navigine Demo'! Please, try again later or contact technical support";
         return Boolean.FALSE;
       }
       return Boolean.TRUE;
@@ -40,8 +49,15 @@ public class SplashActivity extends Activity
       if (result.booleanValue())
       {
         // Starting main activity
-        Intent intent = new Intent(getApplicationContext(), MainActivity.class);
-        startActivity(intent);
+        Intent intent = new Intent(mContext, MainActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        mContext.startActivity(intent);
+      }
+      else
+      {
+        Log.d(TAG, mErrorMsg);
+        mErrorLabel.setText(mErrorMsg);
+        mErrorLabel.setVisibility(View.VISIBLE);
       }
     }
   }
@@ -59,7 +75,7 @@ public class SplashActivity extends Activity
     mErrorLabel = (TextView)findViewById(R.id.splash__error_label);
     mErrorLabel.setVisibility(View.GONE);
     
-    (new InitTask()).execute();
+    (new InitTask(this)).execute();
   }
 
   @Override public void onBackPressed()

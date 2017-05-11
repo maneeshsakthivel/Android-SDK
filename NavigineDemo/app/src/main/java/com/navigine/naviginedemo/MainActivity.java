@@ -18,7 +18,7 @@ import com.navigine.naviginesdk.*;
 
 public class MainActivity extends Activity
 {
-  private static final String   TAG                     = "Navigine.Demo";
+  private static final String   TAG                     = "NAVIGINE.Demo";
   private static final int      UPDATE_TIMEOUT          = 100;  // milliseconds
   private static final int      ADJUST_TIMEOUT          = 5000; // milliseconds
   private static final int      ERROR_MESSAGE_TIMEOUT   = 5000; // milliseconds
@@ -92,6 +92,8 @@ public class MainActivity extends Activity
   
   @Override protected void onCreate(Bundle savedInstanceState)
   {
+    Log.d(TAG, "MainActivity started");
+    
     super.onCreate(savedInstanceState);
     requestWindowFeature(Window.FEATURE_NO_TITLE);
     setContentView(R.layout.activity_main);
@@ -271,7 +273,7 @@ public class MainActivity extends Activity
   }
   
   private boolean mMapLoaded = false;
-  private boolean loadMap(String fileName)
+  private boolean loadMap()
   {
     if (mMapLoaded)
       return false;
@@ -280,21 +282,6 @@ public class MainActivity extends Activity
     if (DemoApp.Navigation == null)
     {
       Log.e(TAG, "Can't load map! Navigine SDK is not available!");
-      return false;
-    }
-
-    File f = new File(fileName);
-    if (!f.exists())
-    {
-      Log.e(TAG, "Can't load map! Location archive doesn't exist!");
-      return false;
-    }
-
-    if (!DemoApp.Navigation.loadArchive(fileName))
-    {
-      String error = DemoApp.Navigation.getLastError();
-      if (error != null)
-        Log.e(TAG, error);
       return false;
     }
 
@@ -985,9 +972,7 @@ public class MainActivity extends Activity
 
         if (mMatrix == null)
         {
-          String archiveFile = NavigineSDK.getLocationFile(DemoApp.LOCATION_ID);
-          String venuesFile  = NavigineSDK.getLocationDir(DemoApp.LOCATION_ID) + "/venues.xml";
-          loadMap(archiveFile);
+          loadMap();
           return;
         }
 
