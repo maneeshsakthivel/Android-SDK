@@ -2,20 +2,15 @@
 
  - библиотеку GeoService, позволяющую в фоновом режиме осуществлять периодическое
  сканирование текущих географических координат устройства и отправку их на
- сервер:
+ сервер;
     
-    GeoServiceApp/libs/GeoService.jar
-
  - демо-приложение GeoServiceApp (с исходными кодами), демонстрирующее
-использование библиотеки GeoService:
+использование библиотеки GeoService.
 
-    GeoServiceApp/src/com/navigine/geo_service_app/
-    GeoServiceApp/GeoServiceApp-debug.apk
- 
 Для встраивания сервиса уведомлений в приложение необходимо выполнить следующие
 шаги.
 
-1. Добавить библиотеку GeoServiceApp/libs/GeoService.jar в проект.
+1. Добавить библиотеку GeoService/GeoService.jar в проект.
 
 2. Добавить в AndroidManifest.xml:
 
