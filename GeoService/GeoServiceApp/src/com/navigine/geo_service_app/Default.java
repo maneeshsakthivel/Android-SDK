@@ -8,5 +8,5 @@ public final class Default
   public static final int WAKE_FREQUENCY    = 300;    // seconds
   public static final int SEND_FREQUENCY    = 300;    // seconds
   public static final int SEND_TIMEOUT      = 30;     // seconds
-  public static final String SEND_URL       = "https://api.navigine.com/xmlParserInsert";
+  public static final String SEND_URL       = "https://api.navigine.com/tracking/geoservice.php";
 }
