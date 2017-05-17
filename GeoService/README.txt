@@ -95,7 +95,7 @@
 
 Пример класса: NavigineApp/src/com/navigine/navigation_service_app/MainActivity.java
 
-5. Проверка, запущен ли сервис уведомлений:
+5. Проверка, запущен ли сервис:
 
 GeoService.isStarted();
 
