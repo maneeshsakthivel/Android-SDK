@@ -36,6 +36,7 @@ public class SplashActivity extends Activity
         mErrorMsg = "Error downloading location 'Navigine Demo'! Please, try again later or contact technical support";
         return Boolean.FALSE;
       }
+      Log.d(TAG, "Initialized!");
       if (!NavigineSDK.loadLocation(DemoApp.LOCATION_ID, 30))
       {
         mErrorMsg = "Error downloading location 'Navigine Demo'! Please, try again later or contact technical support";
