@@ -11,12 +11,14 @@ import java.util.*;
 
 public class MainActivity extends Activity
 {
-  private Context   mContext        = null;
-  private Button    mStartButton    = null;
-  private TextView  mTextView       = null;
-  private TimerTask mTimerTask      = null;
-  private Handler   mHandler        = new Handler();
-  private Timer     mTimer          = new Timer();
+  private static final String TAG = "GeoServiceApp";
+  
+  private Context   mContext      = null;
+  private Button    mStartButton  = null;
+  private TextView  mTextView     = null;
+  private TimerTask mTimerTask    = null;
+  private Handler   mHandler      = new Handler();
+  private Timer     mTimer        = new Timer();
   
   private BroadcastReceiver mLocationReceiver = null;
   
@@ -28,11 +30,7 @@ public class MainActivity extends Activity
     // Initializing GeoService parameters
     GeoService.setParameter(this, "debug_level",      Default.DEBUG_LEVEL);
     GeoService.setParameter(this, "gps_scan_timeout", Default.GPS_SCAN_TIMEOUT);
-    GeoService.setParameter(this, "max_cache_size",   Default.MAX_CACHE_SIZE);
     GeoService.setParameter(this, "wake_frequency",   Default.WAKE_FREQUENCY);
-    GeoService.setParameter(this, "send_frequency",   Default.SEND_FREQUENCY);
-    GeoService.setParameter(this, "send_timeout",     Default.SEND_TIMEOUT);
-    GeoService.setParameter(this, "send_url",         Default.SEND_URL);
     
     mContext     = getApplicationContext();
     mTextView    = (TextView)findViewById(R.id.text_view);
@@ -45,20 +43,21 @@ public class MainActivity extends Activity
         {
           try
           {
-            final String latitude  = intent.getStringExtra("latitude");
-            final String longitude = intent.getStringExtra("longitude");
-            final String accuracy  = intent.getStringExtra("accuracy");
-            final String timeStr   = intent.getStringExtra("time");
-            final long   time      = Long.parseLong(timeStr) * 1000;
+            final double latitude  = intent.getDoubleExtra("latitude",  0.0);
+            final double longitude = intent.getDoubleExtra("longitude", 0.0);
+            final double accuracy  = intent.getDoubleExtra("accuracy",  0.0);
+            final long   time      = intent.getLongExtra("time", 0) * 1000;
+            final int    id        = intent.getIntExtra("id", 0);
             
             Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
             calendar.setTimeInMillis(time);
             
             mTextView.setText(String.format(Locale.ENGLISH,
+                                            "ID:       \t\t\t\t\t %d\n" +
                                             "Time:     \t\t\t %04d-%02d-%02d %02d:%02d:%02d (UTC)\n" +
-                                            "Latitude: \t\t %s\n" +
-                                            "Longitude:\t %s\n" +
-                                            "Accuracy: \t %s\n",
+                                            "Latitude: \t\t %.8f\n" +
+                                            "Longitude:\t %.8f\n" +
+                                            "Accuracy: \t %.2f\n", id,
                                             calendar.get(Calendar.YEAR),
                                             calendar.get(Calendar.MONTH) + 1,
                                             calendar.get(Calendar.DAY_OF_MONTH),

@@ -23,11 +23,7 @@ public class BootReceiver extends BroadcastReceiver
       // Initializing GeoService parameters
       GeoService.setParameter(context, "debug_level",      Default.DEBUG_LEVEL);
       GeoService.setParameter(context, "gps_scan_timeout", Default.GPS_SCAN_TIMEOUT);
-      GeoService.setParameter(context, "max_cache_size",   Default.MAX_CACHE_SIZE);
       GeoService.setParameter(context, "wake_frequency",   Default.WAKE_FREQUENCY);
-      GeoService.setParameter(context, "send_frequency",   Default.SEND_FREQUENCY);
-      GeoService.setParameter(context, "send_timeout",     Default.SEND_TIMEOUT);
-      GeoService.setParameter(context, "send_url",         Default.SEND_URL);
       
       // Starting GeoService
       GeoService.startService(context);

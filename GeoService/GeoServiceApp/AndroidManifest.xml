@@ -8,18 +8,13 @@
     
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
-    <uses-permission android:name="android.permission.INTERNET"/>
-    <uses-permission android:name="android.permission.READ_PHONE_STATE"/>
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
-    <uses-permission android:name="android.permission.WAKE_LOCK"/>
     
     <application android:label="Geo Service"
                  android:icon="@drawable/ic_launcher">
     
         <activity android:name="MainActivity"
-                  android:label="Geo Service"
+                  android:label="GeoService.ICanDeliver"
                   android:configChanges="keyboardHidden|orientation"
                   android:screenOrientation="portrait">
             <intent-filter>
@@ -37,16 +32,16 @@
         </receiver>
         
         <!-- Declaring GeoService -->
-        <service android:name="com.navigine.geo_service.GeoService" android:exported="true"/>
+        <service android:name="com.navigine.geo_service.GeoService"/>
         
         <!-- Declaring GeoReceiver -->
-        <receiver android:name="com.navigine.geo_service.GeoReceiver" android:exported="true">
+        <receiver android:name="com.navigine.geo_service.GeoReceiver">
             <intent-filter>
                 <action android:name="com.navigine.geo_service.SERVICE_START"/>
                 <action android:name="com.navigine.geo_service.SERVICE_STOP"/>
                 <action android:name="com.navigine.geo_service.SERVICE_WAKE"/>
             </intent-filter>
         </receiver>
-        
+         
     </application>
 </manifest>

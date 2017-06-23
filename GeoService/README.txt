@@ -18,20 +18,15 @@
 
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
-    <uses-permission android:name="android.permission.INTERNET"/>
-    <uses-permission android:name="android.permission.READ_PHONE_STATE"/>
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
-    <uses-permission android:name="android.permission.WAKE_LOCK"/>
 
  - объявление GeoService и GeoReceiver:
     
     <!-- Declaring GeoService -->
-    <service android:name="com.navigine.geo_service.GeoService" android:exported="true"/>
+    <service android:name="com.navigine.geo_service.GeoService"/>
   
     <!-- Declaring GeoReceiver -->
-    <receiver android:name="com.navigine.geo_service.GeoReceiver" android:exported="true">
+    <receiver android:name="com.navigine.geo_service.GeoReceiver">
       <intent-filter>
         <action android:name="com.navigine.geo_service.SERVICE_START"/>
         <action android:name="com.navigine.geo_service.SERVICE_STOP"/>
@@ -63,11 +58,7 @@
     // Initializing GeoService parameters
     GeoService.setParameter(this, "debug_level",      Default.DEBUG_LEVEL);
     GeoService.setParameter(this, "gps_scan_timeout", Default.GPS_SCAN_TIMEOUT);
-    GeoService.setParameter(this, "max_cache_size",   Default.MAX_CACHE_SIZE);
     GeoService.setParameter(this, "wake_frequency",   Default.WAKE_FREQUENCY);
-    GeoService.setParameter(this, "send_frequency",   Default.SEND_FREQUENCY);
-    GeoService.setParameter(this, "send_timeout",     Default.SEND_TIMEOUT);
-    GeoService.setParameter(this, "send_url",         Default.SEND_URL);
     
     // Starting GeoService
     GeoService.startService(getApplicationContext());
@@ -84,10 +75,11 @@
       {
         @Override public void onReceive(Context ctxt, Intent intent)
         {
-          final String latitude  = intent.getStringExtra("latitude");
-          final String longitude = intent.getStringExtra("longitude");
-          final String accuracy  = intent.getStringExtra("accuracy");
-          final String time      = intent.getStringExtra("time");
+          final double latitude  = intent.getDoubleExtra("latitude",  0.0);
+          final double longitude = intent.getDoubleExtra("longitude", 0.0);
+          final double accuracy  = intent.getDoubleExtra("accuracy",  0.0);
+          final long   time      = intent.getLongExtra("time", 0);
+          final int    id        = intent.getIntExtra("id", 0);
           ...
         }
       };
@@ -112,17 +104,6 @@ GeoService.isStarted();
  - gps_scan_timeout - продолжительность непрерывного сканирования GPS сигнала в
  течении одного проббуждения сервиса (в секундах). Диапазон значений: 10-60 сек.
  
- - max_cache_size - максимальное количество записей во внутреннем хранилище
- приложения. Диапазон значений: 1000-10000.
- 
  - wake_frequency - частота пробуждения сервиса (в секундах).
  Диапазон значений: 60-3600 сек.
  
- - send_frequency - частота отправки данных (в секундах).
- Диапазон значений: 60-3600 сек.
- 
- - send_timeout - таймаут отправки данных в течение одного пробуждения (включает
- таймаут соединения с сервером, таймаут передачи данных, таймаут получения
- подтверждения от сервера). Диапазон значений: 10-60 сек.
- 
- - send_url - HTTP URL для отправки данных.

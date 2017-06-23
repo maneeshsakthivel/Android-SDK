@@ -90,7 +90,7 @@
     <import file="${sdk.dir}/tools/ant/build.xml" />
     
     <target name="-pre-build">
-      <copy file="../GeoService/GeoService.jar" tofile="libs/GeoService.jar"/>
+      <copy file="../GeoService2/GeoService.jar" tofile="libs/GeoService.jar"/>
     </target>
     
 </project>
