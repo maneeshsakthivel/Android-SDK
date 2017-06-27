@@ -4,6 +4,7 @@ import com.navigine.geo_service.*;
 import android.app.*;
 import android.os.*;
 import android.content.*;
+import android.location.*;
 import android.view.*;
 import android.widget.*;
 import android.util.*;
@@ -43,14 +44,11 @@ public class MainActivity extends Activity
         {
           try
           {
-            final double latitude  = intent.getDoubleExtra("latitude",  0.0);
-            final double longitude = intent.getDoubleExtra("longitude", 0.0);
-            final double accuracy  = intent.getDoubleExtra("accuracy",  0.0);
-            final long   time      = intent.getLongExtra("time", 0) * 1000;
-            final int    id        = intent.getIntExtra("id", 0);
+            final int id = intent.getIntExtra("id", 0);
+            Location location = intent.getParcelableExtra("location");
             
             Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
-            calendar.setTimeInMillis(time);
+            calendar.setTimeInMillis(location.getTime());
             
             mTextView.setText(String.format(Locale.ENGLISH,
                                             "ID:       \t\t\t\t\t %d\n" +
@@ -64,7 +62,9 @@ public class MainActivity extends Activity
                                             calendar.get(Calendar.HOUR_OF_DAY),
                                             calendar.get(Calendar.MINUTE),
                                             calendar.get(Calendar.SECOND),
-                                            latitude, longitude, accuracy));
+                                            location.getLatitude(),
+                                            location.getLongitude(),
+                                            location.getAccuracy()));
           }
           catch (Throwable e)
           { }
