@@ -75,11 +75,8 @@
       {
         @Override public void onReceive(Context ctxt, Intent intent)
         {
-          final double latitude  = intent.getDoubleExtra("latitude",  0.0);
-          final double longitude = intent.getDoubleExtra("longitude", 0.0);
-          final double accuracy  = intent.getDoubleExtra("accuracy",  0.0);
-          final long   time      = intent.getLongExtra("time", 0);
-          final int    id        = intent.getIntExtra("id", 0);
+          final int id = intent.getIntExtra("id", 0);
+          Location location = intent.getParcelableExtra("location");
           ...
         }
       };
