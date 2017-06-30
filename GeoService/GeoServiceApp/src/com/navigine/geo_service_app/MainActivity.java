@@ -89,6 +89,20 @@ public class MainActivity extends Activity
     super.onDestroy();
   }
   
+  @Override public void onStart()
+  {
+    Log.d(TAG, "Set parameter: active_mode_enabled=true");
+    GeoService.setParameter(this, "active_mode_enabled", true);
+    super.onStart();
+  }
+  
+  @Override public void onStop()
+  {
+    Log.d(TAG, "Set parameter: active_mode_enabled=false");
+    GeoService.setParameter(this, "active_mode_enabled", false);
+    super.onStop();
+  }
+  
   public void onToggleService(View v)
   {
     if (GeoService.isStarted(mContext))

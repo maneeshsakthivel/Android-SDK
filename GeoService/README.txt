@@ -56,9 +56,10 @@
  - выполнить настройку параметров и запуск GeoService:
 
     // Initializing GeoService parameters
-    GeoService.setParameter(this, "debug_level",      Default.DEBUG_LEVEL);
-    GeoService.setParameter(this, "gps_scan_timeout", Default.GPS_SCAN_TIMEOUT);
-    GeoService.setParameter(this, "wake_frequency",   Default.WAKE_FREQUENCY);
+    GeoService.setParameter(this, "debug_level",         Default.DEBUG_LEVEL);
+    GeoService.setParameter(this, "gps_scan_timeout",    Default.GPS_SCAN_TIMEOUT);
+    GeoService.setParameter(this, "wake_frequency",      Default.WAKE_FREQUENCY);
+    GeoService.setParameter(this, "active_mode_enabled", true);
     
     // Starting GeoService
     GeoService.startService(getApplicationContext());
@@ -103,4 +104,6 @@ GeoService.isStarted();
  
  - wake_frequency - частота пробуждения сервиса (в секундах).
  Диапазон значений: 60-3600 сек.
- 
+
+ - active_mode_enabled - сканируем местоположение в актвином режиме (true/false)
+  
