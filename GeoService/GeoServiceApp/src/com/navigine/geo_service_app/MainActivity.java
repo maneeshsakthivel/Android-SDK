@@ -111,6 +111,11 @@ public class MainActivity extends Activity
       GeoService.startService(mContext);
   }
   
+  public void onWakeService(View v)
+  {
+    GeoService.wakeService(mContext);
+  }
+  
   final Runnable mRunnable =
     new Runnable()
     {

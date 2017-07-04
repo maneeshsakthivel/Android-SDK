@@ -4,13 +4,29 @@
     android:layout_width="fill_parent"
     android:layout_height="fill_parent">
     
-    <Button android:id="@+id/start_button"
-        android:layout_width="200dp"
-        android:layout_height="100dp"
-        android:layout_gravity="center"
-        android:onClick="onToggleService"
-        android:textSize="16dp"
-        android:text="Start service"/>
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="fill_parent"
+        android:layout_height="100dp">
+        
+        <Button android:id="@+id/start_button"
+            android:layout_width="0dp"
+            android:layout_height="fill_parent"
+            android:layout_weight="1"
+            android:layout_gravity="center"
+            android:onClick="onToggleService"
+            android:textSize="16dp"
+            android:text="Start service"/>
+        
+        <Button android:id="@+id/wake_button"
+            android:layout_width="0dp"
+            android:layout_height="fill_parent"
+            android:layout_weight="1"
+            android:layout_gravity="center"
+            android:onClick="onWakeService"
+            android:textSize="16dp"
+            android:text="Wake service"/>
+    </LinearLayout>
     
     <TextView android:id="@+id/text_view"
         android:layout_width="fill_parent"
