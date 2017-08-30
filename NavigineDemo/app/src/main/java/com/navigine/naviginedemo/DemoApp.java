@@ -22,7 +22,9 @@ public class DemoApp extends Application
   public static float DisplayWidthDp            = 0.0f;
   public static float DisplayHeightDp           = 0.0f;
   public static float DisplayDensity            = 0.0f;
-
+  
+  public static boolean PermissionLocation      = false;
+  
   @Override public void onCreate()
   {
     super.onCreate();

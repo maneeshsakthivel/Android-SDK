@@ -1,22 +1,22 @@
 package com.navigine.naviginedemo;
 
+import android.content.pm.PackageManager;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
+import android.Manifest;
+
 import android.app.*;
-import android.content.*;
 import android.graphics.*;
-import android.graphics.drawable.*;
 import android.os.*;
 import android.view.*;
-import android.view.View.*;
 import android.widget.*;
-import android.widget.ImageView.*;
 import android.util.*;
-import java.io.*;
 import java.lang.*;
 import java.util.*;
 
 import com.navigine.naviginesdk.*;
 
-public class MainActivity extends Activity
+public class MainActivity extends Activity implements ActivityCompat.OnRequestPermissionsResultCallback
 {
   private static final String   TAG                     = "NAVIGINE.Demo";
   private static final int      UPDATE_TIMEOUT          = 100;  // milliseconds
@@ -60,6 +60,7 @@ public class MainActivity extends Activity
   private Venue   mTargetVenue    = null;
   private Venue   mSelectedVenue  = null;
   private RectF   mSelectedVenueRect = null;
+  private Zone    mSelectedZone   = null;
   
   @Override protected void onCreate(Bundle savedInstanceState)
   {
@@ -97,7 +98,11 @@ public class MainActivity extends Activity
     mErrorMessageLabel.setVisibility(View.GONE);
     
     mVenueBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.elm_venue);
-
+    
+    if (!DemoApp.PermissionLocation)
+      ActivityCompat.requestPermissions(this, new String[] { Manifest.permission.ACCESS_FINE_LOCATION,
+                                                             Manifest.permission.ACCESS_COARSE_LOCATION }, 101);
+    
     // Setting up listener
     mLocationView.setListener
     (
@@ -110,6 +115,7 @@ public class MainActivity extends Activity
         
         @Override public void onDraw(Canvas canvas)
         {
+          drawZones(canvas);
           drawPoints(canvas);
           drawVenues(canvas);
           drawDevice(canvas);
@@ -142,7 +148,22 @@ public class MainActivity extends Activity
   {
     moveTaskToBack(true);
   }
-
+  
+  @Override public void onRequestPermissionsResult(int requestCode,
+                                                   String permissions[],
+                                                   int[] grantResults)
+  {
+    DemoApp.PermissionLocation = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)   == PackageManager.PERMISSION_GRANTED &&
+                                 ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+    switch (requestCode)
+    {
+      case 101:
+        if (!DemoApp.PermissionLocation)
+          finish();
+        break;
+    }
+  }
+  
   public void toggleAdjustMode(View v)
   {
     mAdjustMode = !mAdjustMode;
@@ -256,7 +277,7 @@ public class MainActivity extends Activity
         mTargetVenue = mSelectedVenue;
         mTargetPoint = null;
         
-        DemoApp.Navigation.setTarget(new LocationPoint(subLoc.id, mTargetVenue.kx * subLoc.width, mTargetVenue.ky * subLoc.height));
+        DemoApp.Navigation.setTarget(new LocationPoint(mLocation.id, subLoc.id, mTargetVenue.x, mTargetVenue.y));
         mBackView.setVisibility(View.VISIBLE);
       }
       cancelVenue();
@@ -266,6 +287,15 @@ public class MainActivity extends Activity
     // Check if we touched venue
     mSelectedVenue = getVenueAt(x, y);
     mSelectedVenueRect = new RectF();
+    
+    // Check if we touched zone
+    if (mSelectedVenue == null)
+    {
+      Zone Z = getZoneAt(x, y);
+      if (Z != null)
+        mSelectedZone = (mSelectedZone == Z) ? null : Z;
+    }
+    
     mHandler.post(mRunnable);
   }
   
@@ -424,7 +454,7 @@ public class MainActivity extends Activity
       return;
     }
 
-    mPinPoint = new LocationPoint(subLoc.id, P.x, P.y);
+    mPinPoint = new LocationPoint(mLocation.id, subLoc.id, P.x, P.y);
     mPinPointRect = new RectF();
     mHandler.post(mRunnable);
   }
@@ -469,7 +499,7 @@ public class MainActivity extends Activity
       Venue v = subLoc.venues.get(i);
       if (v.subLocation != subLoc.id)
         continue;
-      PointF P = mLocationView.getScreenCoordinates(v.kx * subLoc.width, v.ky * subLoc.height);
+      PointF P = mLocationView.getScreenCoordinates(v.x, v.y);
       float d = Math.abs(x - P.x) + Math.abs(y - P.y);
       if (d < 30.0f * DemoApp.DisplayDensity && d < d0)
       {
@@ -479,6 +509,27 @@ public class MainActivity extends Activity
     }
     
     return v0;
+  }
+  
+  private Zone getZoneAt(float x, float y)
+  {
+    if (mLocation == null || mCurrentSubLocationIndex < 0)
+      return null;
+
+    SubLocation subLoc = mLocation.subLocations.get(mCurrentSubLocationIndex);
+    if (subLoc == null)
+      return null;
+    
+    PointF P = mLocationView.getAbsCoordinates(x, y);
+    LocationPoint LP = new LocationPoint(mLocation.id, subLoc.id, P.x, P.y);
+    
+    for(int i = 0; i < subLoc.zones.size(); ++i)
+    {
+      Zone Z = subLoc.zones.get(i);
+      if (Z.contains(LP))
+        return Z;
+    }
+    return null;
   }
   
   private void drawPoints(Canvas canvas)
@@ -575,7 +626,7 @@ public class MainActivity extends Activity
       if (v.subLocation != subLoc.id)
         continue;
       
-      final PointF P = mLocationView.getScreenCoordinates(v.kx * subLoc.width, v.ky * subLoc.height);
+      final PointF P = mLocationView.getScreenCoordinates(v.x, v.y);
       final float x0 = P.x - venueSize/2;
       final float y0 = P.y - venueSize/2;
       final float x1 = P.x + venueSize/2;
@@ -585,7 +636,7 @@ public class MainActivity extends Activity
     
     if (mSelectedVenue != null)
     {
-      final PointF T = mLocationView.getScreenCoordinates(mSelectedVenue.kx * subLoc.width, mSelectedVenue.ky * subLoc.height);
+      final PointF T = mLocationView.getScreenCoordinates(mSelectedVenue.x, mSelectedVenue.y);
       final float textWidth = paint.measureText(mSelectedVenue.name);
       
       final float h  = 50 * dp;
@@ -599,6 +650,50 @@ public class MainActivity extends Activity
       
       paint.setARGB(255, 255, 255, 255);
       canvas.drawText(mSelectedVenue.name, x0 - textWidth/2, y0 + textSize/4, paint);
+    }
+  }
+  
+  private void drawZones(Canvas canvas)
+  {
+    // Check if location is loaded
+    if (mLocation == null || mCurrentSubLocationIndex < 0)
+      return;
+    
+    // Get current sublocation displayed
+    SubLocation subLoc = mLocation.subLocations.get(mCurrentSubLocationIndex);
+    if (subLoc == null)
+      return;
+    
+    // Preparing paints
+    Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    paint.setStyle(Paint.Style.FILL_AND_STROKE);
+    
+    for(int i = 0; i < subLoc.zones.size(); ++i)
+    {
+      Zone Z = subLoc.zones.get(i);
+      if (Z.points.size() < 3)
+        continue;
+      
+      boolean selected = (Z == mSelectedZone);
+      
+      Path path = new Path();
+      final LocationPoint P0 = Z.points.get(0);
+      final PointF        Q0 = mLocationView.getScreenCoordinates(P0);
+      path.moveTo(Q0.x, Q0.y);
+      
+      for(int j = 0; j < Z.points.size(); ++j)
+      {
+        final LocationPoint P = Z.points.get((j + 1) % Z.points.size());
+        final PointF        Q = mLocationView.getScreenCoordinates(P);
+        path.lineTo(Q.x, Q.y);
+      }
+      
+      int zoneColor = Color.parseColor(Z.color);
+      int red       = (zoneColor >> 16) & 0xff;
+      int green     = (zoneColor >> 8 ) & 0xff;
+      int blue      = (zoneColor >> 0 ) & 0xff;
+      paint.setColor(Color.argb(selected ? 200 : 100, red, green, blue));
+      canvas.drawPath(path, paint);
     }
   }
   
@@ -635,15 +730,15 @@ public class MainActivity extends Activity
     /// Drawing device path (if it exists)
     if (mDeviceInfo.paths != null && mDeviceInfo.paths.size() > 0)
     {
-      DevicePath p = mDeviceInfo.paths.get(0);
-      if (p.path.length >= 2)
+      RoutePath path = mDeviceInfo.paths.get(0);
+      if (path.points.size() >= 2)
       {
         paint.setColor(solidColor);
 
-        for(int j = 1; j < p.path.length; ++j)
+        for(int j = 1; j < path.points.size(); ++j)
         {
-          LocationPoint P = p.path[j-1];
-          LocationPoint Q = p.path[j];
+          LocationPoint P = path.points.get(j-1);
+          LocationPoint Q = path.points.get(j);
           if (P.subLocation == subLoc.id && Q.subLocation == subLoc.id)
           {
             paint.setStrokeWidth(3 * dp);
