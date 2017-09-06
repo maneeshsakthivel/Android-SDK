@@ -6,6 +6,7 @@ import android.support.v4.content.ContextCompat;
 import android.Manifest;
 
 import android.app.*;
+import android.content.*;
 import android.graphics.*;
 import android.os.*;
 import android.view.*;
@@ -122,6 +123,18 @@ public class MainActivity extends Activity implements ActivityCompat.OnRequestPe
         }
       }
     );
+    
+    if (DemoApp.Navigation != null)
+    {
+      DemoApp.Navigation.setZoneListener
+      (
+        new Zone.Listener()
+        {
+          @Override public void onEnterZone(Zone z) { handleEnterZone(z); }
+          @Override public void onLeaveZone(Zone z) { handleLeaveZone(z); }
+        }
+      );
+    }
     
     loadMap();
 
@@ -304,6 +317,42 @@ public class MainActivity extends Activity implements ActivityCompat.OnRequestPe
     Log.d(TAG, String.format(Locale.ENGLISH, "Long click at (%.2f, %.2f)", x, y));
     makePin(mLocationView.getAbsCoordinates(x, y));
     cancelVenue();
+  }
+  
+  private void handleEnterZone(Zone z)
+  {
+    Log.d(TAG, "Enter zone " + z.name);
+    
+    Intent notificationIntent = new Intent(this, NotificationActivity.class);
+    notificationIntent.putExtra("zone_id", z.id);
+    notificationIntent.putExtra("zone_uuid", z.uuid);
+    notificationIntent.putExtra("zone_name", z.name);
+    notificationIntent.putExtra("zone_color", z.color);
+    
+    PendingIntent pendingIntent = PendingIntent.getActivity(this, z.id,
+                                                            notificationIntent,
+                                                            PendingIntent.FLAG_UPDATE_CURRENT);
+    
+    Notification.Builder notificationBuilder = new Notification.Builder(this);
+    notificationBuilder.setSmallIcon(R.drawable.elm_logo);
+    notificationBuilder.setContentTitle("New zone");
+    notificationBuilder.setContentText("You have entered zone '" + z.name + "'");
+    notificationBuilder.setDefaults(Notification.DEFAULT_SOUND);
+    notificationBuilder.setAutoCancel(true);
+    notificationBuilder.setContentIntent(pendingIntent);
+    
+    // Get an instance of the NotificationManager service
+    NotificationManager notificationManager = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
+    
+    // Build the notification and issues it with notification manager.
+    notificationManager.notify(z.id, notificationBuilder.build());
+  }
+  
+  private void handleLeaveZone(Zone z)
+  {
+    Log.d(TAG, "Leave zone " + z.name);
+    NotificationManager notificationManager = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
+    notificationManager.cancel(z.id);
   }
   
   private boolean mMapLoaded = false;

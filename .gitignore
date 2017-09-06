@@ -24,3 +24,5 @@ proguard/
 
 # Obj files
 *.obj
+
+.idea/
