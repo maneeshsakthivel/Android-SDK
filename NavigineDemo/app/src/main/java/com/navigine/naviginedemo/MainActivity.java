@@ -260,9 +260,16 @@ public class MainActivity extends Activity implements ActivityCompat.OnRequestPe
   {
     Log.d(TAG, String.format(Locale.ENGLISH, "Click at (%.2f, %.2f)", x, y));
     
+    if (mLocation == null || mCurrentSubLocationIndex < 0)
+      return;
+    
+    SubLocation subLoc = mLocation.subLocations.get(mCurrentSubLocationIndex);
+    if (subLoc == null)
+      return;
+    
     if (mPinPoint != null)
     {
-      if (mPinPointRect.contains(x, y))
+      if (mPinPointRect != null && mPinPointRect.contains(x, y))
       {
         mTargetPoint  = mPinPoint;
         mTargetVenue  = null;
@@ -280,16 +287,8 @@ public class MainActivity extends Activity implements ActivityCompat.OnRequestPe
     {
       if (mSelectedVenueRect != null && mSelectedVenueRect.contains(x, y))
       {
-        if (mLocation == null || mCurrentSubLocationIndex < 0)
-          return;
-        
-        SubLocation subLoc = mLocation.subLocations.get(mCurrentSubLocationIndex);
-        if (subLoc == null)
-          return;
-        
         mTargetVenue = mSelectedVenue;
         mTargetPoint = null;
-        
         DemoApp.Navigation.setTarget(new LocationPoint(mLocation.id, subLoc.id, mTargetVenue.x, mTargetVenue.y));
         mBackView.setVisibility(View.VISIBLE);
       }
@@ -324,10 +323,10 @@ public class MainActivity extends Activity implements ActivityCompat.OnRequestPe
     Log.d(TAG, "Enter zone " + z.name);
     
     Intent notificationIntent = new Intent(this, NotificationActivity.class);
-    notificationIntent.putExtra("zone_id", z.id);
-    notificationIntent.putExtra("zone_uuid", z.uuid);
-    notificationIntent.putExtra("zone_name", z.name);
+    notificationIntent.putExtra("zone_id",    z.id);
+    notificationIntent.putExtra("zone_name",  z.name);
     notificationIntent.putExtra("zone_color", z.color);
+    notificationIntent.putExtra("zone_alias", z.alias);
     
     PendingIntent pendingIntent = PendingIntent.getActivity(this, z.id,
                                                             notificationIntent,
@@ -542,12 +541,10 @@ public class MainActivity extends Activity implements ActivityCompat.OnRequestPe
 
     Venue v0 = null;
     float d0 = 1000.0f;
-    
+        
     for(int i = 0; i < subLoc.venues.size(); ++i)
     {
       Venue v = subLoc.venues.get(i);
-      if (v.subLocation != subLoc.id)
-        continue;
       PointF P = mLocationView.getScreenCoordinates(v.x, v.y);
       float d = Math.abs(x - P.x) + Math.abs(y - P.y);
       if (d < 30.0f * DemoApp.DisplayDensity && d < d0)

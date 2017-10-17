@@ -36,7 +36,9 @@ public class DemoApp extends Application
     NavigineSDK.setParameter(context, "apply_server_config_enabled",  false);
     NavigineSDK.setParameter(context, "actions_updates_enabled",      false);
     NavigineSDK.setParameter(context, "location_updates_enabled",     true);
-    NavigineSDK.setParameter(context, "location_update_timeout",      30);
+    NavigineSDK.setParameter(context, "location_loader_timeout",      60);
+    NavigineSDK.setParameter(context, "location_update_timeout",      300);
+    NavigineSDK.setParameter(context, "location_retry_timeout",       300);
     NavigineSDK.setParameter(context, "post_beacons_enabled",         true);
     NavigineSDK.setParameter(context, "post_messages_enabled",        true);
     if (!NavigineSDK.initialize(context, USER_HASH, SERVER_URL))
