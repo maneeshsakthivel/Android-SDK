@@ -109,10 +109,11 @@ public class MainActivity extends Activity implements ActivityCompat.OnRequestPe
     (
       new LocationView.Listener()
       {
-        @Override public void onClick     (float x, float y) { handleClick(x, y);     }
-        @Override public void onLongClick (float x, float y) { handleLongClick(x, y); }
-        @Override public void onScroll    (float x, float y) { mAdjustTime = NavigineSDK.currentTimeMillis() + ADJUST_TIMEOUT; }
-        @Override public void onZoom      (float ratio)      { mAdjustTime = NavigineSDK.currentTimeMillis() + ADJUST_TIMEOUT; }
+        @Override public void onClick       ( float x, float y ) { handleClick(x, y);     }
+        @Override public void onLongClick   ( float x, float y ) { handleLongClick(x, y); }
+        @Override public void onDoubleClick ( float x, float y ) { }
+        @Override public void onScroll      ( float x, float y ) { mAdjustTime = NavigineSDK.currentTimeMillis() + ADJUST_TIMEOUT; }
+        @Override public void onZoom        ( float ratio )      { mAdjustTime = NavigineSDK.currentTimeMillis() + ADJUST_TIMEOUT; }
         
         @Override public void onDraw(Canvas canvas)
         {
