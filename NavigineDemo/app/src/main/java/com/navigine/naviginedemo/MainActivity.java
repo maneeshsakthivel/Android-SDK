@@ -10,6 +10,7 @@ import android.content.*;
 import android.graphics.*;
 import android.os.*;
 import android.view.*;
+import android.view.View.*;
 import android.widget.*;
 import android.util.*;
 import java.lang.*;
@@ -75,7 +76,6 @@ public class MainActivity extends Activity implements ActivityCompat.OnRequestPe
       WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
 
     // Setting up GUI parameters
-    mLocationView = (LocationView)findViewById(R.id.navigation__location_view);
     mBackView = (View)findViewById(R.id.navigation__back_view);
     mPrevFloorButton = (Button)findViewById(R.id.navigation__prev_floor_button);
     mNextFloorButton = (Button)findViewById(R.id.navigation__next_floor_button);
@@ -86,8 +86,6 @@ public class MainActivity extends Activity implements ActivityCompat.OnRequestPe
     mZoomOutView = (View)findViewById(R.id.navigation__zoom_out_view);
     mAdjustModeView = (View)findViewById(R.id.navigation__adjust_mode_view);
     mErrorMessageLabel = (TextView)findViewById(R.id.navigation__error_message_label);
-
-    mLocationView.setBackgroundColor(0xffebebeb);
 
     mBackView.setVisibility(View.INVISIBLE);
     mPrevFloorView.setVisibility(View.INVISIBLE);
@@ -104,7 +102,9 @@ public class MainActivity extends Activity implements ActivityCompat.OnRequestPe
       ActivityCompat.requestPermissions(this, new String[] { Manifest.permission.ACCESS_FINE_LOCATION,
                                                              Manifest.permission.ACCESS_COARSE_LOCATION }, 101);
     
-    // Setting up listener
+    // Initializing location view
+    mLocationView = (LocationView)findViewById(R.id.navigation__location_view);
+    mLocationView.setBackgroundColor(0xffebebeb);
     mLocationView.setListener
     (
       new LocationView.Listener()
@@ -125,6 +125,29 @@ public class MainActivity extends Activity implements ActivityCompat.OnRequestPe
       }
     );
     
+    // Loading map only when location view size is known
+    mLocationView.addOnLayoutChangeListener
+    (
+      new OnLayoutChangeListener()
+      {
+        @Override public void onLayoutChange(View v, int left, int top, int right, int bottom, int oldLeft, int oldTop, int oldRight, int oldBottom)
+        {
+          int width  = right  - left;
+          int height = bottom - top;
+          if (width == 0 || height == 0)
+            return;
+          
+          Log.d(TAG, "Layout chaged: " + width + "x" + height);
+          
+          int oldWidth  = oldRight  - oldLeft;
+          int oldHeight = oldBottom - oldTop;
+          if (oldWidth != width || oldHeight != height)
+            loadMap();
+        }
+      }
+    );
+    
+    // Setting up zone listener
     if (DemoApp.Navigation != null)
     {
       DemoApp.Navigation.setZoneListener
@@ -137,8 +160,6 @@ public class MainActivity extends Activity implements ActivityCompat.OnRequestPe
       );
     }
     
-    loadMap();
-
     // Starting interface updates
     mTimerTask = new TimerTask()
     {
@@ -355,13 +376,8 @@ public class MainActivity extends Activity implements ActivityCompat.OnRequestPe
     notificationManager.cancel(z.id);
   }
   
-  private boolean mMapLoaded = false;
   private boolean loadMap()
   {
-    if (mMapLoaded)
-      return false;
-    mMapLoaded = true;
-
     if (DemoApp.Navigation == null)
     {
       Log.e(TAG, "Can't load map! Navigine SDK is not available!");
@@ -422,12 +438,20 @@ public class MainActivity extends Activity implements ActivityCompat.OnRequestPe
       Log.e(TAG, String.format(Locale.ENGLISH, "Loading sublocation failed: invalid size: %.2f x %.2f", subLoc.width, subLoc.height));
       return false;
     }
-
+    
     if (!mLocationView.loadSubLocation(subLoc))
     {
       Log.e(TAG, "Loading sublocation failed: invalid image");
       return false;
     }
+
+    float viewWidth  = mLocationView.getWidth();
+    float viewHeight = mLocationView.getHeight();
+    float minZoomFactor = Math.min(viewWidth / subLoc.width, viewHeight / subLoc.height);
+    float maxZoomFactor = LocationView.ZOOM_FACTOR_MAX;
+    mLocationView.setZoomRange(minZoomFactor, maxZoomFactor);
+    mLocationView.setZoomFactor(minZoomFactor);
+    Log.d(TAG, String.format(Locale.ENGLISH, "View size: %.1f x %.1f", viewWidth, viewHeight));
 
     mAdjustTime = 0;
     
