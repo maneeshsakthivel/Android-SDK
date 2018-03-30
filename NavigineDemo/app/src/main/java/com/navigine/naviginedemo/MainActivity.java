@@ -21,11 +21,13 @@ import com.navigine.naviginesdk.*;
 public class MainActivity extends Activity implements ActivityCompat.OnRequestPermissionsResultCallback
 {
   private static final String   TAG                     = "NAVIGINE.Demo";
+  private static final String   NOTIFICATION_CHANNEL    = "NAVIGINE_DEMO_NOTIFICATION_CHANNEL";
   private static final int      UPDATE_TIMEOUT          = 100;  // milliseconds
   private static final int      ADJUST_TIMEOUT          = 5000; // milliseconds
   private static final int      ERROR_MESSAGE_TIMEOUT   = 5000; // milliseconds
   private static final boolean  ORIENTATION_ENABLED     = true; // Show device orientation?
-
+  private static final boolean  NOTIFICATIONS_ENABLED   = true; // Show zone notifications?
+  
   // UI Parameters
   private LocationView  mLocationView             = null;
   private Button        mPrevFloorButton          = null;
@@ -38,14 +40,9 @@ public class MainActivity extends Activity implements ActivityCompat.OnRequestPe
   private View          mAdjustModeView           = null;
   private TextView      mCurrentFloorLabel        = null;
   private TextView      mErrorMessageLabel        = null;
-  private TimerTask     mTimerTask                = null;
-  private Timer         mTimer                    = new Timer();
   private Handler       mHandler                  = new Handler();
 
   private boolean       mAdjustMode               = false;
-  private long          mErrorMessageTime         = 0;
-
-  // Map parameters
   private long          mAdjustTime               = 0;
 
   // Location parameters
@@ -57,7 +54,7 @@ public class MainActivity extends Activity implements ActivityCompat.OnRequestPe
   private LocationPoint mPinPoint                 = null; // Potential device target
   private LocationPoint mTargetPoint              = null; // Current device target
   private RectF         mPinPointRect             = null;
-
+  
   private Bitmap  mVenueBitmap    = null;
   private Venue   mTargetVenue    = null;
   private Venue   mSelectedVenue  = null;
@@ -109,11 +106,10 @@ public class MainActivity extends Activity implements ActivityCompat.OnRequestPe
     (
       new LocationView.Listener()
       {
-        @Override public void onClick       ( float x, float y ) { handleClick(x, y);     }
-        @Override public void onLongClick   ( float x, float y ) { handleLongClick(x, y); }
-        @Override public void onDoubleClick ( float x, float y ) { }
-        @Override public void onScroll      ( float x, float y ) { mAdjustTime = NavigineSDK.currentTimeMillis() + ADJUST_TIMEOUT; }
-        @Override public void onZoom        ( float ratio )      { mAdjustTime = NavigineSDK.currentTimeMillis() + ADJUST_TIMEOUT; }
+        @Override public void onClick     ( float x, float y ) { handleClick(x, y);     }
+        @Override public void onLongClick ( float x, float y ) { handleLongClick(x, y); }
+        @Override public void onScroll    ( float x, float y, boolean byTouchEvent ) { handleScroll ( x, y,  byTouchEvent ); }
+        @Override public void onZoom      ( float ratio,      boolean byTouchEvent ) { handleZoom   ( ratio, byTouchEvent ); }
         
         @Override public void onDraw(Canvas canvas)
         {
@@ -147,6 +143,18 @@ public class MainActivity extends Activity implements ActivityCompat.OnRequestPe
       }
     );
     
+    // Setting up device listener
+    if (DemoApp.Navigation != null)
+    {
+      DemoApp.Navigation.setDeviceListener
+      (
+        new DeviceInfo.Listener()
+        {
+          @Override public void onUpdate(DeviceInfo info) { handleDeviceUpdate(info); }
+        }
+      );
+    }
+    
     // Setting up zone listener
     if (DemoApp.Navigation != null)
     {
@@ -160,22 +168,18 @@ public class MainActivity extends Activity implements ActivityCompat.OnRequestPe
       );
     }
     
-    // Starting interface updates
-    mTimerTask = new TimerTask()
+    if (NOTIFICATIONS_ENABLED)
     {
-      @Override public void run()
-      {
-        mHandler.post(mRunnable);
-      }
-    };
-    mTimer.schedule(mTimerTask, UPDATE_TIMEOUT, UPDATE_TIMEOUT);
+      NotificationManager notificationManager = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
+      if (Build.VERSION.SDK_INT >= 26)
+        notificationManager.createNotificationChannel(new NotificationChannel(NOTIFICATION_CHANNEL, "default",
+                                                                              NotificationManager.IMPORTANCE_LOW));
+    }
   }
-
+  
   @Override public void onDestroy()
   {
     DemoApp.finish();
-    mTimerTask.cancel();
-    mTimerTask = null;
     super.onDestroy();
   }
 
@@ -207,19 +211,19 @@ public class MainActivity extends Activity implements ActivityCompat.OnRequestPe
     adjustModeButton.setBackgroundResource(mAdjustMode ?
                                            R.drawable.btn_adjust_mode_on :
                                            R.drawable.btn_adjust_mode_off);
-    mHandler.post(mRunnable);
+    mLocationView.redraw();
   }
 
   public void onNextFloor(View v)
   {
     if (loadNextSubLocation())
-      mAdjustTime = NavigineSDK.currentTimeMillis() + ADJUST_TIMEOUT;
+      mAdjustTime = System.currentTimeMillis() + ADJUST_TIMEOUT;
   }
 
   public void onPrevFloor(View v)
   {
     if (loadPrevSubLocation())
-      mAdjustTime = NavigineSDK.currentTimeMillis() + ADJUST_TIMEOUT;
+      mAdjustTime = System.currentTimeMillis() + ADJUST_TIMEOUT;
   }
 
   public void onZoomIn(View v)
@@ -247,7 +251,7 @@ public class MainActivity extends Activity implements ActivityCompat.OnRequestPe
 
     DemoApp.Navigation.setTarget(mTargetPoint);
     mBackView.setVisibility(View.VISIBLE);
-    mHandler.post(mRunnable);
+    mLocationView.redraw();
   }
 
   public void onCancelRoute(View v)
@@ -262,22 +266,9 @@ public class MainActivity extends Activity implements ActivityCompat.OnRequestPe
 
     DemoApp.Navigation.cancelTargets();
     mBackView.setVisibility(View.GONE);
-    mHandler.post(mRunnable);
+    mLocationView.redraw();
   }
 
-  public void onCloseMessage(View v)
-  {
-    mErrorMessageLabel.setVisibility(View.GONE);
-    mErrorMessageTime = 0;
-  }
-  
-  private void setErrorMessage(String message)
-  {
-    mErrorMessageLabel.setText(message);
-    mErrorMessageLabel.setVisibility(View.VISIBLE);
-    mErrorMessageTime = NavigineSDK.currentTimeMillis();
-  }
-  
   private void handleClick(float x, float y)
   {
     Log.d(TAG, String.format(Locale.ENGLISH, "Click at (%.2f, %.2f)", x, y));
@@ -330,7 +321,7 @@ public class MainActivity extends Activity implements ActivityCompat.OnRequestPe
         mSelectedZone = (mSelectedZone == Z) ? null : Z;
     }
     
-    mHandler.post(mRunnable);
+    mLocationView.redraw();
   }
   
   private void handleLongClick(float x, float y)
@@ -340,40 +331,107 @@ public class MainActivity extends Activity implements ActivityCompat.OnRequestPe
     cancelVenue();
   }
   
+  private void handleScroll(float x, float y, boolean byTouchEvent)
+  {
+    if (byTouchEvent)
+      mAdjustTime = NavigineSDK.currentTimeMillis() + ADJUST_TIMEOUT;
+  }
+  
+  private void handleZoom(float ratio, boolean byTouchEvent)
+  {
+    if (byTouchEvent)
+      mAdjustTime = NavigineSDK.currentTimeMillis() + ADJUST_TIMEOUT;
+  }
+  
   private void handleEnterZone(Zone z)
   {
-    Log.d(TAG, "Enter zone " + z.name);
-    
-    Intent notificationIntent = new Intent(this, NotificationActivity.class);
-    notificationIntent.putExtra("zone_id",    z.id);
-    notificationIntent.putExtra("zone_name",  z.name);
-    notificationIntent.putExtra("zone_color", z.color);
-    notificationIntent.putExtra("zone_alias", z.alias);
-    
-    PendingIntent pendingIntent = PendingIntent.getActivity(this, z.id,
-                                                            notificationIntent,
-                                                            PendingIntent.FLAG_UPDATE_CURRENT);
-    
-    Notification.Builder notificationBuilder = new Notification.Builder(this);
-    notificationBuilder.setSmallIcon(R.drawable.elm_logo);
-    notificationBuilder.setContentTitle("New zone");
-    notificationBuilder.setContentText("You have entered zone '" + z.name + "'");
-    notificationBuilder.setDefaults(Notification.DEFAULT_SOUND);
-    notificationBuilder.setAutoCancel(true);
-    notificationBuilder.setContentIntent(pendingIntent);
-    
-    // Get an instance of the NotificationManager service
-    NotificationManager notificationManager = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
-    
-    // Build the notification and issues it with notification manager.
-    notificationManager.notify(z.id, notificationBuilder.build());
+    Log.d(TAG, "Enter zone " + z.name);    
+    if (NOTIFICATIONS_ENABLED)
+    {
+      Intent notificationIntent = new Intent(this, NotificationActivity.class);
+      notificationIntent.putExtra("zone_id",    z.id);
+      notificationIntent.putExtra("zone_name",  z.name);
+      notificationIntent.putExtra("zone_color", z.color);
+      notificationIntent.putExtra("zone_alias", z.alias);
+      
+      // Setting up a notification
+      Notification.Builder notificationBuilder = new Notification.Builder(this, NOTIFICATION_CHANNEL);
+      notificationBuilder.setContentIntent(PendingIntent.getActivity(this, z.id, notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT));
+      notificationBuilder.setContentTitle("New zone");
+      notificationBuilder.setContentText("You have entered zone '" + z.name + "'");
+      notificationBuilder.setSmallIcon(R.drawable.elm_logo);
+      notificationBuilder.setAutoCancel(true);
+      
+      // Posting a notification
+      NotificationManager notificationManager = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
+      notificationManager.notify(z.id, notificationBuilder.build());
+    }
   }
   
   private void handleLeaveZone(Zone z)
   {
     Log.d(TAG, "Leave zone " + z.name);
-    NotificationManager notificationManager = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
-    notificationManager.cancel(z.id);
+    if (NOTIFICATIONS_ENABLED)
+    {
+      NotificationManager notificationManager = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
+      notificationManager.cancel(z.id);
+    }
+  }
+  
+  private void handleDeviceUpdate(DeviceInfo deviceInfo)
+  {
+    mDeviceInfo = deviceInfo;
+    if (mDeviceInfo == null)
+      return;
+    
+    // Check if location is loaded
+    if (mLocation == null || mCurrentSubLocationIndex < 0)
+      return;
+    
+    if (mDeviceInfo.isValid())
+    {
+      cancelErrorMessage();
+      mBackView.setVisibility(mTargetPoint != null || mTargetVenue != null ?
+                              View.VISIBLE : View.GONE);
+      if (mAdjustMode)
+        adjustDevice();
+    }
+    else
+    {
+      mBackView.setVisibility(View.GONE);
+      switch (mDeviceInfo.errorCode)
+      {
+        case 4:
+          setErrorMessage("You are out of navigation zone! Please, check that your bluetooth is enabled!");
+          break;
+        
+        case 8:
+        case 30:
+          setErrorMessage("Not enough beacons on the location! Please, add more beacons!");
+          break;
+        
+        default:
+          setErrorMessage(String.format(Locale.ENGLISH,
+                          "Something is wrong with location '%s' (error code %d)! " +
+                          "Please, contact technical support!",
+                          mLocation.name, mDeviceInfo.errorCode));
+          break;
+      }
+    }
+    
+    // This causes map redrawing
+    mLocationView.redraw();
+  }
+  
+  private void setErrorMessage(String message)
+  {
+    mErrorMessageLabel.setText(message);
+    mErrorMessageLabel.setVisibility(View.VISIBLE);
+  }
+  
+  private void cancelErrorMessage()
+  {
+    mErrorMessageLabel.setVisibility(View.GONE);
   }
   
   private boolean loadMap()
@@ -383,30 +441,30 @@ public class MainActivity extends Activity implements ActivityCompat.OnRequestPe
       Log.e(TAG, "Can't load map! Navigine SDK is not available!");
       return false;
     }
-
+    
     mLocation = DemoApp.Navigation.getLocation();
     mCurrentSubLocationIndex = -1;
-
+    
     if (mLocation == null)
     {
       Log.e(TAG, "Loading map failed: no location");
       return false;
     }
-
+    
     if (mLocation.subLocations.size() == 0)
     {
       Log.e(TAG, "Loading map failed: no sublocations");
       mLocation = null;
       return false;
     }
-
+    
     if (!loadSubLocation(0))
     {
       Log.e(TAG, "Loading map failed: unable to load default sublocation");
       mLocation = null;
       return false;
     }
-
+    
     if (mLocation.subLocations.size() >= 2)
     {
       mPrevFloorView.setVisibility(View.VISIBLE);
@@ -415,24 +473,23 @@ public class MainActivity extends Activity implements ActivityCompat.OnRequestPe
     }
     mZoomInView.setVisibility(View.VISIBLE);
     mZoomOutView.setVisibility(View.VISIBLE);
-    mAdjustModeView.setVisibility(View.VISIBLE);
-    
-    mHandler.post(mRunnable);
+    mAdjustModeView.setVisibility(View.VISIBLE);    
     DemoApp.Navigation.setMode(NavigationThread.MODE_NORMAL);
+    mLocationView.redraw();
     return true;
   }
-
+  
   private boolean loadSubLocation(int index)
   {
     if (DemoApp.Navigation == null)
       return false;
-
+    
     if (mLocation == null || index < 0 || index >= mLocation.subLocations.size())
       return false;
-
+    
     SubLocation subLoc = mLocation.subLocations.get(index);
     Log.d(TAG, String.format(Locale.ENGLISH, "Loading sublocation %s (%.2f x %.2f)", subLoc.name, subLoc.width, subLoc.height));
-
+    
     if (subLoc.width < 1.0f || subLoc.height < 1.0f)
     {
       Log.e(TAG, String.format(Locale.ENGLISH, "Loading sublocation failed: invalid size: %.2f x %.2f", subLoc.width, subLoc.height));
@@ -444,7 +501,7 @@ public class MainActivity extends Activity implements ActivityCompat.OnRequestPe
       Log.e(TAG, "Loading sublocation failed: invalid image");
       return false;
     }
-
+    
     float viewWidth  = mLocationView.getWidth();
     float viewHeight = mLocationView.getHeight();
     float minZoomFactor = Math.min(viewWidth / subLoc.width, viewHeight / subLoc.height);
@@ -452,12 +509,11 @@ public class MainActivity extends Activity implements ActivityCompat.OnRequestPe
     mLocationView.setZoomRange(minZoomFactor, maxZoomFactor);
     mLocationView.setZoomFactor(minZoomFactor);
     Log.d(TAG, String.format(Locale.ENGLISH, "View size: %.1f x %.1f", viewWidth, viewHeight));
-
-    mAdjustTime = 0;
     
+    mAdjustTime = 0;
     mCurrentSubLocationIndex = index;
     mCurrentFloorLabel.setText(String.format(Locale.ENGLISH, "%d", mCurrentSubLocationIndex));
-
+    
     if (mCurrentSubLocationIndex > 0)
     {
       mPrevFloorButton.setEnabled(true);
@@ -468,7 +524,7 @@ public class MainActivity extends Activity implements ActivityCompat.OnRequestPe
       mPrevFloorButton.setEnabled(false);
       mPrevFloorView.setBackgroundColor(Color.parseColor("#90dddddd"));
     }
-
+    
     if (mCurrentSubLocationIndex + 1 < mLocation.subLocations.size())
     {
       mNextFloorButton.setEnabled(true);
@@ -481,24 +537,24 @@ public class MainActivity extends Activity implements ActivityCompat.OnRequestPe
     }
     
     cancelVenue();
-    mHandler.post(mRunnable);
+    mLocationView.redraw();
     return true;
   }
-
+  
   private boolean loadNextSubLocation()
   {
     if (mLocation == null || mCurrentSubLocationIndex < 0)
       return false;
     return loadSubLocation(mCurrentSubLocationIndex + 1);
   }
-
+  
   private boolean loadPrevSubLocation()
   {
     if (mLocation == null || mCurrentSubLocationIndex < 0)
       return false;
     return loadSubLocation(mCurrentSubLocationIndex - 1);
   }
-
+  
   private void makePin(PointF P)
   {
     if (mLocation == null || mCurrentSubLocationIndex < 0)
@@ -516,20 +572,14 @@ public class MainActivity extends Activity implements ActivityCompat.OnRequestPe
     }
 
     if (mTargetPoint != null || mTargetVenue != null)
-    {
-      //setErrorMessage("Unable to make route: you must cancel the previous route first!");
       return;
-    }
     
-    if (mDeviceInfo.errorCode != 0)
-    {
-      //setErrorMessage("Unable to make route: navigation is not available!");
+    if (mDeviceInfo == null || !mDeviceInfo.isValid())
       return;
-    }
 
     mPinPoint = new LocationPoint(mLocation.id, subLoc.id, P.x, P.y);
     mPinPointRect = new RectF();
-    mHandler.post(mRunnable);
+    mLocationView.redraw();
   }
 
   private void cancelPin()
@@ -546,13 +596,13 @@ public class MainActivity extends Activity implements ActivityCompat.OnRequestPe
 
     mPinPoint = null;
     mPinPointRect = null;
-    mHandler.post(mRunnable);
+    mLocationView.redraw();
   }
   
   private void cancelVenue()
   {
     mSelectedVenue = null;
-    mHandler.post(mRunnable);
+    mLocationView.redraw();
   }
   
   private Venue getVenueAt(float x, float y)
@@ -775,11 +825,7 @@ public class MainActivity extends Activity implements ActivityCompat.OnRequestPe
       return;
     
     // Check if navigation is available
-    if (mDeviceInfo.errorCode != 0)
-      return;
-
-    // Check if device belongs to the location loaded
-    if (mDeviceInfo.location != mLocation.id)
+    if (mDeviceInfo == null || !mDeviceInfo.isValid())
       return;
 
     // Get current sublocation displayed
@@ -792,7 +838,7 @@ public class MainActivity extends Activity implements ActivityCompat.OnRequestPe
     final int circleColor = Color.argb(127, 64,  163, 205); // Semi-transparent light-blue color
     final int arrowColor  = Color.argb(255, 255, 255, 255); // White color
     final float dp = DemoApp.DisplayDensity;
-
+    
     // Preparing paints
     Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
     paint.setStyle(Paint.Style.FILL_AND_STROKE);
@@ -872,14 +918,10 @@ public class MainActivity extends Activity implements ActivityCompat.OnRequestPe
       return;
 
     // Check if navigation is available
-    if (mDeviceInfo.errorCode != 0)
+    if (mDeviceInfo == null || !mDeviceInfo.isValid())
       return;
 
-    // Check if device belongs to the location loaded
-    if (mDeviceInfo.location != mLocation.id)
-      return;
-
-    long timeNow = NavigineSDK.currentTimeMillis();
+    long timeNow = System.currentTimeMillis();
 
     // Adjust map, if necessary
     if (timeNow >= mAdjustTime)
@@ -901,78 +943,4 @@ public class MainActivity extends Activity implements ActivityCompat.OnRequestPe
       mLocationView.scrollBy(deltaX, deltaY);
     }
   }
-  
-  final Runnable mRunnable =
-    new Runnable()
-    {
-      public void run()
-      {
-        if (DemoApp.Navigation == null)
-        {
-          Log.d(TAG, "Sorry, navigation is not supported on your device!");
-          return;
-        }
-
-        final long timeNow = NavigineSDK.currentTimeMillis();
-        
-        if (mErrorMessageTime > 0 && timeNow > mErrorMessageTime + ERROR_MESSAGE_TIMEOUT)
-        {
-          mErrorMessageTime = 0;
-          mErrorMessageLabel.setVisibility(View.GONE);
-        }
-
-        // Check if location is loaded
-        if (mLocation == null || mCurrentSubLocationIndex < 0)
-          return;
-
-        // Get current sublocation displayed
-        SubLocation subLoc = mLocation.subLocations.get(mCurrentSubLocationIndex);
-
-        // Start navigation if necessary
-        if (DemoApp.Navigation.getMode() == NavigationThread.MODE_IDLE)
-          DemoApp.Navigation.setMode(NavigationThread.MODE_NORMAL);
-        
-        // Get device info from NavigationThread
-        mDeviceInfo = DemoApp.Navigation.getDeviceInfo();
-
-        if (mDeviceInfo.errorCode == 0)
-        {
-          mErrorMessageTime = 0;
-          mErrorMessageLabel.setVisibility(View.GONE);
-          
-          if (mAdjustMode)
-            adjustDevice();
-
-          if (mTargetPoint != null || mTargetVenue != null)
-            mBackView.setVisibility(View.VISIBLE);
-          else
-            mBackView.setVisibility(View.GONE);
-        }
-        else
-        {
-          switch (mDeviceInfo.errorCode)
-          {
-            case 4:
-              setErrorMessage("You are out of navigation zone! Please, check that your bluetooth is enabled!");
-              break;
-
-            case 8:
-            case 30:
-              setErrorMessage("Not enough beacons on the location! Please, add more beacons!");
-              break;
-
-            default:
-              setErrorMessage(String.format(Locale.ENGLISH,
-                              "Something is wrong with location '%s' (error code %d)! " +
-                              "Please, contact technical support!",
-                              mLocation.name, mDeviceInfo.errorCode));
-              break;
-          }
-          mBackView.setVisibility(View.GONE);
-        }
-        
-        // This causes map redrawing
-        mLocationView.redraw();
-      }
-    };
 }

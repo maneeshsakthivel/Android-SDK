@@ -166,7 +166,6 @@
                   android:paddingLeft="5dp"
                   android:paddingRight="5dp"
                   android:gravity="center"
-                  android:onClick="onCloseMessage"
                   android:background="#E8CC5A5A"
                   android:textSize="15dp"
                   android:textColor="#ffffff"/>
