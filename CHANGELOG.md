@@ -20,8 +20,7 @@ coordinates of the device into the global geographic coordinates:
 * Added abstract interface `DeviceInfo.Listener`:
 [wiki](https://github.com/Navigine/Android-SDK/wiki/Class-DeviceInfo.Listener)
 
-* NavigationThread: added function `setDeviceListener`: [wiki](https://github.com/Navigine/Android-SDK/wiki/Class-NavigationThread#function-setdevicelistener). Function is called every time when NavigationThread updates the device position.
-
+* NavigationThread: added function `setDeviceListener`. Function is called every time when NavigationThread updates the device position. [wiki](https://github.com/Navigine/Android-SDK/wiki/Class-NavigationThread#function-setdevicelistener).
 
 * LocationView.Listener: functions
 ```java
