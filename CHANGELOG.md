@@ -25,13 +25,13 @@ coordinates of the device into the global geographic coordinates:
 
 * LocationView.Listener: functions
 ```java
-void onScroll ( float x, float y )
-void onZoom   ( float ratio )
+void onScroll (float x, float y)
+void onZoom   (float ratio)
 ```
 are replaced by:
 ```java
-void onScroll ( float x, float y, boolean isTouchEvent )
-void onZoom   ( float ratio,      boolean isTouchEvent )
+void onScroll (float x, float y, boolean isTouchEvent)
+void onZoom   (float ratio,      boolean isTouchEvent)
 ```
 
 [wiki](https://github.com/Navigine/Android-SDK/wiki/Class-LocationView.Listener)
