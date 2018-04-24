@@ -10,7 +10,7 @@ Download link: [NavigineSDK.jar](https://github.com/Navigine/Android-SDK/blob/b9
 
 * Fixed bug in `DeviceInfo` conversion to `GlobalPoint` (function `DeviceInfo.getGlobalPoint`)
 
-* Added periodic BLE scan restart on Android 7 or higher (to fixed problem with stopping BLE measurements after 30 minutes of continuous scanning)
+* Added periodic BLE scan restart (to fix the problem of stopping BLE measurements after 30 minutes of continuous scanning on Android 7 or higher)
 
 * Added extra validation of the location archives after downloading
 
