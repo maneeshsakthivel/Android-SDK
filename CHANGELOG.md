@@ -6,9 +6,9 @@ uses calendar versioning in the format `YYYYMMDD`.
 ## Version 20180423
 Download link: [NavigineSDK.jar](https://github.com/Navigine/Android-SDK/blob/b9eb40e39166ab873490ef09a8a602863559d466/NavigineSDK/NavigineSDK.jar?raw=true)
 
-* Fixed bug in `DeviceInfo` radius (`r`)
+* Fixed bug in `DeviceInfo` radius (member field `DeviceInfo.r`)
 
-* Fixed bug in `DeviceInfo` conversion to `GlobalPoint`
+* Fixed bug in `DeviceInfo` conversion to `GlobalPoint` (function `DeviceInfo.getGlobalPoint`)
 
 * Fixed problem with stopping BLE measurements on Android 7 or higher
 
