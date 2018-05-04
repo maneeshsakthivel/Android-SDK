@@ -10,11 +10,13 @@ Download link: [NavigineSDK.jar](https://github.com/Navigine/Android-SDK/blob/5a
 
 * Added validation regex for `user_hash` parameter
 
-* Added `Location.LoadListener` interface
+* Added `Location.LoadListener` class:2
+[wiki](https://github.com/Navigine/Android-SDK/wiki/Class-Location.LoadListener)
 
 * Added asynchronous function for loading locations: `NavigineSDK.loadLocationInBackground`
 
 * Added beacon emulation functions: `NavigationThread.addBeaconGenerator`, `NavigationThread.removeBeaconGenerator`, `NavigationThread.removeBeaconGenerators`
+[wiki](https://github.com/Navigine/Android-SDK/wiki/Class-NavigationThread#function-addbeacongenerator)
 
 ## Version 20180423
 Download link: [NavigineSDK.jar](https://github.com/Navigine/Android-SDK/blob/b9eb40e39166ab873490ef09a8a602863559d466/NavigineSDK/NavigineSDK.jar?raw=true)
