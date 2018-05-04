@@ -13,7 +13,9 @@ Download link: [NavigineSDK.jar](https://github.com/Navigine/Android-SDK/blob/5a
 * Added `Location.LoadListener` class:
 [wiki](https://github.com/Navigine/Android-SDK/wiki/Class-Location.LoadListener)
 
-* Added asynchronous function for loading locations for `NavigineSDK`: [loadLocationInBackground](https://github.com/Navigine/Android-SDK/wiki/Class-NavigationThread#function-loadlocationinbackground)
+* Added asynchronous functions for loading locations for `NavigineSDK`:
+  * [loadLocationInBackground](https://github.com/Navigine/Android-SDK/wiki/Class-NavigineSDK#function-loadlocationinbackground)
+  * [loadLocationInBackgroundCancel](https://github.com/Navigine/Android-SDK/wiki/Class-NavigineSDK#function-loadlocationinbackgroundCancel)
 
 * Added beacon emulation functions for `NavigationThread`:
   * [addBeaconGenerator](https://github.com/Navigine/Android-SDK/wiki/Class-NavigationThread#function-addbeacongenerator),
