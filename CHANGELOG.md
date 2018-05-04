@@ -10,8 +10,7 @@ Download link: [NavigineSDK.jar](https://github.com/Navigine/Android-SDK/blob/5a
 
 * Added validation regex for `user_hash` parameter
 
-* Added `Location.LoadListener` class:
-[wiki](https://github.com/Navigine/Android-SDK/wiki/Class-Location.LoadListener)
+* Added class [Location.LoadListener](https://github.com/Navigine/Android-SDK/wiki/Class-Location.LoadListener)
 
 * Added asynchronous functions for loading locations for `NavigineSDK`:
   * [loadLocationInBackground](https://github.com/Navigine/Android-SDK/wiki/Class-NavigineSDK#function-loadlocationinbackground)
