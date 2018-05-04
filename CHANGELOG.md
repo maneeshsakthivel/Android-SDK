@@ -6,6 +6,8 @@ uses calendar versioning in the format `YYYYMMDD`.
 ## Version 20180503
 Download link: [NavigineSDK.jar](https://github.com/Navigine/Android-SDK/blob/5a74248a388685f5532976482162b1c5124dc253/NavigineSDK/NavigineSDK.jar?raw=true)
 
+* Improved navigation algorithms
+
 * Fixed validation regex for `server_url` parameter
 
 * Added validation regex for `user_hash` parameter
