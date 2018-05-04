@@ -6,6 +6,13 @@ uses calendar versioning in the format `YYYYMMDD`.
 ## Version 20180503
 Download link: [NavigineSDK.jar](https://github.com/Navigine/Android-SDK/blob/5a74248a388685f5532976482162b1c5124dc253/NavigineSDK/NavigineSDK.jar?raw=true)
 
+* Fixed validation regex for `server_url` parameter, added validation regex for `user_hash` parameters
+
+* Added beacon emulation functions: `NavigationThread.addBeaconGenerator`, `NavigationThread.removeBeaconGenerator`, `NavigationThread.removeBeaconGenerators`)
+
+* Added `Location.LoadListener` interface
+
+* Added asynchronous function for loading locations: `NavigineSDK.loadLocationInBackground`
 
 ## Version 20180423
 Download link: [NavigineSDK.jar](https://github.com/Navigine/Android-SDK/blob/b9eb40e39166ab873490ef09a8a602863559d466/NavigineSDK/NavigineSDK.jar?raw=true)
