@@ -2,7 +2,7 @@
 
 # Android SDK
 
-The following sections describe the contents of the Navigine Android SDK repository. The files in our public repository for Android are:
+The following sections describe the contents of the Navigine Android SDK repository. The files in our public repository for Android are: 
 
 - sources of the Navigine Demo Application for Android
 - Navigine SDK for Android in form of a JAR file
