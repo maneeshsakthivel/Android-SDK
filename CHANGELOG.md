@@ -3,6 +3,26 @@
 All notable changes to this project will be documented in this file. NavigineSDK
 uses calendar versioning in the format `YYYYMMDD`.
 
+## Version 20180503
+Download link: [NavigineSDK.jar](https://github.com/Navigine/Android-SDK/blob/5a74248a388685f5532976482162b1c5124dc253/NavigineSDK/NavigineSDK.jar?raw=true)
+
+* Improved navigation algorithms
+
+* Fixed validation regex for `server_url` parameter
+
+* Added validation regex for `user_hash` parameter
+
+* Added class [Location.LoadListener](https://github.com/Navigine/Android-SDK/wiki/Class-Location.LoadListener)
+
+* Added asynchronous functions for loading locations for `NavigineSDK`:
+  * [loadLocationInBackground](https://github.com/Navigine/Android-SDK/wiki/Class-NavigineSDK#function-loadlocationinbackground)
+  * [loadLocationInBackgroundCancel](https://github.com/Navigine/Android-SDK/wiki/Class-NavigineSDK#function-loadlocationinbackgroundCancel)
+
+* Added beacon emulation functions for `NavigationThread`:
+  * [addBeaconGenerator](https://github.com/Navigine/Android-SDK/wiki/Class-NavigationThread#function-addbeacongenerator),
+  * [removeBeaconGenerator](https://github.com/Navigine/Android-SDK/wiki/Class-NavigationThread#function-removebeacongenerator),
+  * [removeBeaconGenerators](https://github.com/Navigine/Android-SDK/wiki/Class-NavigationThread#function-removebeacongenerators)
+
 ## Version 20180423
 Download link: [NavigineSDK.jar](https://github.com/Navigine/Android-SDK/blob/b9eb40e39166ab873490ef09a8a602863559d466/NavigineSDK/NavigineSDK.jar?raw=true)
 
