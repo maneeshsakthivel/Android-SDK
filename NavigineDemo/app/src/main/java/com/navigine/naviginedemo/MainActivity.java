@@ -1,10 +1,5 @@
 package com.navigine.naviginedemo;
 
-import android.content.pm.PackageManager;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
-import android.Manifest;
-
 import android.app.*;
 import android.content.*;
 import android.graphics.*;
@@ -18,7 +13,7 @@ import java.util.*;
 
 import com.navigine.naviginesdk.*;
 
-public class MainActivity extends Activity implements ActivityCompat.OnRequestPermissionsResultCallback
+public class MainActivity extends Activity
 {
   private static final String   TAG                     = "NAVIGINE.Demo";
   private static final String   NOTIFICATION_CHANNEL    = "NAVIGINE_DEMO_NOTIFICATION_CHANNEL";
@@ -94,10 +89,6 @@ public class MainActivity extends Activity implements ActivityCompat.OnRequestPe
     mErrorMessageLabel.setVisibility(View.GONE);
     
     mVenueBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.elm_venue);
-    
-    if (!DemoApp.PermissionLocation)
-      ActivityCompat.requestPermissions(this, new String[] { Manifest.permission.ACCESS_FINE_LOCATION,
-                                                             Manifest.permission.ACCESS_COARSE_LOCATION }, 101);
     
     // Initializing location view
     mLocationView = (LocationView)findViewById(R.id.navigation__location_view);
@@ -186,21 +177,6 @@ public class MainActivity extends Activity implements ActivityCompat.OnRequestPe
   @Override public void onBackPressed()
   {
     moveTaskToBack(true);
-  }
-  
-  @Override public void onRequestPermissionsResult(int requestCode,
-                                                   String permissions[],
-                                                   int[] grantResults)
-  {
-    DemoApp.PermissionLocation = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)   == PackageManager.PERMISSION_GRANTED &&
-                                 ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
-    switch (requestCode)
-    {
-      case 101:
-        if (!DemoApp.PermissionLocation)
-          finish();
-        break;
-    }
   }
   
   public void toggleAdjustMode(View v)
@@ -474,7 +450,16 @@ public class MainActivity extends Activity implements ActivityCompat.OnRequestPe
     mZoomInView.setVisibility(View.VISIBLE);
     mZoomOutView.setVisibility(View.VISIBLE);
     mAdjustModeView.setVisibility(View.VISIBLE);    
+    
     DemoApp.Navigation.setMode(NavigationThread.MODE_NORMAL);
+    
+    if (DemoApp.WRITE_LOGS)
+    {
+      final String logFile = DemoApp.getLogFile("");
+      DemoApp.Navigation.setLogFile(logFile + "log");
+      DemoApp.Navigation.setTrackFile(logFile + "track");
+    }
+    
     mLocationView.redraw();
     return true;
   }

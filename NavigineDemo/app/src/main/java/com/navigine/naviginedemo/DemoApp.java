@@ -3,27 +3,28 @@ import com.navigine.naviginesdk.*;
 
 import android.app.*;
 import android.content.*;
+import android.os.*;
 import android.util.*;
+import java.io.*;
 import java.lang.*;
 import java.util.*;
 
 public class DemoApp extends Application
 {
-  public static final String      TAG           = "NAVIGINE.Demo";
-  public static final String      SERVER_URL    = "https://api.navigine.com";
-  public static final String      USER_HASH     = "0000-0000-0000-0000";
-  public static final int         LOCATION_ID   = 1603;
+  public static final String      TAG             = "NAVIGINE.Demo";
+  public static final String      SERVER_URL      = "https://api.navigine.com";
+  public static final String      USER_HASH       = "0000-0000-0000-0000";
+  public static final int         LOCATION_ID     = 1603;
+  public static final boolean     WRITE_LOGS      = true;
   
-  public static NavigationThread  Navigation    = null;
+  public static NavigationThread  Navigation      = null;
   
   // Screen parameters
-  public static float DisplayWidthPx            = 0.0f;
-  public static float DisplayHeightPx           = 0.0f;
-  public static float DisplayWidthDp            = 0.0f;
-  public static float DisplayHeightDp           = 0.0f;
-  public static float DisplayDensity            = 0.0f;
-  
-  public static boolean PermissionLocation      = false;
+  public static float DisplayWidthPx              = 0.0f;
+  public static float DisplayHeightPx             = 0.0f;
+  public static float DisplayWidthDp              = 0.0f;
+  public static float DisplayHeightDp             = 0.0f;
+  public static float DisplayDensity              = 0.0f;
   
   @Override public void onCreate()
   {
@@ -58,6 +59,46 @@ public class DemoApp extends Application
                              DisplayDensity));
     
     return true;
+  }
+  
+  public static String getLogFile(String extension)
+  {
+    if (Navigation == null)
+      return null;
+    
+    try
+    {
+      final String extDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS).getAbsolutePath() + "/Navigine.Demo";
+      (new File(extDir)).mkdirs();
+      if (!(new File(extDir)).exists())
+        return null;
+      
+      final int locationId = Navigation.getLocationId();
+      if (locationId == 0)
+        return null;
+      
+      final String locationDir = extDir + "/" + locationId;
+      (new File(locationDir)).mkdirs();
+      if (!(new File(locationDir)).exists())
+        return null;
+      
+      Calendar calendar = Calendar.getInstance();
+      calendar.setTimeInMillis(System.currentTimeMillis());
+      
+      return String.format(Locale.ENGLISH, "%s/%04d%02d%02d_%02d%02d%02d.%s",
+                           locationDir,
+                           calendar.get(Calendar.YEAR),
+                           calendar.get(Calendar.MONTH) + 1,
+                           calendar.get(Calendar.DAY_OF_MONTH),
+                           calendar.get(Calendar.HOUR_OF_DAY),
+                           calendar.get(Calendar.MINUTE),
+                           calendar.get(Calendar.SECOND),
+                           extension);
+    }
+    catch (Throwable e)
+    {
+      return null;
+    }
   }
   
   public static void finish()
