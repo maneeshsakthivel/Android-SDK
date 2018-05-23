@@ -10,6 +10,7 @@ Download link: [NavigineSDK.jar](https://github.com/Navigine/Android-SDK/blob/2f
 ## Version 20180513
 Download link: [NavigineSDK.jar](https://github.com/Navigine/Android-SDK/blob/f1c725d4b138351002001fed7e48d428d765466b/libs/NavigineSDK.jar?raw=true)
 
+* Fixed synchronization bugs (deadlocks, ANRs)
 
 ## Version 20180503
 Download link: [NavigineSDK.jar](https://github.com/Navigine/Android-SDK/blob/5a74248a388685f5532976482162b1c5124dc253/NavigineSDK/NavigineSDK.jar?raw=true)
