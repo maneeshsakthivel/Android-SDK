@@ -3,6 +3,25 @@
 All notable changes to this project will be documented in this file. NavigineSDK
 uses calendar versioning in the format `YYYYMMDD`.
 
+## Version 20180523
+Download link: [NavigineSDK.jar](https://github.com/Navigine/Android-SDK/blob/2f46c63ff66b60d34de2be3490a2ab1820d83d91/libs/NavigineSDK.jar?raw=true)
+
+* Improved navigation algorithms
+
+* Added functions:
+```java
+DeviceInfo.inZone(int id)
+DeviceInfo.inZone(String alias)
+SubLocation.getZone(String alias)
+Location.getZone(String alias)
+Location.getZones(LocationPoint P) 
+```
+
+## Version 20180513
+Download link: [NavigineSDK.jar](https://github.com/Navigine/Android-SDK/blob/f1c725d4b138351002001fed7e48d428d765466b/libs/NavigineSDK.jar?raw=true)
+
+* Fixed synchronization bugs (deadlocks, ANRs)
+
 ## Version 20180503
 Download link: [NavigineSDK.jar](https://github.com/Navigine/Android-SDK/blob/5a74248a388685f5532976482162b1c5124dc253/NavigineSDK/NavigineSDK.jar?raw=true)
 
