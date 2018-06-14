@@ -15,7 +15,7 @@ public class DemoApp extends Application
   public static final String      SERVER_URL      = "https://api.navigine.com";
   public static final String      USER_HASH       = "0000-0000-0000-0000";
   public static final int         LOCATION_ID     = 1603;
-  public static final boolean     WRITE_LOGS      = true;
+  public static final boolean     WRITE_LOGS      = false;
   
   public static NavigationThread  Navigation      = null;
   
