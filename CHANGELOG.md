@@ -3,6 +3,27 @@
 All notable changes to this project will be documented in this file. NavigineSDK
 uses calendar versioning in the format `YYYYMMDD`.
 
+## Version 20180620
+Download link: [NavigineSDK.jar](https://github.com/Navigine/Android-SDK/raw/master/libs/NavigineSDK.jar)
+
+* [Location.LoadListener](https://github.com/Navigine/Android-SDK/wiki/Class-Location.LoadListener):
+functions
+```java
+Location.LoadListener.onFinished ( String location )
+Location.LoadListener.onFailed   ( String location, int error )
+Location.LoadListener.onUpdate   ( String location, int error )
+
+Location.LoadListener.onFinished ( int locationId)
+Location.LoadListener.onFailed   ( int locationId, int error )
+Location.LoadListener.onUpdate   ( int locationId, int error )
+```
+are replaced by:
+```java
+Location.LoadListener.onFinished ( )
+Location.LoadListener.onFailed   ( int error )
+Location.LoadListener.onUpdate   ( int error )
+```
+
 ## Version 20180523
 Download link: [NavigineSDK.jar](https://github.com/Navigine/Android-SDK/blob/2f46c63ff66b60d34de2be3490a2ab1820d83d91/libs/NavigineSDK.jar?raw=true)
 
