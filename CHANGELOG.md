@@ -6,6 +6,13 @@ uses calendar versioning in the format `YYYYMMDD`.
 ## Version 20180620
 Download link: [NavigineSDK.jar](https://github.com/Navigine/Android-SDK/raw/master/libs/NavigineSDK.jar)
 
+* Added functions:
+```java
+Location.LoadListener.onFinished ( )
+Location.LoadListener.onFailed   ( int error )
+Location.LoadListener.onUpdate   ( int error )
+```
+
 * Removed functions:
 ```java
 Location.LoadListener.onFinished ( String location )
@@ -15,13 +22,6 @@ Location.LoadListener.onUpdate   ( String location, int error )
 Location.LoadListener.onFinished ( int locationId)
 Location.LoadListener.onFailed   ( int locationId, int error )
 Location.LoadListener.onUpdate   ( int locationId, int error )
-```
-
-* Added functions:
-```java
-Location.LoadListener.onFinished ( )
-Location.LoadListener.onFailed   ( int error )
-Location.LoadListener.onUpdate   ( int error )
 ```
 
 ## Version 20180523
