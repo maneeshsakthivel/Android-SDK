@@ -24,6 +24,8 @@ Location.LoadListener.onFailed   ( int locationId, int error )
 Location.LoadListener.onUpdate   ( int locationId, int error )
 ```
 
+[Location.LoadListener](https://github.com/Navigine/Android-SDK/wiki/Class-Location.LoadListener)
+
 ## Version 20180523
 Download link: [NavigineSDK.jar](https://github.com/Navigine/Android-SDK/blob/2f46c63ff66b60d34de2be3490a2ab1820d83d91/libs/NavigineSDK.jar?raw=true)
 
