@@ -21,14 +21,22 @@ public class SplashActivity extends Activity implements ActivityCompat.OnRequest
 {
   private static final String TAG = "NAVIGINE.Demo";
   
-  private Context   mContext     = null;
+  private Context   mContext     = this;
   private TextView  mStatusLabel = null;
   
   @Override public void onCreate(Bundle savedInstanceState)
   {
     super.onCreate(savedInstanceState);
     
-    mContext = getApplicationContext();
+    // Setting up NavigineSDK parameters
+    NavigineSDK.setParameter(mContext, "debug_level", 2);
+    NavigineSDK.setParameter(mContext, "actions_updates_enabled",      false);
+    NavigineSDK.setParameter(mContext, "location_updates_enabled",     true);
+    NavigineSDK.setParameter(mContext, "location_loader_timeout",      60);
+    NavigineSDK.setParameter(mContext, "location_update_timeout",      300);
+    NavigineSDK.setParameter(mContext, "location_retry_timeout",       300);
+    NavigineSDK.setParameter(mContext, "post_beacons_enabled",         true);
+    NavigineSDK.setParameter(mContext, "post_messages_enabled",        true);
     
     requestWindowFeature(Window.FEATURE_NO_TITLE);
     setContentView(R.layout.activity_splash);
@@ -60,13 +68,13 @@ public class SplashActivity extends Activity implements ActivityCompat.OnRequest
     switch (requestCode)
     {
       case 101:
-        if (!permissionLocation || (DemoApp.WRITE_LOGS && !permissionStorage))
+        if (!permissionLocation || (D.WRITE_LOGS && !permissionStorage))
           finish();
         else
         {
-          if (DemoApp.initialize(getApplicationContext()))
+          if (NavigineSDK.initialize(mContext, D.USER_HASH, D.SERVER_URL))
           {
-            NavigineSDK.loadLocationInBackground(DemoApp.LOCATION_ID, 30,
+            NavigineSDK.loadLocationInBackground(D.LOCATION_NAME, 30,
               new Location.LoadListener()
               {
                 @Override public void onFinished(int locationId)

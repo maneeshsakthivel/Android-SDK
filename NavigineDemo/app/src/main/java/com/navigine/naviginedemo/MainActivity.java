@@ -8,6 +8,7 @@ import android.view.*;
 import android.view.View.*;
 import android.widget.*;
 import android.util.*;
+import java.io.*;
 import java.lang.*;
 import java.util.*;
 
@@ -23,6 +24,9 @@ public class MainActivity extends Activity
   private static final boolean  ORIENTATION_ENABLED     = true; // Show device orientation?
   private static final boolean  NOTIFICATIONS_ENABLED   = true; // Show zone notifications?
   
+  // NavigationThread instance
+  private NavigationThread mNavigation            = null;
+
   // UI Parameters
   private LocationView  mLocationView             = null;
   private Button        mPrevFloorButton          = null;
@@ -36,6 +40,7 @@ public class MainActivity extends Activity
   private TextView      mCurrentFloorLabel        = null;
   private TextView      mErrorMessageLabel        = null;
   private Handler       mHandler                  = new Handler();
+  private float         mDisplayDensity           = 0.0f;
 
   private boolean       mAdjustMode               = false;
   private long          mAdjustTime               = 0;
@@ -65,7 +70,7 @@ public class MainActivity extends Activity
     setContentView(R.layout.activity_main);
 
     getWindow().setFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS,
-      WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+                         WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
 
     // Setting up GUI parameters
     mBackView = (View)findViewById(R.id.navigation__back_view);
@@ -134,10 +139,13 @@ public class MainActivity extends Activity
       }
     );
     
+    mDisplayDensity = getResources().getDisplayMetrics().density;
+    mNavigation     = NavigineSDK.getNavigation();
+    
     // Setting up device listener
-    if (DemoApp.Navigation != null)
+    if (mNavigation != null)
     {
-      DemoApp.Navigation.setDeviceListener
+      mNavigation.setDeviceListener
       (
         new DeviceInfo.Listener()
         {
@@ -147,9 +155,9 @@ public class MainActivity extends Activity
     }
     
     // Setting up zone listener
-    if (DemoApp.Navigation != null)
+    if (mNavigation != null)
     {
-      DemoApp.Navigation.setZoneListener
+      mNavigation.setZoneListener
       (
         new Zone.Listener()
         {
@@ -170,7 +178,12 @@ public class MainActivity extends Activity
   
   @Override public void onDestroy()
   {
-    DemoApp.finish();
+    if (mNavigation != null)
+    {
+      NavigineSDK.finish();
+      mNavigation = null;
+    }
+    
     super.onDestroy();
   }
 
@@ -214,7 +227,7 @@ public class MainActivity extends Activity
 
   public void onMakeRoute(View v)
   {
-    if (DemoApp.Navigation == null)
+    if (mNavigation == null)
       return;
 
     if (mPinPoint == null)
@@ -225,14 +238,14 @@ public class MainActivity extends Activity
     mPinPoint     = null;
     mPinPointRect = null;
 
-    DemoApp.Navigation.setTarget(mTargetPoint);
+    mNavigation.setTarget(mTargetPoint);
     mBackView.setVisibility(View.VISIBLE);
     mLocationView.redraw();
   }
 
   public void onCancelRoute(View v)
   {
-    if (DemoApp.Navigation == null)
+    if (mNavigation == null)
       return;
 
     mTargetPoint  = null;
@@ -240,7 +253,7 @@ public class MainActivity extends Activity
     mPinPoint     = null;
     mPinPointRect = null;
 
-    DemoApp.Navigation.cancelTargets();
+    mNavigation.cancelTargets();
     mBackView.setVisibility(View.GONE);
     mLocationView.redraw();
   }
@@ -264,7 +277,7 @@ public class MainActivity extends Activity
         mTargetVenue  = null;
         mPinPoint     = null;
         mPinPointRect = null;
-        DemoApp.Navigation.setTarget(mTargetPoint);
+        mNavigation.setTarget(mTargetPoint);
         mBackView.setVisibility(View.VISIBLE);
         return;
       }
@@ -278,7 +291,7 @@ public class MainActivity extends Activity
       {
         mTargetVenue = mSelectedVenue;
         mTargetPoint = null;
-        DemoApp.Navigation.setTarget(new LocationPoint(mLocation.id, subLoc.id, mTargetVenue.x, mTargetVenue.y));
+        mNavigation.setTarget(new LocationPoint(mLocation.id, subLoc.id, mTargetVenue.x, mTargetVenue.y));
         mBackView.setVisibility(View.VISIBLE);
       }
       cancelVenue();
@@ -412,13 +425,13 @@ public class MainActivity extends Activity
   
   private boolean loadMap()
   {
-    if (DemoApp.Navigation == null)
+    if (mNavigation == null)
     {
       Log.e(TAG, "Can't load map! Navigine SDK is not available!");
       return false;
     }
     
-    mLocation = DemoApp.Navigation.getLocation();
+    mLocation = mNavigation.getLocation();
     mCurrentSubLocationIndex = -1;
     
     if (mLocation == null)
@@ -451,13 +464,12 @@ public class MainActivity extends Activity
     mZoomOutView.setVisibility(View.VISIBLE);
     mAdjustModeView.setVisibility(View.VISIBLE);    
     
-    DemoApp.Navigation.setMode(NavigationThread.MODE_NORMAL);
+    mNavigation.setMode(NavigationThread.MODE_NORMAL);
     
-    if (DemoApp.WRITE_LOGS)
+    if (D.WRITE_LOGS)
     {
-      final String logFile = DemoApp.getLogFile("");
-      DemoApp.Navigation.setLogFile(logFile + "log");
-      DemoApp.Navigation.setTrackFile(logFile + "track");
+      mNavigation.setLogFile(getLogFile("log"));
+      mNavigation.setTrackFile(getLogFile("trk"));
     }
     
     mLocationView.redraw();
@@ -466,7 +478,7 @@ public class MainActivity extends Activity
   
   private boolean loadSubLocation(int index)
   {
-    if (DemoApp.Navigation == null)
+    if (mNavigation == null)
       return false;
     
     if (mLocation == null || index < 0 || index >= mLocation.subLocations.size())
@@ -607,7 +619,7 @@ public class MainActivity extends Activity
       Venue v = subLoc.venues.get(i);
       PointF P = mLocationView.getScreenCoordinates(v.x, v.y);
       float d = Math.abs(x - P.x) + Math.abs(y - P.y);
-      if (d < 30.0f * DemoApp.DisplayDensity && d < d0)
+      if (d < 30.0f * mDisplayDensity && d < d0)
       {
         v0 = new Venue(v);
         d0 = d;
@@ -653,7 +665,7 @@ public class MainActivity extends Activity
     final int solidColor  = Color.argb(255, 64, 163, 205);  // Light-blue color
     final int circleColor = Color.argb(127, 64, 163, 205);  // Semi-transparent light-blue color
     final int arrowColor  = Color.argb(255, 255, 255, 255); // White color
-    final float dp        = DemoApp.DisplayDensity;
+    final float dp        = mDisplayDensity;
     final float textSize  = 16 * dp;
     
     // Preparing paints
@@ -714,7 +726,7 @@ public class MainActivity extends Activity
     
     SubLocation subLoc = mLocation.subLocations.get(mCurrentSubLocationIndex);
     
-    final float dp = DemoApp.DisplayDensity;
+    final float dp = mDisplayDensity;
     final float textSize  = 16 * dp;
     final float venueSize = 30 * dp;
     final int   venueColor = Color.argb(255, 0xCD, 0x88, 0x50); // Venue color
@@ -822,7 +834,7 @@ public class MainActivity extends Activity
     final int solidColor  = Color.argb(255, 64,  163, 205); // Light-blue color
     final int circleColor = Color.argb(127, 64,  163, 205); // Semi-transparent light-blue color
     final int arrowColor  = Color.argb(255, 255, 255, 255); // White color
-    final float dp = DemoApp.DisplayDensity;
+    final float dp = mDisplayDensity;
     
     // Preparing paints
     Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -926,6 +938,33 @@ public class MainActivity extends Activity
       float deltaY  = mLocationView.getHeight() / 2 - center.y;
       mAdjustTime   = timeNow;
       mLocationView.scrollBy(deltaX, deltaY);
+    }
+  }
+  
+  private String getLogFile(String extension)
+  {
+    try
+    {
+      final String extDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS).getAbsolutePath() + "/Navigine.Demo";
+      (new File(extDir)).mkdirs();
+      if (!(new File(extDir)).exists())
+        return null;
+      
+      Calendar calendar = Calendar.getInstance();
+      calendar.setTimeInMillis(System.currentTimeMillis());
+      
+      return String.format(Locale.ENGLISH, "%s/%04d%02d%02d_%02d%02d%02d.%s", extDir,
+                           calendar.get(Calendar.YEAR),
+                           calendar.get(Calendar.MONTH) + 1,
+                           calendar.get(Calendar.DAY_OF_MONTH),
+                           calendar.get(Calendar.HOUR_OF_DAY),
+                           calendar.get(Calendar.MINUTE),
+                           calendar.get(Calendar.SECOND),
+                           extension);
+    }
+    catch (Throwable e)
+    {
+      return null;
     }
   }
 }
