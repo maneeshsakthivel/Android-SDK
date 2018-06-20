@@ -72,7 +72,7 @@ public class SplashActivity extends Activity implements ActivityCompat.OnRequest
           finish();
         else
         {
-          if (NavigineSDK.initialize(mContext, D.USER_HASH, D.SERVER_URL))
+          if (!NavigineSDK.initialize(mContext, D.USER_HASH, D.SERVER_URL))
           {
             NavigineSDK.loadLocationInBackground(D.LOCATION_NAME, 30,
               new Location.LoadListener()
