@@ -4,14 +4,13 @@ All notable changes to this project will be documented in this file. NavigineSDK
 uses calendar versioning in the format `YYYYMMDD`.
 
 ## Version 20180712
-Download link: [NavigineSDK.jar](https://github.com/Navigine/Android-SDK/raw/master/libs/NavigineSDK.jar)
+Download link: [NavigineSDK.jar](https://github.com/Navigine/Android-SDK/blob/d233ffbeb0874ba8c05bbece389f71f63166b433/libs/NavigineSDK.jar?raw=true)
 
 * Fixed bug in NavigineSDK.loadLocationInBackgroundCancel
 * Imporoved navigation algorithms
 
-
 ## Version 20180620
-Download link: [NavigineSDK.jar](https://github.com/Navigine/Android-SDK/raw/master/libs/NavigineSDK.jar)
+Download link: [NavigineSDK.jar](https://github.com/Navigine/Android-SDK/blob/4e129d99487168b105e51981deaa2aa2dc3f2837/libs/NavigineSDK.jar?raw=true)
 
 * [Location.LoadListener](https://github.com/Navigine/Android-SDK/wiki/Class-Location.LoadListener):
 functions
