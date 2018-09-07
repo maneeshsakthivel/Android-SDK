@@ -7,7 +7,7 @@ uses calendar versioning in the format `YYYYMMDD`.
 Download link: [NavigineSDK.jar](https://github.com/Navigine/Android-SDK/blob/47688f140521e483fbdd342a9291062a10fa23b4/libs/NavigineSDK.jar?raw=true)
 
 * Fixed memory leak in LocationView
-* Improved navigation algorithms
+* Navigation algorithms updated to version 1.5
 
 ## Version 20180720
 Download link: [NavigineSDK.jar](https://github.com/Navigine/Android-SDK/blob/de4e177cf41bbc2f71b6564710abf46b8763efbc/libs/NavigineSDK.jar?raw=true)
