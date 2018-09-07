@@ -45,12 +45,10 @@ Location.LoadListener.onFailed   ( int error )
 Location.LoadListener.onUpdate   ( int error )
 ```
 
-* Navigation algorithms updated to version 1.1.0
-
 ## Version 20180523
 Download link: [NavigineSDK.jar](https://github.com/Navigine/Android-SDK/blob/2f46c63ff66b60d34de2be3490a2ab1820d83d91/libs/NavigineSDK.jar?raw=true)
 
-* Improved navigation algorithms
+* Navigation algorithms updated to version 1.1.0
 
 * Added functions:
 ```java
