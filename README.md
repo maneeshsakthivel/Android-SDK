@@ -1,4 +1,4 @@
-<a href="http://navigine.com"><img src="https://navigine.com/wp-content/themes/flat-theme/assets/images/img/w_menuLogo.svg" align="right" height="60" width="180" hspace="10" vspace="5"></a>
+<a href="http://navigine.com"><img src="https://navigine.com/assets/web/images/logo.svg" align="right" height="60" width="180" hspace="10" vspace="5"></a>
 
 # Android SDK
 
@@ -33,3 +33,27 @@ The SDK file resides in the NavigineSDK folder.
 
 Refer to the [NavigineSDK](https://github.com/Navigine/Android-SDK/tree/master/NavigineSDK) for the SDK used for indoor navigation.
 Find formal description of Navigine-SDK API including the list of classes and their public fields and methods at [Navigine SDK wiki](https://github.com/Navigine/Android-SDK/wiki).
+
+### Using with Jitpack
+
+#### Gradle
+
+Add this in root *build.gradle* at the end of repositories:
+
+```
+allprojects {
+    repositories {
+        ...
+        maven { url 'https://jitpack.io' }
+    }
+}
+```
+
+Add the dependency
+
+```
+dependencies {
+  ...
+  implementation 'com.github.Navigine:Android-SDK:20180720'
+}
+```
