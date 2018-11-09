@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file. NavigineSDK
 uses calendar versioning in the format `YYYYMMDD`.
 
+## Version 20181109
+Download link: [NavigineSDK.jar](https://github.com/Navigine/Android-SDK/blob/1f1c82ff1ec591cc0804899997ecec21acac1534/libs/NavigineSDK.jar?raw=true)
+
+* Reworked notification handling (More information [here](https://github.com/Navigine/Android-SDK/wiki/Push-notifications))
+* Added methods to LocationView.Listener
+```java
+  void onLoadFinished()
+  void onLoadFailed()
+```
+* Navigation algorithms updated to version 1.8
+
 ## Version 20181009
 Download link: [NavigineSDK.jar](https://github.com/Navigine/Android-SDK/blob/d9466f503ac33dfd383dae03f3774fb7a92e417e/libs/NavigineSDK.jar?raw=true)
 
