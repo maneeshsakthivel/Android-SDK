@@ -12,7 +12,7 @@ apply plugin: 'java'
 apply plugin: 'maven'
 
 group 'com.navigine'
-version '20190114'
+version '20190208'
 
 sourceCompatibility = 1.8
 
