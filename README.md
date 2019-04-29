@@ -54,6 +54,6 @@ Add the dependency
 ```
 dependencies {
   ...
-  implementation 'com.github.Navigine:Android-SDK:20190228'
+  implementation 'com.github.Navigine:Android-SDK:20190429'
 }
 ```
