@@ -3,6 +3,29 @@
 All notable changes to this project will be documented in this file. NavigineSDK
 uses calendar versioning in the format `YYYYMMDD`.
 
+## Version 20190429
+
+Download link [NavigineSDK.jar](https://github.com/Navigine/Android-SDK/blob/3e713e7a376031531b8f6b5a96c9957dac06952b/libs/NavigineSDK.jar?raw=true)
+
+* Added class [SubLocationImage](https://github.com/Navigine/Android-SDK/wiki/Class-SubLocationImage)
+* Following fields and methods are marked as `@Deprecated` in class `SubLocation`:
+  * `svgFile`
+  * `pngFile`
+  * `jpgFile`
+  * `getSvgImage()`
+  * `getPngImage()`
+  * `getJpgImage()`
+  * `getPicture()`
+  * `getBitmap()`
+  * `getBitmap(int maxsize)`
+* Added followin method in class `SubLocation`:
+
+```java
+SubLocationImage getImage()
+```
+
+* Navigation algorithms updated to version 1.17
+
 ## Version 20190228
 
 Download link: [NavigineSDK.jar](https://github.com/Navigine/Android-SDK/blob/f65ffca0030d58c9df591084b55246d410728ddf/libs/NavigineSDK.jar?raw=true)
@@ -102,7 +125,7 @@ DeviceInfo.inZone(int id)
 DeviceInfo.inZone(String alias)
 SubLocation.getZone(String alias)
 Location.getZone(String alias)
-Location.getZones(LocationPoint P) 
+Location.getZones(LocationPoint P)
 ```
 
 ## Version 20180513
