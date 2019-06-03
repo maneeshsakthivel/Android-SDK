@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file. NavigineSDK
 uses calendar versioning in the format `YYYYMMDD`.
 
+## Version 20190603
+
+Download link [NavigineSDK.jar](https://github.com/Navigine/Android-SDK/blob/18d3b9f4e25e819b57a83ea94b7dc18f8d5a8496/libs/NavigineSDK.jar?raw=true)
+
+* Minor bugfixes and improvements
+
 ## Version 20190429
 
 Download link [NavigineSDK.jar](https://github.com/Navigine/Android-SDK/blob/3e713e7a376031531b8f6b5a96c9957dac06952b/libs/NavigineSDK.jar?raw=true)
