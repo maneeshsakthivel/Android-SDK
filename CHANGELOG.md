@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file. NavigineSDK
 uses calendar versioning in the format `YYYYMMDD`.
 
+## Version 20190626
+
+Download link [NavigineSDK.jar](https://github.com/Navigine/Android-SDK/blob/4317b949ebf89c4aa803c3e2286472f72c26be9d/libs/NavigineSDK.jar?raw=true)
+
+* Bugfixes in class `LocationView`
+
 ## Version 20190603
 
 Download link [NavigineSDK.jar](https://github.com/Navigine/Android-SDK/blob/18d3b9f4e25e819b57a83ea94b7dc18f8d5a8496/libs/NavigineSDK.jar?raw=true)
@@ -24,7 +30,7 @@ Download link [NavigineSDK.jar](https://github.com/Navigine/Android-SDK/blob/3e7
   * `getPicture()`
   * `getBitmap()`
   * `getBitmap(int maxsize)`
-* Added followin method in class `SubLocation`:
+* Added following method in class `SubLocation`:
 
 ```java
 SubLocationImage getImage()
