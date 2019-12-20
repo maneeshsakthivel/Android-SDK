@@ -3,6 +3,16 @@
 All notable changes to this project will be documented in this file. NavigineSDK
 uses calendar versioning in the format `YYYYMMDD`.
 
+## Version 20191220
+
+Download link [NavigineSDK.jar](https://github.com/Navigine/Android-SDK/blob/21a23858abd688639674054f9be7b67301a0c28a/libs/NavigineSDK.jar?raw=true)
+
+* Added support for graph_smoothing in navigation.
+* Removed support of track file recording
+* Removed support of post messages (X-type - from navigation-core)
+* Navigation frequency changed to 1 per second
+* Added getters to following classes: Action, Beacon, Location, LocationInfo, LocationPoint, RouteEvent, RoutePath, SubLocation, Venue, Zone
+
 ## Version 20191014
 
 Download link [NavigineSDK.jar](https://github.com/Navigine/Android-SDK/blob/a6e3148d50ed0629acc6eecd892b9479e358d84b/libs/NavigineSDK.jar?raw=true)
