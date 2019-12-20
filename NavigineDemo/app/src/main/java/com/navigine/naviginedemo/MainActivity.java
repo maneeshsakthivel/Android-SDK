@@ -265,7 +265,7 @@ public class MainActivity extends Activity
     if (mLocation == null || mCurrentSubLocationIndex < 0)
       return;
     
-    SubLocation subLoc = mLocation.subLocations.get(mCurrentSubLocationIndex);
+    SubLocation subLoc = mLocation.getSubLocations().get(mCurrentSubLocationIndex);
     if (subLoc == null)
       return;
     
@@ -291,7 +291,7 @@ public class MainActivity extends Activity
       {
         mTargetVenue = mSelectedVenue;
         mTargetPoint = null;
-        mNavigation.setTarget(new LocationPoint(mLocation.id, subLoc.id, mTargetVenue.x, mTargetVenue.y));
+        mNavigation.setTarget(new LocationPoint(mLocation.getId(), subLoc.getId(), mTargetVenue.getX(), mTargetVenue.getY()));
         mBackView.setVisibility(View.VISIBLE);
       }
       cancelVenue();
@@ -334,36 +334,36 @@ public class MainActivity extends Activity
   
   private void handleEnterZone(Zone z)
   {
-    Log.d(TAG, "Enter zone " + z.name);    
+    Log.d(TAG, "Enter zone " + z.getName());
     if (NOTIFICATIONS_ENABLED)
     {
       Intent notificationIntent = new Intent(this, NotificationActivity.class);
-      notificationIntent.putExtra("zone_id",    z.id);
-      notificationIntent.putExtra("zone_name",  z.name);
-      notificationIntent.putExtra("zone_color", z.color);
-      notificationIntent.putExtra("zone_alias", z.alias);
+      notificationIntent.putExtra("zone_id",    z.getId());
+      notificationIntent.putExtra("zone_name",  z.getName());
+      notificationIntent.putExtra("zone_color", z.getColor());
+      notificationIntent.putExtra("zone_alias", z.getAlias());
       
       // Setting up a notification
       Notification.Builder notificationBuilder = new Notification.Builder(this, NOTIFICATION_CHANNEL);
-      notificationBuilder.setContentIntent(PendingIntent.getActivity(this, z.id, notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT));
+      notificationBuilder.setContentIntent(PendingIntent.getActivity(this, z.getId(), notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT));
       notificationBuilder.setContentTitle("New zone");
-      notificationBuilder.setContentText("You have entered zone '" + z.name + "'");
+      notificationBuilder.setContentText("You have entered zone '" + z.getName() + "'");
       notificationBuilder.setSmallIcon(R.drawable.elm_logo);
       notificationBuilder.setAutoCancel(true);
       
       // Posting a notification
       NotificationManager notificationManager = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
-      notificationManager.notify(z.id, notificationBuilder.build());
+      notificationManager.notify(z.getId(), notificationBuilder.build());
     }
   }
   
   private void handleLeaveZone(Zone z)
   {
-    Log.d(TAG, "Leave zone " + z.name);
+    Log.d(TAG, "Leave zone " + z.getName());
     if (NOTIFICATIONS_ENABLED)
     {
       NotificationManager notificationManager = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
-      notificationManager.cancel(z.id);
+      notificationManager.cancel(z.getId());
     }
   }
   
@@ -388,7 +388,7 @@ public class MainActivity extends Activity
     else
     {
       mBackView.setVisibility(View.GONE);
-      switch (mDeviceInfo.errorCode)
+      switch (mDeviceInfo.getErrorCode())
       {
         case 4:
           setErrorMessage("You are out of navigation zone! Please, check that your bluetooth is enabled!");
@@ -403,7 +403,7 @@ public class MainActivity extends Activity
           setErrorMessage(String.format(Locale.ENGLISH,
                           "Something is wrong with location '%s' (error code %d)! " +
                           "Please, contact technical support!",
-                          mLocation.name, mDeviceInfo.errorCode));
+                          mLocation.getName(), mDeviceInfo.getErrorCode()));
           break;
       }
     }
@@ -440,7 +440,7 @@ public class MainActivity extends Activity
       return false;
     }
     
-    if (mLocation.subLocations.size() == 0)
+    if (mLocation.getSubLocations().size() == 0)
     {
       Log.e(TAG, "Loading map failed: no sublocations");
       mLocation = null;
@@ -454,7 +454,7 @@ public class MainActivity extends Activity
       return false;
     }
     
-    if (mLocation.subLocations.size() >= 2)
+    if (mLocation.getSubLocations().size() >= 2)
     {
       mPrevFloorView.setVisibility(View.VISIBLE);
       mNextFloorView.setVisibility(View.VISIBLE);
@@ -467,10 +467,7 @@ public class MainActivity extends Activity
     mNavigation.setMode(NavigationThread.MODE_NORMAL);
     
     if (D.WRITE_LOGS)
-    {
       mNavigation.setLogFile(getLogFile("log"));
-      mNavigation.setTrackFile(getLogFile("trk"));
-    }
     
     mLocationView.redraw();
     return true;
@@ -481,15 +478,15 @@ public class MainActivity extends Activity
     if (mNavigation == null)
       return false;
     
-    if (mLocation == null || index < 0 || index >= mLocation.subLocations.size())
+    if (mLocation == null || index < 0 || index >= mLocation.getSubLocations().size())
       return false;
     
-    SubLocation subLoc = mLocation.subLocations.get(index);
-    Log.d(TAG, String.format(Locale.ENGLISH, "Loading sublocation %s (%.2f x %.2f)", subLoc.name, subLoc.width, subLoc.height));
+    SubLocation subLoc = mLocation.getSubLocations().get(index);
+    Log.d(TAG, String.format(Locale.ENGLISH, "Loading sublocation %s (%.2f x %.2f)", subLoc.getName(), subLoc.getWidth(), subLoc.getHeight()));
     
-    if (subLoc.width < 1.0f || subLoc.height < 1.0f)
+    if (subLoc.getWidth() < 1.0f || subLoc.getHeight() < 1.0f)
     {
-      Log.e(TAG, String.format(Locale.ENGLISH, "Loading sublocation failed: invalid size: %.2f x %.2f", subLoc.width, subLoc.height));
+      Log.e(TAG, String.format(Locale.ENGLISH, "Loading sublocation failed: invalid size: %.2f x %.2f", subLoc.getWidth(), subLoc.getHeight()));
       return false;
     }
     
@@ -501,7 +498,7 @@ public class MainActivity extends Activity
     
     float viewWidth  = mLocationView.getWidth();
     float viewHeight = mLocationView.getHeight();
-    float minZoomFactor = Math.min(viewWidth / subLoc.width, viewHeight / subLoc.height);
+    float minZoomFactor = Math.min(viewWidth / subLoc.getWidth(), viewHeight / subLoc.getHeight());
     float maxZoomFactor = LocationView.ZOOM_FACTOR_MAX;
     mLocationView.setZoomRange(minZoomFactor, maxZoomFactor);
     mLocationView.setZoomFactor(minZoomFactor);
@@ -522,7 +519,7 @@ public class MainActivity extends Activity
       mPrevFloorView.setBackgroundColor(Color.parseColor("#90dddddd"));
     }
     
-    if (mCurrentSubLocationIndex + 1 < mLocation.subLocations.size())
+    if (mCurrentSubLocationIndex + 1 < mLocation.getSubLocations().size())
     {
       mNextFloorButton.setEnabled(true);
       mNextFloorView.setBackgroundColor(Color.parseColor("#90aaaaaa"));
@@ -557,12 +554,12 @@ public class MainActivity extends Activity
     if (mLocation == null || mCurrentSubLocationIndex < 0)
       return;
 
-    SubLocation subLoc = mLocation.subLocations.get(mCurrentSubLocationIndex);
+    SubLocation subLoc = mLocation.getSubLocations().get(mCurrentSubLocationIndex);
     if (subLoc == null)
       return;
 
-    if (P.x < 0.0f || P.x > subLoc.width ||
-        P.y < 0.0f || P.y > subLoc.height)
+    if (P.x < 0.0f || P.x > subLoc.getWidth() ||
+        P.y < 0.0f || P.y > subLoc.getHeight())
     {
       // Missing the map
       return;
@@ -574,7 +571,7 @@ public class MainActivity extends Activity
     if (mDeviceInfo == null || !mDeviceInfo.isValid())
       return;
 
-    mPinPoint = new LocationPoint(mLocation.id, subLoc.id, P.x, P.y);
+    mPinPoint = new LocationPoint(mLocation.getId(), subLoc.getId(), P.x, P.y);
     mPinPointRect = new RectF();
     mLocationView.redraw();
   }
@@ -584,7 +581,7 @@ public class MainActivity extends Activity
     if (mLocation == null || mCurrentSubLocationIndex < 0)
       return;
 
-    SubLocation subLoc = mLocation.subLocations.get(mCurrentSubLocationIndex);
+    SubLocation subLoc = mLocation.getSubLocations().get(mCurrentSubLocationIndex);
     if (subLoc == null)
       return;
 
@@ -607,21 +604,21 @@ public class MainActivity extends Activity
     if (mLocation == null || mCurrentSubLocationIndex < 0)
       return null;
 
-    SubLocation subLoc = mLocation.subLocations.get(mCurrentSubLocationIndex);
+    SubLocation subLoc = mLocation.getSubLocations().get(mCurrentSubLocationIndex);
     if (subLoc == null)
       return null;
 
     Venue v0 = null;
     float d0 = 1000.0f;
         
-    for(int i = 0; i < subLoc.venues.size(); ++i)
+    for(int i = 0; i < subLoc.getVenues().size(); ++i)
     {
-      Venue v = subLoc.venues.get(i);
-      PointF P = mLocationView.getScreenCoordinates(v.x, v.y);
+      Venue v = subLoc.getVenues().get(i);
+      PointF P = mLocationView.getScreenCoordinates(v.getX(), v.getY());
       float d = Math.abs(x - P.x) + Math.abs(y - P.y);
       if (d < 30.0f * mDisplayDensity && d < d0)
       {
-        v0 = new Venue(v);
+        v0 = v;
         d0 = d;
       }
     }
@@ -634,16 +631,16 @@ public class MainActivity extends Activity
     if (mLocation == null || mCurrentSubLocationIndex < 0)
       return null;
 
-    SubLocation subLoc = mLocation.subLocations.get(mCurrentSubLocationIndex);
+    SubLocation subLoc = mLocation.getSubLocations().get(mCurrentSubLocationIndex);
     if (subLoc == null)
       return null;
     
     PointF P = mLocationView.getAbsCoordinates(x, y);
-    LocationPoint LP = new LocationPoint(mLocation.id, subLoc.id, P.x, P.y);
+    LocationPoint LP = new LocationPoint(mLocation.getId(), subLoc.getId(), P.x, P.y);
     
-    for(int i = 0; i < subLoc.zones.size(); ++i)
+    for(int i = 0; i < subLoc.getZones().size(); ++i)
     {
-      Zone Z = subLoc.zones.get(i);
+      Zone Z = subLoc.getZones().get(i);
       if (Z.contains(LP))
         return Z;
     }
@@ -657,7 +654,7 @@ public class MainActivity extends Activity
       return;
 
     // Get current sublocation displayed
-    SubLocation subLoc = mLocation.subLocations.get(mCurrentSubLocationIndex);
+    SubLocation subLoc = mLocation.getSubLocations().get(mCurrentSubLocationIndex);
 
     if (subLoc == null)
       return;
@@ -675,7 +672,7 @@ public class MainActivity extends Activity
     paint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
 
     // Drawing pin point (if it exists and belongs to the current sublocation)
-    if (mPinPoint != null && mPinPoint.subLocation == subLoc.id)
+    if (mPinPoint != null && mPinPoint.subLocation == subLoc.getId())
     {
       final PointF T = mLocationView.getScreenCoordinates(mPinPoint);
       final float tRadius = 10 * dp;
@@ -705,7 +702,7 @@ public class MainActivity extends Activity
     }
     
     // Drawing target point (if it exists and belongs to the current sublocation)
-    if (mTargetPoint != null && mTargetPoint.subLocation == subLoc.id)
+    if (mTargetPoint != null && mTargetPoint.subLocation == subLoc.getId())
     {
       final PointF T = mLocationView.getScreenCoordinates(mTargetPoint);
       final float tRadius = 10 * dp;
@@ -724,7 +721,7 @@ public class MainActivity extends Activity
     if (mLocation == null || mCurrentSubLocationIndex < 0)
       return;
     
-    SubLocation subLoc = mLocation.subLocations.get(mCurrentSubLocationIndex);
+    SubLocation subLoc = mLocation.getSubLocations().get(mCurrentSubLocationIndex);
     
     final float dp = mDisplayDensity;
     final float textSize  = 16 * dp;
@@ -738,13 +735,13 @@ public class MainActivity extends Activity
     paint.setTextSize(textSize);
     paint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
     
-    for(int i = 0; i < subLoc.venues.size(); ++i)
+    for(int i = 0; i < subLoc.getVenues().size(); ++i)
     {
-      Venue v = subLoc.venues.get(i);
-      if (v.subLocation != subLoc.id)
+      Venue v = subLoc.getVenues().get(i);
+      if (v.getSubLocationId() != subLoc.getId())
         continue;
       
-      final PointF P = mLocationView.getScreenCoordinates(v.x, v.y);
+      final PointF P = mLocationView.getScreenCoordinates(v.getX(), v.getY());
       final float x0 = P.x - venueSize/2;
       final float y0 = P.y - venueSize/2;
       final float x1 = P.x + venueSize/2;
@@ -754,8 +751,8 @@ public class MainActivity extends Activity
     
     if (mSelectedVenue != null)
     {
-      final PointF T = mLocationView.getScreenCoordinates(mSelectedVenue.x, mSelectedVenue.y);
-      final float textWidth = paint.measureText(mSelectedVenue.name);
+      final PointF T = mLocationView.getScreenCoordinates(mSelectedVenue.getX(), mSelectedVenue.getY());
+      final float textWidth = paint.measureText(mSelectedVenue.getName());
       
       final float h  = 50 * dp;
       final float w  = Math.max(120 * dp, textWidth + h/2);
@@ -767,7 +764,7 @@ public class MainActivity extends Activity
       canvas.drawRoundRect(mSelectedVenueRect, h/2, h/2, paint);
       
       paint.setARGB(255, 255, 255, 255);
-      canvas.drawText(mSelectedVenue.name, x0 - textWidth/2, y0 + textSize/4, paint);
+      canvas.drawText(mSelectedVenue.getName(), x0 - textWidth/2, y0 + textSize/4, paint);
     }
   }
   
@@ -778,7 +775,7 @@ public class MainActivity extends Activity
       return;
     
     // Get current sublocation displayed
-    SubLocation subLoc = mLocation.subLocations.get(mCurrentSubLocationIndex);
+    SubLocation subLoc = mLocation.getSubLocations().get(mCurrentSubLocationIndex);
     if (subLoc == null)
       return;
     
@@ -786,27 +783,27 @@ public class MainActivity extends Activity
     Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
     paint.setStyle(Paint.Style.FILL_AND_STROKE);
     
-    for(int i = 0; i < subLoc.zones.size(); ++i)
+    for(int i = 0; i < subLoc.getZones().size(); ++i)
     {
-      Zone Z = subLoc.zones.get(i);
-      if (Z.points.size() < 3)
+      Zone Z = subLoc.getZones().get(i);
+      if (Z.getPoints().size() < 3)
         continue;
       
       boolean selected = (Z == mSelectedZone);
       
       Path path = new Path();
-      final LocationPoint P0 = Z.points.get(0);
+      final LocationPoint P0 = Z.getPoints().get(0);
       final PointF        Q0 = mLocationView.getScreenCoordinates(P0);
       path.moveTo(Q0.x, Q0.y);
       
-      for(int j = 0; j < Z.points.size(); ++j)
+      for(int j = 0; j < Z.getPoints().size(); ++j)
       {
-        final LocationPoint P = Z.points.get((j + 1) % Z.points.size());
+        final LocationPoint P = Z.getPoints().get((j + 1) % Z.getPoints().size());
         final PointF        Q = mLocationView.getScreenCoordinates(P);
         path.lineTo(Q.x, Q.y);
       }
       
-      int zoneColor = Color.parseColor(Z.color);
+      int zoneColor = Color.parseColor(Z.getColor());
       int red       = (zoneColor >> 16) & 0xff;
       int green     = (zoneColor >> 8 ) & 0xff;
       int blue      = (zoneColor >> 0 ) & 0xff;
@@ -826,7 +823,7 @@ public class MainActivity extends Activity
       return;
 
     // Get current sublocation displayed
-    SubLocation subLoc = mLocation.subLocations.get(mCurrentSubLocationIndex);
+    SubLocation subLoc = mLocation.getSubLocations().get(mCurrentSubLocationIndex);
 
     if (subLoc == null)
       return;
@@ -842,18 +839,18 @@ public class MainActivity extends Activity
     paint.setStrokeCap(Paint.Cap.ROUND);
 
     /// Drawing device path (if it exists)
-    if (mDeviceInfo.paths != null && mDeviceInfo.paths.size() > 0)
+    if (mDeviceInfo.getPaths() != null && mDeviceInfo.getPaths().size() > 0)
     {
-      RoutePath path = mDeviceInfo.paths.get(0);
-      if (path.points.size() >= 2)
+      RoutePath path = mDeviceInfo.getPaths().get(0);
+      if (path.getPoints().size() >= 2)
       {
         paint.setColor(solidColor);
 
-        for(int j = 1; j < path.points.size(); ++j)
+        for(int j = 1; j < path.getPoints().size(); ++j)
         {
-          LocationPoint P = path.points.get(j-1);
-          LocationPoint Q = path.points.get(j);
-          if (P.subLocation == subLoc.id && Q.subLocation == subLoc.id)
+          LocationPoint P = path.getPoints().get(j-1);
+          LocationPoint Q = path.getPoints().get(j);
+          if (P.subLocation == subLoc.getId() && Q.subLocation == subLoc.getId())
           {
             paint.setStrokeWidth(3 * dp);
             PointF P1 = mLocationView.getScreenCoordinates(P);
@@ -867,13 +864,13 @@ public class MainActivity extends Activity
     paint.setStrokeCap(Paint.Cap.BUTT);
 
     // Check if device belongs to the current sublocation
-    if (mDeviceInfo.subLocation != subLoc.id)
+    if (mDeviceInfo.getSubLocationId() != subLoc.getId())
       return;
 
-    final float x  = mDeviceInfo.x;
-    final float y  = mDeviceInfo.y;
-    final float r  = mDeviceInfo.r;
-    final float angle = mDeviceInfo.azimuth;
+    final float x  = mDeviceInfo.getX();
+    final float y  = mDeviceInfo.getY();
+    final float r  = mDeviceInfo.getR();
+    final float angle = mDeviceInfo.getAzimuth();
     final float sinA = (float)Math.sin(angle);
     final float cosA = (float)Math.cos(angle);
     final float radius  = mLocationView.getScreenLengthX(r);  // External radius: navigation-determined, transparent
@@ -924,16 +921,16 @@ public class MainActivity extends Activity
     if (timeNow >= mAdjustTime)
     {
       // Firstly, set the correct sublocation
-      SubLocation subLoc = mLocation.subLocations.get(mCurrentSubLocationIndex);
-      if (mDeviceInfo.subLocation != subLoc.id)
+      SubLocation subLoc = mLocation.getSubLocations().get(mCurrentSubLocationIndex);
+      if (mDeviceInfo.getSubLocationId() != subLoc.getId())
       {
-        for(int i = 0; i < mLocation.subLocations.size(); ++i)
-          if (mLocation.subLocations.get(i).id == mDeviceInfo.subLocation)
+        for(int i = 0; i < mLocation.getSubLocations().size(); ++i)
+          if (mLocation.getSubLocations().get(i).getId() == mDeviceInfo.getSubLocationId())
             loadSubLocation(i);
       }
       
       // Secondly, adjust device to the center of the screen
-      PointF center = mLocationView.getScreenCoordinates(mDeviceInfo.x, mDeviceInfo.y);
+      PointF center = mLocationView.getScreenCoordinates(mDeviceInfo.getX(), mDeviceInfo.getY());
       float deltaX  = mLocationView.getWidth()  / 2 - center.x;
       float deltaY  = mLocationView.getHeight() / 2 - center.y;
       mAdjustTime   = timeNow;
