@@ -12,244 +12,133 @@ Download link [NavigineSDK.jar](https://github.com/Navigine/Android-SDK/blob/21a
 * Removed support of post messages (X-type - from navigation-core)
 * Navigation frequency changed to 1 per second
 * Class Location.Info changed to [LocationInfo](https://github.com/Navigine/Android-SDK/wiki/Class-LocationInfo)
-* Following fields and constructors are marked as `@Deprecated` in class `Beacon`:
+* Public fields were replaced by corresponding getters, constructors will be removed in further versions in class `Beacon`:
 
 ```java
-  @Deprecated public int id              // replaced by getId()
-  @Deprecated public int location        // replaced by getLocationId()
-  @Deprecated public int subLocation     // replaced by getSubLocationId()
-  @Deprecated public int major           // replaced by getMajor()
-  @Deprecated public int minor           // replaced by getMinor()
-  @Deprecated public String uuid         // replaced by getUuid()
-  @Deprecated public String name         // replaced by getName()
-  @Deprecated public int power           // replaced by getPower()
-  @Deprecated public float x             // replaced by getX()
-  @Deprecated public float y             // replaced by getY()
+  @Deprecated public int id                   // replaced by getId()
+  @Deprecated public int location             // replaced by getLocationId()
+  @Deprecated public int subLocation          // replaced by getSubLocationId()
+  @Deprecated public int major                // replaced by getMajor()
+  @Deprecated public int minor                // replaced by getMinor()
+  @Deprecated public String uuid              // replaced by getUuid()
+  @Deprecated public String name              // replaced by getName()
+  @Deprecated public int power                // replaced by getPower()
+  @Deprecated public float x                  // replaced by getX()
+  @Deprecated public float y                  // replaced by getY()
   @Deprecated public Beacon()
   @Deprecated public Beacon(Beacon B)
 ```
 
-* Added following methods in class `Beacon`:
+* Public fields were replaced by corresponding getters, constructors will be removed in further versions in class `DeviceInfo`:
 
 ```java
-  public int getId()
-  public int getLocationId()
-  public int getSubLocationId()
-  public int getMajor()
-  public int getMinor()
-  public String getUuid()
-  public String getName()
-  public int getPower()
-  public float getX()
-  public float getY()
+  @Deprecated public int id                   // replaced by getId()
+  @Deprecated public int location             // replaced by getLocationId()
+  @Deprecated public int subLocation          // replaced by getSubLocationId()
+  @Deprecated public long time                // replaced by getTime()
+  @Deprecated public float x                  // replaced by getX()
+  @Deprecated public float y                  // replaced by getY()
+  @Deprecated public float r                  // replaced by getR()
+  @Deprecated public float azimuth            // replaced by getAzimuth()
+  @Deprecated public float stepLength         // replaced by getStepLength()
+  @Deprecated public int stepCount            // replaced by getStepCount()
+  @Deprecated public int errorCode            // replaced by getErrorCode()
+  @Deprecated public List<RoutePath> paths    // replaced by getPaths()
+  @Deprecated public List<Zone> zones         // replaced by getZones()
+  @Deprecated public DeviceInfo()
+  @Deprecated public DeviceInfo(DeviceInfo info)
 ```
 
-* Following fields and constructors are marked as `@Deprecated` in class `DeviceInfo`:
+* Public fields were replaced by corresponding getters, constructors will be removed in further versions in class `Location`:
 
 ```java
-  public int id
-  public int location
-  public int subLocation
-  public long time
-  public float x
-  public float y
-  public float r
-  public float azimuth
-  public float stepLength
-  public int stepCount
-  public int errorCode
-  public List<RoutePath> paths
-  public List<Zone> zones
-  public DeviceInfo()
-  public DeviceInfo(DeviceInfo info)
+  @Deprecated public int id                           // replaced by getId()
+  @Deprecated public int version                      // replaced by getVersion()
+  @Deprecated public String name                      // replaced by getName()
+  @Deprecated public String description               // replaced by getDescription()
+  @Deprecated public List<SubLocation> subLocations   // replaced by getSubLocations()
+  @Deprecated public List<Venue.Category> categories  // replaced by getCategories()
+  @Deprecated public Location()
+  @Deprecated public Location(Location loc)
 ```
 
-* Added following methods in class `DeviceInfo`:
+* Public fields were replaced by corresponding getters, constructors will be removed in further versions in class `RouteEvent`:
 
 ```java
-  public int getId()
-  public int getLocationId()
-  public int getSubLocationId()
-  public long getTime()
-  public float getX()
-  public float getY()
-  public float getR()
-  public float getAzimuth()
-  public float getStepLength()
-  public int getStepCount()
-  public int getErrorCode()
-  public List<RoutePath> getPaths()
-  public List<Zone> getZones()
+  @Deprecated public int type                     // replaced by getType()
+  @Deprecated public int value                    // replaced by getValue()
+  @Deprecated public float distance               // reaplced by getDistance()
+  @Deprecated public RouteEvent()
+  @Deprecated public RouteEvent(RouteEvent event)
 ```
 
-* Following fields and constructors are marked as `@Deprecated` in class `Location`:
+* Public fields were replaced by corresponding getters, constructors will be removed in further versions in class `RoutePath`:
 
 ```java
-  public int id
-  public int version
-  public String name
-  public String description
-  public List<SubLocation> subLocations
-  public List<Venue.Category> categories
-  public Location()
-  public Location(Location loc)
+  @Deprecated public float length                 // replaced by getLength()
+  @Deprecated public List<RouteEvent> events      // replaced by getEvents()
+  @Deprecated public List<LocationPoint> points   // replaced by getPoints()
+  @Deprecated public RoutePath()
+  @Deprecated public RoutePath(RoutePath path)
 ```
 
-* Added following methods in class `Location`:
+* Public fields were replaced by corresponding getters, constructors will be removed in further versions in class `SubLocation`:
 
 ```java
-  public int getId()
-  public int getVersion()
-  public String getName()
-  public String getDescription()
-  public List<SubLocation> getSubLocations()
-  public List<Venue.Category> getCategories()
+  @Deprecated public int id                     // replaced by getId()
+  @Deprecated public int location               // replaced by getLocationId()
+  @Deprecated public String name                // replaced by getName()
+  @Deprecated public float width                // replaced by getWidth()
+  @Deprecated public float height               // replaced by getHeight()
+  @Deprecated public float azimuth              // replaced by getAzimuth()
+  @Deprecated public double latitude            // replaced by getLatitude()
+  @Deprecated public double longitude           // replaced by getLongitude()
+  @Deprecated public List<Beacon> beacons       // replaced by getBeacons()
+  @Deprecated public List<Venue> venues         // replaced by getVenues()
+  @Deprecated public List<Zone> zones           // replaced by getZones()
+  @Deprecated public SubLocation()
+  @Deprecated public SubLocation(SubLocation subLoc)
 ```
 
-* Following fields and constructors are marked as `@Deprecated` in class `RouteEvent`:
+* Public fields were replaced by corresponding getters, constructors will be removed in further versions in class `Venue`:
 
 ```java
-  public int type
-  public int value
-  public float distance
-  public RouteEvent()
-  public RouteEvent(RouteEvent event)
+  @Deprecated public int id                     // replaced by getId()
+  @Deprecated public int location               // replaced by getLocationId()
+  @Deprecated public int subLocation            // replaced by getSubLocationId()
+  @Deprecated public float x                    // replaced by getX()
+  @Deprecated public float y                    // replaced by getY()
+  @Deprecated public String name                // replaced by getName()
+  @Deprecated public String alias               // replaced by getAlias()
+  @Deprecated public String phone               // replaced by getPhone()
+  @Deprecated public String image               // replaced by getImage()
+  @Deprecated public String description         // replaced by getDescription()
+  @Deprecated public Category category          // replaced by getCategory()
+  @Deprecated public Venue()
+  @Deprecated public Venue(Venue v)
 ```
 
-* Added following methods in class `RouteEvent`:
+* Public fields were replaced by corresponding getters, constructors will be removed in further versions in class `Venue.Category`:
 
 ```java
-  public int getType()
-  public int getValue()
-  public float getDistance()
+  @Deprecated public int id                     // replaced by getId()
+  @Deprecated public String name                // replaced by getName()
+  @Deprecated public Venue.Category()
+  @Deprecated public Venue.Category(Venue.Category c)
 ```
 
-* Following fields and constructors are marked as `@Deprecated` in class `RoutePath`:
+* Public fields were replaced by corresponding getters, constructors will be removed in further versions in class `Zone`:
 
 ```java
-  public float length
-  public List<RouteEvent> events
-  public List<LocationPoint> points
-  public RoutePath()
-  public RoutePath(RoutePath path)
-```
-
-* Added following methods in class `RoutePath`:
-
-```java
-  public float getLength()
-  public List<RouteEvent> getEvents()
-  public List<LocationPoint> getPoints()
-```
-
-* Following fields and constructors are marked as `@Deprecated` in class `SubLocation`:
-
-```java
-  public int id
-  public int location
-  public String name
-  public float width
-  public float height
-  public float azimuth
-  public double latitude
-  public double longitude
-  public List<Beacon> beacons
-  public List<Venue> venues
-  public List<Zone> zones
-  public SubLocation()
-  public SubLocation(SubLocation subLoc)
-```
-
-* Added following methods in class `SubLocation`:
-
-```java
-  public int getId()
-  public int getLocationId()
-  public String getName()
-  public float getWidth()
-  public float getHeight()
-  public float getAzimuth()
-  public double getLatitude()
-  public double getLongitude()
-  public List<Beacon> getBeacons()
-  public List<Venue> getVenues()
-  public List<Zone> getZones()
-```
-
-* Following fields and constructors are marked as `@Deprecated` in class `Venue`:
-
-```java
-  public int id
-  public int location
-  public int subLocation
-  public float x
-  public float y
-  public String name
-  public String alias
-  public String phone
-  public String image
-  public String description
-  public Category category
-  public Venue()
-  public Venue(Venue v)
-```
-
-* Added following methods in class `Venue`:
-
-```java
-  public int getId()
-  public int getLocationId()
-  public int getSubLocationId()
-  public float getX()
-  public float getY()
-  public String getName()
-  public String getAlias()
-  public String getPhone()
-  public String getImage()
-  public String getDescription()
-  public Category getCategory()
-```
-
-* Following fields and constructors are marked as `@Deprecated` in class `Venue.Category`:
-
-```java
-  public int id
-  public String name
-  public Venue.Category()
-  public Venue.Category(Venue.Category c)
-```
-
-* Added following methods in class `Venue.Category`:
-
-```java
-  public int getId()
-  public String getName()
-```
-
-* Following fields and constructors are marked as `@Deprecated` in class `Zone`:
-
-```java
-  public int id
-  public int location
-  public int subLocation
-  public String name
-  public String alias
-  public String color
-  public List<LocationPoint> points
-  public Zone()
-  public Zone(Zone Z)
-```
-
-* Added following methods in class `Zone`:
-
-```java
-  public int getId()
-  public int getLocationId()
-  public int getSubLocationId()
-  public String getName()
-  public String getAlias()
-  public String getColor()
-  public List<LocationPoint> getPoints()
+  @Deprecated public int id                       // replaced by getId()
+  @Deprecated public int location                 // replaced by getLocationId()
+  @Deprecated public int subLocation              // replaced by getSubLocationId()
+  @Deprecated public String name                  // replaced by getName()
+  @Deprecated public String alias                 // replaced by getAlias()
+  @Deprecated public String color                 // replaced by getColor()
+  @Deprecated public List<LocationPoint> points   // replaced by getPoints()
+  @Deprecated public Zone()
+  @Deprecated public Zone(Zone Z)
 ```
 
 ## Version 20191014
