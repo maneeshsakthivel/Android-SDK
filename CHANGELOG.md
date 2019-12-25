@@ -12,8 +12,7 @@ Download link [NavigineSDK.jar](https://github.com/Navigine/Android-SDK/blob/21a
 * Removed support of post messages (X-type - from navigation-core)
 * Navigation frequency changed to 1 per second
 * Class Location.Info changed to [LocationInfo](https://github.com/Navigine/Android-SDK/wiki/Class-LocationInfo)
-* Public fields were replaced by corresponding getters, constructors will be removed in further versions in class `Beacon`:
-
+* Class Beacon: public fields were replaced by corresponding getters, constructors will be removed in further versions
 ```java
   @Deprecated public int id                   // replaced by getId()
   @Deprecated public int location             // replaced by getLocationId()
@@ -29,8 +28,7 @@ Download link [NavigineSDK.jar](https://github.com/Navigine/Android-SDK/blob/21a
   @Deprecated public Beacon(Beacon B)
 ```
 
-* Public fields were replaced by corresponding getters, constructors will be removed in further versions in class `DeviceInfo`:
-
+* Class DeviceInfo: public fields were replaced by corresponding getters, constructors will be removed in further versions:
 ```java
   @Deprecated public int id                   // replaced by getId()
   @Deprecated public int location             // replaced by getLocationId()
@@ -49,8 +47,7 @@ Download link [NavigineSDK.jar](https://github.com/Navigine/Android-SDK/blob/21a
   @Deprecated public DeviceInfo(DeviceInfo info)
 ```
 
-* Public fields were replaced by corresponding getters, constructors will be removed in further versions in class `Location`:
-
+* Class Location: public fields were replaced by corresponding getters, constructors will be removed in further versions:
 ```java
   @Deprecated public int id                           // replaced by getId()
   @Deprecated public int version                      // replaced by getVersion()
@@ -62,18 +59,16 @@ Download link [NavigineSDK.jar](https://github.com/Navigine/Android-SDK/blob/21a
   @Deprecated public Location(Location loc)
 ```
 
-* Public fields were replaced by corresponding getters, constructors will be removed in further versions in class `RouteEvent`:
-
+* Class RouteEvent: public fields were replaced by corresponding getters, constructors will be removed in further versions:
 ```java
   @Deprecated public int type                     // replaced by getType()
   @Deprecated public int value                    // replaced by getValue()
-  @Deprecated public float distance               // reaplced by getDistance()
+  @Deprecated public float distance               // replaced by getDistance()
   @Deprecated public RouteEvent()
   @Deprecated public RouteEvent(RouteEvent event)
 ```
 
-* Public fields were replaced by corresponding getters, constructors will be removed in further versions in class `RoutePath`:
-
+* Class RoutePath: public fields were replaced by corresponding getters, constructors will be removed in further versions:
 ```java
   @Deprecated public float length                 // replaced by getLength()
   @Deprecated public List<RouteEvent> events      // replaced by getEvents()
@@ -82,8 +77,7 @@ Download link [NavigineSDK.jar](https://github.com/Navigine/Android-SDK/blob/21a
   @Deprecated public RoutePath(RoutePath path)
 ```
 
-* Public fields were replaced by corresponding getters, constructors will be removed in further versions in class `SubLocation`:
-
+* Class SubLocation: public fields were replaced by corresponding getters, constructors will be removed in further versions:
 ```java
   @Deprecated public int id                     // replaced by getId()
   @Deprecated public int location               // replaced by getLocationId()
@@ -100,8 +94,7 @@ Download link [NavigineSDK.jar](https://github.com/Navigine/Android-SDK/blob/21a
   @Deprecated public SubLocation(SubLocation subLoc)
 ```
 
-* Public fields were replaced by corresponding getters, constructors will be removed in further versions in class `Venue`:
-
+* Class Venue: public fields were replaced by corresponding getters, constructors will be removed in further versions:
 ```java
   @Deprecated public int id                     // replaced by getId()
   @Deprecated public int location               // replaced by getLocationId()
@@ -118,8 +111,7 @@ Download link [NavigineSDK.jar](https://github.com/Navigine/Android-SDK/blob/21a
   @Deprecated public Venue(Venue v)
 ```
 
-* Public fields were replaced by corresponding getters, constructors will be removed in further versions in class `Venue.Category`:
-
+* Class Venue.Category: public fields were replaced by corresponding getters, constructors will be removed in further versions:
 ```java
   @Deprecated public int id                     // replaced by getId()
   @Deprecated public String name                // replaced by getName()
@@ -127,8 +119,7 @@ Download link [NavigineSDK.jar](https://github.com/Navigine/Android-SDK/blob/21a
   @Deprecated public Venue.Category(Venue.Category c)
 ```
 
-* Public fields were replaced by corresponding getters, constructors will be removed in further versions in class `Zone`:
-
+* Class Zone: public fields were replaced by corresponding getters, constructors will be removed in further versions:
 ```java
   @Deprecated public int id                       // replaced by getId()
   @Deprecated public int location                 // replaced by getLocationId()
