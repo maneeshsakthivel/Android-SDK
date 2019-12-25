@@ -13,18 +13,22 @@ Download link [NavigineSDK.jar](https://github.com/Navigine/Android-SDK/blob/21a
 * Navigation frequency changed to 1 per second
 * Class Location.Info changed to [LocationInfo](https://github.com/Navigine/Android-SDK/wiki/Class-LocationInfo)
 * Following fields and constructors are marked as `@Deprecated` in class `Beacon`:
-  * `id`
-  * `location`
-  * `subLocation`
-  * `major`
-  * `minor`
-  * `uuid`
-  * `name`
-  * `power`
-  * `x`
-  * `y`
-  * `Beacon()`
-  * `Beacon(Beacon B)`
+
+```java
+  public int id
+  public int location
+  public int subLocation
+  public int major
+  public int minor
+  public String uuid
+  public String name
+  public int power
+  public float x
+  public float y
+  public Beacon()
+  public Beacon(Beacon B)
+```
+
 * Added following methods in class `Beacon`:
 
 ```java
@@ -41,21 +45,25 @@ Download link [NavigineSDK.jar](https://github.com/Navigine/Android-SDK/blob/21a
 ```
 
 * Following fields and constructors are marked as `@Deprecated` in class `DeviceInfo`:
-  * `id`
-  * `location`
-  * `subLocation`
-  * `time`
-  * `x`
-  * `y`
-  * `r`
-  * `azimuth`
-  * `stepLength`
-  * `stepCount`
-  * `errorCode`
-  * `paths`
-  * `zones`
-  * `DeviceInfo()`
-  * `DeviceInfo(DeviceInfo info)`
+
+```java
+  public int id
+  public int location
+  public int subLocation
+  public long time
+  public float x
+  public float y
+  public float r
+  public float azimuth
+  public float stepLength
+  public int stepCount
+  public int errorCode
+  public List<RoutePath> paths
+  public List<Zone> zones
+  public DeviceInfo()
+  public DeviceInfo(DeviceInfo info)
+```
+
 * Added following methods in class `DeviceInfo`:
 
 ```java
@@ -74,15 +82,19 @@ Download link [NavigineSDK.jar](https://github.com/Navigine/Android-SDK/blob/21a
   public List<Zone> getZones()
 ```
 
-* Following fields, methods and constructors are marked as `@Deprecated` in class `Location`:
-  * `id`
-  * `version`
-  * `name`
-  * `description`
-  * `subLocations`
-  * `categories`
-  * `Location()`
-  * `Location(Location loc)`
+* Following fields and constructors are marked as `@Deprecated` in class `Location`:
+
+```java
+  public int id
+  public int version
+  public String name
+  public String description
+  public List<SubLocation> subLocations
+  public List<Venue.Category> categories
+  public Location()
+  public Location(Location loc)
+```
+
 * Added following methods in class `Location`:
 
 ```java
@@ -95,11 +107,15 @@ Download link [NavigineSDK.jar](https://github.com/Navigine/Android-SDK/blob/21a
 ```
 
 * Following fields and constructors are marked as `@Deprecated` in class `RouteEvent`:
-  * `type`
-  * `value`
-  * `distance`
-  * `RouteEvent()`
-  * `RouteEvent(RouteEvent event)`
+
+```java
+  public int type
+  public int value
+  public float distance
+  public RouteEvent()
+  public RouteEvent(RouteEvent event)
+```
+
 * Added following methods in class `RouteEvent`:
 
 ```java
@@ -109,11 +125,15 @@ Download link [NavigineSDK.jar](https://github.com/Navigine/Android-SDK/blob/21a
 ```
 
 * Following fields and constructors are marked as `@Deprecated` in class `RoutePath`:
-  * `length`
-  * `events`
-  * `points`
-  * `RoutePath()`
-  * `RoutePath(RoutePath path)`
+
+```java
+  public float length
+  public List<RouteEvent> events
+  public List<LocationPoint> points
+  public RoutePath()
+  public RoutePath(RoutePath path)
+```
+
 * Added following methods in class `RoutePath`:
 
 ```java
@@ -123,20 +143,23 @@ Download link [NavigineSDK.jar](https://github.com/Navigine/Android-SDK/blob/21a
 ```
 
 * Following fields and constructors are marked as `@Deprecated` in class `SubLocation`:
-  * `id`
-  * `location`
-  * `name`
-  * `width`
-  * `height`
-  * `azimuth`
-  * `latitude`
-  * `longitude`
-  * `measureList`
-  * `beacons`
-  * `venues`
-  * `zones`
-  * `SubLocation()`
-  * `SubLocation(SubLocation subLoc)`
+
+```java
+  public int id
+  public int location
+  public String name
+  public float width
+  public float height
+  public float azimuth
+  public double latitude
+  public double longitude
+  public List<Beacon> beacons
+  public List<Venue> venues
+  public List<Zone> zones
+  public SubLocation()
+  public SubLocation(SubLocation subLoc)
+```
+
 * Added following methods in class `SubLocation`:
 
 ```java
@@ -154,19 +177,23 @@ Download link [NavigineSDK.jar](https://github.com/Navigine/Android-SDK/blob/21a
 ```
 
 * Following fields and constructors are marked as `@Deprecated` in class `Venue`:
-  * `id`
-  * `location`
-  * `subLocation`
-  * `x`
-  * `y`
-  * `name`
-  * `alias`
-  * `phone`
-  * `image`
-  * `description`
-  * `category`
-  * `Venue()`
-  * `Venue(Venue v)`
+
+```java
+  public int id
+  public int location
+  public int subLocation
+  public float x
+  public float y
+  public String name
+  public String alias
+  public String phone
+  public String image
+  public String description
+  public Category category
+  public Venue()
+  public Venue(Venue v)
+```
+
 * Added following methods in class `Venue`:
 
 ```java
@@ -184,10 +211,14 @@ Download link [NavigineSDK.jar](https://github.com/Navigine/Android-SDK/blob/21a
 ```
 
 * Following fields and constructors are marked as `@Deprecated` in class `Venue.Category`:
-  * `id`
-  * `name`
-  * `Venue.Category()`
-  * `Venue.Category(Venue.Category c)`
+
+```java
+  public int id
+  public String name
+  public Venue.Category()
+  public Venue.Category(Venue.Category c)
+```
+
 * Added following methods in class `Venue.Category`:
 
 ```java
@@ -196,15 +227,19 @@ Download link [NavigineSDK.jar](https://github.com/Navigine/Android-SDK/blob/21a
 ```
 
 * Following fields and constructors are marked as `@Deprecated` in class `Zone`:
-  * `id`
-  * `location`
-  * `subLocation`
-  * `name`
-  * `alias`
-  * `color`
-  * `points`
-  * `Zone()`
-  * `Zone(Zone Z)`
+
+```java
+  public int id
+  public int location
+  public int subLocation
+  public String name
+  public String alias
+  public String color
+  public List<LocationPoint> points
+  public Zone()
+  public Zone(Zone Z)
+```
+
 * Added following methods in class `Zone`:
 
 ```java
