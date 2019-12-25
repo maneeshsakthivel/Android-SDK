@@ -9,7 +9,13 @@ Download link [NavigineSDK.jar](https://github.com/Navigine/Android-SDK/blob/21a
 
 * Navigation algorithms updated to version 2.2
 * Added support for graph smoothing in navigation.
-* Removed support of track file recording.
+* Removed support of track file recording. Following methods are removed from [NavigationThread](https://github.com/Navigine/Android-SDK/wiki/Class-NavigationThread) class:
+
+```java
+  public void setTrackFile(String filename)
+  public String getTrackFile()
+```
+
 * Navigation frequency changed to 1 per second
 * Class Location.Info changed to [LocationInfo](https://github.com/Navigine/Android-SDK/wiki/Class-LocationInfo)
 * Class [Beacon](https://github.com/Navigine/Android-SDK/wiki/Class-Beacon): public fields were replaced by corresponding getters, constructors will be removed in further versions
