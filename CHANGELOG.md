@@ -8,8 +8,8 @@ uses calendar versioning in the format `YYYYMMDD`.
 Download link [NavigineSDK.jar](https://github.com/Navigine/Android-SDK/blob/21a23858abd688639674054f9be7b67301a0c28a/libs/NavigineSDK.jar?raw=true)
 
 * Navigation algorithms updated to version 2.2
-* Added support for graph_smoothing in navigation.
-* Removed support of track file recording
+* Added support for graph smoothing in navigation.
+* Removed support of track file recording.
 * Navigation frequency changed to 1 per second
 * Class Location.Info changed to [LocationInfo](https://github.com/Navigine/Android-SDK/wiki/Class-LocationInfo)
 * Class [Beacon](https://github.com/Navigine/Android-SDK/wiki/Class-Beacon): public fields were replaced by corresponding getters, constructors will be removed in further versions
