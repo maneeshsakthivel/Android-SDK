@@ -15,18 +15,18 @@ Download link [NavigineSDK.jar](https://github.com/Navigine/Android-SDK/blob/21a
 * Following fields and constructors are marked as `@Deprecated` in class `Beacon`:
 
 ```java
-  public int id
-  public int location
-  public int subLocation
-  public int major
-  public int minor
-  public String uuid
-  public String name
-  public int power
-  public float x
-  public float y
-  public Beacon()
-  public Beacon(Beacon B)
+  @Deprecated public int id              // replaced by getId()
+  @Deprecated public int location        // replaced by getLocationId()
+  @Deprecated public int subLocation     // replaced by getSubLocationId()
+  @Deprecated public int major           // replaced by getMajor()
+  @Deprecated public int minor           // replaced by getMinor()
+  @Deprecated public String uuid         // replaced by getUuid()
+  @Deprecated public String name         // replaced by getName()
+  @Deprecated public int power           // replaced by getPower()
+  @Deprecated public float x             // replaced by getX()
+  @Deprecated public float y             // replaced by getY()
+  @Deprecated public Beacon()
+  @Deprecated public Beacon(Beacon B)
 ```
 
 * Added following methods in class `Beacon`:
