@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file. NavigineSDK
 uses calendar versioning in the format `YYYYMMDD`.
 
+## Version 20200228
+
+Download link [NavigineSDK.jar](https://github.com/Navigine/Android-SDK/blob/2dac5d71ece61878c8a7c73c868f74d1038916ab/libs/NavigineSDK.jar?raw=true)
+
+* Added Eddystone scanning for Android devices with version >= 21
+
 ## Version 20200212
 
 Download link [NavigineSDK.jar](https://github.com/Navigine/Android-SDK/blob/f9fc5594d2321c4a28fd051c8c9b0f7eb639a325/libs/NavigineSDK.jar?raw=true)
