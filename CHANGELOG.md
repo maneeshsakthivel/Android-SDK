@@ -3,6 +3,20 @@
 All notable changes to this project will be documented in this file. NavigineSDK
 uses calendar versioning in the format `YYYYMMDD`.
 
+## Version 20200423
+
+Download link [NavigineSDK.jar](https://github.com/Navigine/Android-SDK/blob/3cb56f53f65909ed77f7ecfffd36f6a1a6845bfb/libs/NavigineSDK.jar?raw=true)
+
+* Added public function for providing WiFi and Bluetooth measurements on NavigationThread class.
+```java
+  public void provideBluetoothMeasurement(String name, 
+                                          String address, 
+                                          int rssi, 
+                                          byte[] scanRecord);
+  public void provideWifiMeasurement(List<android.net.wifi.ScanResult> scanResults);
+```
+* Added fling and zoom animations to location view.
+
 ## Version 20200228
 
 Download link [NavigineSDK.jar](https://github.com/Navigine/Android-SDK/blob/2dac5d71ece61878c8a7c73c868f74d1038916ab/libs/NavigineSDK.jar?raw=true)
