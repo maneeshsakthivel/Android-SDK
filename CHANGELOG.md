@@ -3,6 +3,15 @@
 All notable changes to this project will be documented in this file. NavigineSDK
 uses calendar versioning in the format `YYYYMMDD`.
 
+## Version 20200509
+
+Download link [NavigineSDK.jar](https://github.com/Navigine/Android-SDK/blob/5f330d1f56079c9daa8c9c08042f2e00d13a181f/libs/NavigineSDK.jar?raw=true)
+
+* Added public function for publishing user events.
+```java
+  public String publishUserEvent(String content);
+```
+
 ## Version 20200423
 
 Download link [NavigineSDK.jar](https://github.com/Navigine/Android-SDK/blob/3cb56f53f65909ed77f7ecfffd36f6a1a6845bfb/libs/NavigineSDK.jar?raw=true)
