@@ -3,6 +3,16 @@
 All notable changes to this project will be documented in this file. NavigineSDK
 uses calendar versioning in the format `YYYYMMDD`.
 
+## Version 20200515
+
+Download link [NavigineSDK.jar](https://github.com/Navigine/Android-SDK/blob/7da35fdd9f7b22a0d5426a10ca53c29f57b5a77a/libs/NavigineSDK.jar?raw=true)
+
+* Added public function for removing locations list file.
+```java
+  public boolean removeLocationsList();
+```
+* Heatmaps and Zones storage size increased
+
 ## Version 20200509
 
 Download link [NavigineSDK.jar](https://github.com/Navigine/Android-SDK/blob/5f330d1f56079c9daa8c9c08042f2e00d13a181f/libs/NavigineSDK.jar?raw=true)
