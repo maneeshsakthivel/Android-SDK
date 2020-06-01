@@ -3,6 +3,25 @@
 All notable changes to this project will be documented in this file. NavigineSDK
 uses calendar versioning in the format `YYYYMMDD`.
 
+## Version 20200601
+
+Download link [NavigineSDK.jar](https://github.com/Navigine/Android-SDK/blob/a58687bf3a364e53193c9e9f32344be0255101d8/libs/NavigineSDK.jar?raw=true)
+
+* Added public function for uploading user files.
+```java
+  public static boolean uploadFile(String filePath, UploadFileListener uploadListener);
+```
+* Added UploadFileListener class.
+```java
+  public class UploadFileListener
+  {
+    public UploadFileListener( ) { }
+    public void onFinished ( ) { }
+    public void onFailed   ( int error ) { }
+    public void onUpdate   ( int state ) { }
+  };
+```
+
 ## Version 20200515
 
 Download link [NavigineSDK.jar](https://github.com/Navigine/Android-SDK/blob/7da35fdd9f7b22a0d5426a10ca53c29f57b5a77a/libs/NavigineSDK.jar?raw=true)
